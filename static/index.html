@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Telegram AI System</title>
+
+<!-- فحص تحميل السكريبتات قبل React -->
+<script>window.__LOAD_ERRORS__=[];</script>
+
+<!-- React 18 -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"
+  onerror="window.__LOAD_ERRORS__.push('React')"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+  onerror="window.__LOAD_ERRORS__.push('ReactDOM')"></script>
+
+<!-- Babel Standalone – لتشغيل JSX مباشرة في المتصفح -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"
+  onerror="window.__LOAD_ERRORS__.push('Babel')"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#22263a;--border:#2d3150;
+  --accent:#6c63ff;--accent2:#4ade80;--danger:#f87171;--warn:#fbbf24;
+  --text:#e2e8f0;--muted:#64748b;--white:#fff;--sw:230px;
+}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+
+/* شاشة التحميل الأولية */
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px}
+#loading-screen.hidden{display:none}
+.loader-ring{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Layout */
+#root{display:flex;min-height:100vh}
+.sidebar{width:var(--sw);background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100;overflow-y:auto}
+.main{margin-right:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+
+/* Sidebar */
+.logo-box{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.logo-text{font-weight:800;font-size:15px;color:var(--white);line-height:1.2}
+.logo-sub{font-size:10px;color:var(--muted);font-weight:400}
+nav{padding:10px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--muted);font-size:14px;transition:all .18s;margin-bottom:1px;user-select:none;border:none;background:none;width:100%;text-align:right}
+.nav-item:hover{background:var(--card2);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(108,99,255,.3),rgba(167,139,250,.15));color:var(--white);font-weight:700}
+.nav-icon{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+
+/* Topbar */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:800;color:var(--white);white-space:nowrap;min-width:130px}
+.copilot-wrap{flex:1;display:flex;gap:8px;max-width:650px}
+.copilot-input{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s;direction:rtl}
+.copilot-input:focus{border-color:var(--accent)}
+.copilot-input::placeholder{color:var(--muted)}
+.ws-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:4px 10px;border-radius:20px;background:var(--card2);border:1px solid var(--border);white-space:nowrap}
+.ws-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ws-dot.on{background:var(--accent2)}
+.ws-dot.off{background:var(--danger)}
+
+/* Content */
+.content{padding:22px;flex:1;overflow-y:auto;max-height:calc(100vh - 57px)}
+
+/* Buttons */
+.btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#a78bfa);color:#fff}
+.btn-primary:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}
+.btn-success{background:linear-gradient(135deg,#059669,var(--accent2));color:#fff}
+.btn-danger{background:linear-gradient(135deg,#dc2626,var(--danger));color:#fff}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px}
+.page-header{margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.page-title{font-size:20px;font-weight:800;color:var(--white)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px}
+
+/* Stat Grid */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px;display:flex;align-items:center;gap:14px}
+.stat-icon{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-val{font-size:26px;font-weight:800;color:var(--white);line-height:1}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-change{font-size:11px;color:var(--accent2);margin-top:3px}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:11px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--card2);padding:11px 13px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 13px;border-bottom:1px solid rgba(45,49,80,.4);vertical-align:middle}
+tbody tr:hover{background:rgba(108,99,255,.04)}
+tbody tr:last-child td{border:none}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.bg-green{background:rgba(74,222,128,.15);color:var(--accent2)}
+.bg-red{background:rgba(248,113,113,.15);color:var(--danger)}
+.bg-yellow{background:rgba(251,191,36,.15);color:var(--warn)}
+.bg-purple{background:rgba(108,99,255,.15);color:#a78bfa}
+.bg-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+.bg-gray{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* Form */
+.fg{margin-bottom:14px}
+.flabel{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.finput{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:9px 13px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.finput:focus{border-color:var(--accent)}
+textarea.finput{min-height:90px;resize:vertical}
+select.finput{cursor:pointer}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-title{font-size:17px;font-weight:700;color:var(--white)}
+.modal-x{background:var(--card2);border:1px solid var(--border);width:30px;height:30px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:17px;flex-shrink:0}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:22px;left:22px;z-index:9999;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+.toast{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:12px 16px;min-width:230px;max-width:320px;display:flex;align-items:center;gap:9px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tin .28s ease;pointer-events:auto}
+.toast.ok{border-color:var(--accent2)}
+.toast.err{border-color:var(--danger)}
+@keyframes tin{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
+
+/* Bar chart (SVG) */
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:120px;padding:8px 0}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.bar-fill{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;min-height:2px}
+.bar-label{font-size:9px;color:var(--muted);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;width:100%;text-align:center}
+
+/* Section title */
+.sec-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+
+/* Spinner */
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+
+/* Progress */
+.prog-bar{height:5px;background:var(--card2);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s}
+
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filter-input{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.filter-input:focus{border-color:var(--accent)}
+
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(108,99,255,.15);color:#a78bfa;border-radius:12px;padding:2px 9px;font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- شاشة تحميل تظهر فوراً قبل React -->
+<div id="loading-screen">
+  <div class="loader-ring"></div>
+  <div style="color:var(--muted);font-size:14px">جارٍ التحميل...</div>
+</div>
+
+<div id="root"></div>
+
+<!-- رسالة خطأ إذا فشل تحميل السكريبتات -->
+<div id="fatal-error" style="display:none;position:fixed;inset:0;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#e2e8f0;font-family:sans-serif;gap:12px;padding:20px;text-align:center">
+  <div style="font-size:48px">⚠️</div>
+  <div style="font-size:20px;font-weight:700">فشل تحميل النظام</div>
+  <div id="fatal-msg" style="color:#64748b;font-size:14px"></div>
+  <button onclick="location.reload()" style="margin-top:8px;padding:10px 24px;background:#6c63ff;color:#fff;border:none;border-radius:9px;font-size:14px;cursor:pointer">إعادة المحاولة</button>
+</div>
+
+<script type="text/babel">
+/* ═══════════════════════════════════════════════════════════════════════════
+   فحص تحميل المكتبات
+═══════════════════════════════════════════════════════════════════════════ */
+(function checkLibs() {
+  const errs = window.__LOAD_ERRORS__ || [];
+  const missing = [];
+  if (!window.React)    missing.push('React');
+  if (!window.ReactDOM) missing.push('ReactDOM');
+  if (missing.length) {
+    document.getElementById('loading-screen').style.display = 'none';
+    const fe = document.getElementById('fatal-error');
+    fe.style.display = 'flex';
+    document.getElementById('fatal-msg').textContent = 'المكتبات المفقودة: ' + missing.join(', ') + '. تحقق من الاتصال بالإنترنت.';
+    throw new Error('Missing: ' + missing.join(', '));
+  }
+})();
+
+const { useState, useEffect, useRef, useCallback, Fragment } = React;
+
+/* ── API helper ── */
+const API_BASE = '';
+async function api(path, opts = {}) {
+  const r = await fetch(API_BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+/* ── Toast ── */
+let _toast = () => {};
+function ToastContainer() {
+  const [list, setList] = useState([]);
+  _toast = (msg, type = 'ok') => {
+    const id = Date.now() + Math.random();
+    setList(p => [...p, { id, msg, type }]);
+    setTimeout(() => setList(p => p.filter(t => t.id !== id)), 3600);
+  };
+  return (
+    <div className="toast-wrap">
+      {list.map(t => (
+        <div key={t.id} className={`toast ${t.type}`}>
+          <span>{t.type === 'ok' ? '✅' : '❌'}</span>
+          <span>{t.msg}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+const toast = (m, t) => _toast(m, t);
+
+/* ── Badge ── */
+const COLOR_MAP = { green:'bg-green', red:'bg-red', yellow:'bg-yellow', purple:'bg-purple', blue:'bg-blue', gray:'bg-gray' };
+function Badge({ label, color = 'gray' }) {
+  return <span className={`badge ${COLOR_MAP[color] || 'bg-gray'}`}>{label}</span>;
+}
+
+/* ── Spinner ── */
+function Spin() { return <span className="spin" />; }
+
+/* ── Modal ── */
+function Modal({ title, onClose, children, footer }) {
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-head">
+          <span className="modal-title">{title}</span>
+          <button className="modal-x" onClick={onClose}>×</button>
+        </div>
+        {children}
+        {footer && <div className="modal-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Simple Bar Chart (بدون مكتبة خارجية) ── */
+function BarChart({ data, xKey, yKey, color = '#6c63ff' }) {
+  if (!data || !data.length) return <div className="empty" style={{padding:20}}>لا توجد بيانات</div>;
+  const max = Math.max(...data.map(d => d[yKey] || 0)) || 1;
+  return (
+    <div className="bar-chart">
+      {data.slice(-20).map((d, i) => {
+        const pct = ((d[yKey] || 0) / max * 100).toFixed(1);
+        return (
+          <div key={i} className="bar-col" title={`${d[xKey]}: ${d[yKey]}`}>
+            <div className="bar-fill" style={{ height: `${pct}%`, background: color }} />
+            <div className="bar-label">{String(d[xKey] || '').slice(-5)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Pie Chart (SVG بسيط) ── */
+function PieChart({ data, nameKey, valueKey }) {
+  if (!data || !data.length) return <div className="empty" style={{padding:20}}>لا توجد بيانات</div>;
+  const colors = ['#6c63ff','#4ade80','#f87171','#fbbf24','#60a5fa','#f472b6','#34d399','#fb923c'];
+  const total = data.reduce((s, d) => s + (d[valueKey] || 0), 0) || 1;
+  let angle = -90;
+  const slices = data.map((d, i) => {
+    const pct = (d[valueKey] || 0) / total;
+    const start = angle;
+    angle += pct * 360;
+    return { ...d, pct, start, end: angle, color: colors[i % colors.length] };
+  });
+  function polarToXY(deg, r) {
+    const rad = deg * Math.PI / 180;
+    return { x: 50 + r * Math.cos(rad), y: 50 + r * Math.sin(rad) };
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <svg viewBox="0 0 100 100" style={{ width: 110, height: 110, flexShrink: 0 }}>
+        {slices.map((s, i) => {
+          if (s.pct === 0) return null;
+          const s1 = polarToXY(s.start, 38);
+          const s2 = polarToXY(s.end, 38);
+          const large = s.pct > 0.5 ? 1 : 0;
+          return (
+            <path key={i}
+              d={`M50,50 L${s1.x},${s1.y} A38,38 0 ${large},1 ${s2.x},${s2.y} Z`}
+              fill={s.color} stroke="#1a1d27" strokeWidth="1" />
+          );
+        })}
+      </svg>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
+            <span style={{ color: 'var(--text)' }}>{s[nameKey]}</span>
+            <span style={{ color: 'var(--muted)', marginRight: 'auto' }}>{s[valueKey]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PAGES
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard ── */
+function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [bots, setBots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      api('/api/stats/overview'),
+      api('/api/stats/messages_timeline'),
+      api('/api/stats/groups_by_category'),
+      api('/api/stats/protection_bots'),
+    ]).then(([s, t, c, b]) => { setStats(s); setTimeline(t); setCats(c); setBots(b); })
+      .catch(e => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="content" style={{display:'flex',alignItems:'center',gap:10}}><Spin/> جارٍ التحميل...</div>;
+  if (err) return <div className="content"><div style={{color:'var(--danger)'}}>❌ خطأ في الاتصال بالخادم: {err}</div></div>;
+
+  const s = stats || {};
+  const acc = s.accounts || {};
+  const grp = s.groups || {};
+  const msg = s.messages || {};
+  const cam = s.campaigns || {};
+
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div>
+          <div className="page-title">لوحة التحكم 📊</div>
+          <div className="page-sub">نظرة عامة على أداء النظام</div>
+        </div>
+      </div>
+
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-icon" style={{background:'rgba(108,99,255,.15)'}}>👤</div>
+          <div>
+            <div className="stat-val">{acc.active || 0}<span style={{fontSize:14,color:'var(--muted)'}}>/{acc.total || 0}</span></div>
+            <div className="stat-label">الحسابات النشطة</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{background:'rgba(74,222,128,.15)'}}>👥</div>
+          <div>
+            <div className="stat-val">{(grp.joined || 0).toLocaleString()}</div>
+            <div className="stat-label">مجموعة منضم إليها</div>
+            <div className="stat-change">من {grp.total || 0} إجمالاً</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{background:'rgba(96,165,250,.15)'}}>📨</div>
+          <div>
+            <div className="stat-val">{(msg.total || 0).toLocaleString()}</div>
+            <div className="stat-label">رسائل مرسلة</div>
+            <div className="stat-change">نجاح {msg.success_rate || 0}%</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{background:'rgba(248,113,113,.15)'}}>🗑</div>
+          <div>
+            <div className="stat-val">{msg.deleted || 0}</div>
+            <div className="stat-label">رسائل محذوفة</div>
+            <div className="stat-change">مُصنَّفة تلقائياً</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{background:'rgba(251,191,36,.15)'}}>🚀</div>
+          <div>
+            <div className="stat-val">{cam.total || 0}</div>
+            <div className="stat-label">حملات إجمالاً</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid2" style={{marginBottom:14}}>
+        <div className="card">
+          <div className="sec-title">📈 الرسائل اليومية</div>
+          <BarChart data={timeline} xKey="date" yKey="count" color="#6c63ff" />
+        </div>
+        <div className="card">
+          <div className="sec-title">🏷 المجموعات حسب الفئة</div>
+          <PieChart data={cats} nameKey="category" valueKey="count" />
+        </div>
+      </div>
+
+      {bots.length > 0 && (
+        <div className="card">
+          <div className="sec-title">🤖 بوتات الحماية المكتشفة</div>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+            {bots.map((b, i) => (
+              <div key={i} style={{background:'var(--card2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 18px',textAlign:'center',minWidth:100}}>
+                <div style={{fontSize:24}}>{b.bot?.includes('سريع') ? '⚡' : '🛡'}</div>
+                <div style={{fontWeight:800,fontSize:20,color:'var(--white)',marginTop:4}}>{b.count}</div>
+                <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{b.bot}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Groups ── */
+function Groups() {
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [catF, setCatF] = useState('');
+  const [joinedF, setJoinedF] = useState('');
+  const [modal, setModal] = useState(null); // null | 'edit' | 'join'
+  const [editing, setEditing] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const CATS = ['تعليمي','تجاري','رياضي','ترفيهي','ديني','تقني','طبي','أخرى'];
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const p = new URLSearchParams();
+    if (search) p.set('search', search);
+    if (catF) p.set('category', catF);
+    if (joinedF !== '') p.set('is_joined', joinedF);
+    api(`/api/groups?${p}`).then(setGroups).catch(e => toast(e.message, 'err')).finally(() => setLoading(false));
+  }, [search, catF, joinedF]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function syncDialogs() {
+    const id = prompt('أدخل معرف الحساب للمزامنة:');
+    if (!id) return;
+    try {
+      const r = await api('/api/groups/action', { method: 'POST', body: JSON.stringify({ action: 'sync_dialogs', account_id: parseInt(id) }) });
+      toast(`✅ تمت المزامنة – ${r.added} مجموعة جديدة`);
+      load();
+    } catch (e) { toast(e.message, 'err'); }
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      await api('/api/groups/action', { method: 'POST', body: JSON.stringify({ action: 'update', group_id: editing.id, data: { category: editing.category, sub_category: editing.sub_category, notes: editing.notes } }) });
+      toast('تم الحفظ ✅'); setModal(null); load();
+    } catch (e) { toast(e.message, 'err'); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div>
+          <div className="page-title">المجموعات 👥</div>
+          <div className="page-sub">{groups.length} مجموعة</div>
+        </div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <button className="btn btn-ghost btn-sm" onClick={syncDialogs}>🔄 مزامنة الحوارات</button>
+          <button className="btn btn-primary btn-sm" onClick={() => { setEditing({}); setModal('edit'); }}>+ إضافة</button>
+        </div>
+      </div>
+
+      <div className="filter-row">
+        <input className="filter-input" placeholder="🔍 بحث بالاسم..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="filter-input" value={catF} onChange={e => setCatF(e.target.value)}>
+          <option value="">كل الفئات</option>
+          {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select className="filter-input" value={joinedF} onChange={e => setJoinedF(e.target.value)}>
+          <option value="">كل الحالات</option>
+          <option value="true">منضم</option>
+          <option value="false">غير منضم</option>
+        </select>
+        <button className="btn btn-ghost btn-sm" onClick={load}>تحديث</button>
+      </div>
+
+      {loading ? (
+        <div style={{display:'flex',gap:10,padding:'20px 0'}}><Spin /> جارٍ التحميل...</div>
+      ) : (
+        <div className="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>المجموعة</th><th>الأعضاء</th><th>الفئة</th><th>الحالة</th><th>بوت الحماية</th><th></th></tr>
+            </thead>
+            <tbody>
+              {groups.length === 0 ? (
+                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">👥</div>لا توجد مجموعات</div></td></tr>
+              ) : groups.map(g => (
+                <tr key={g.id}>
+                  <td>
+                    <div style={{fontWeight:600,color:'var(--white)'}}>{g.title}</div>
+                    {g.username && <div style={{fontSize:11,color:'var(--muted)'}}>@{g.username}</div>}
+                  </td>
+                  <td style={{color:'var(--accent2)',fontWeight:600}}>{(g.member_count || 0).toLocaleString()}</td>
+                  <td>{g.category ? <Badge label={g.category} color="purple" /> : <span style={{color:'var(--muted)'}}>—</span>}</td>
+                  <td><Badge label={g.is_joined ? 'منضم' : 'غير منضم'} color={g.is_joined ? 'green' : 'gray'} /></td>
+                  <td>{g.protection_bot ? <Badge label={g.protection_bot} color="red" /> : <span style={{color:'var(--muted)'}}>—</span>}</td>
+                  <td><button className="btn btn-ghost btn-xs" onClick={() => { setEditing({...g}); setModal('edit'); }}>✏️</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modal === 'edit' && (
+        <Modal title={editing.id ? 'تعديل مجموعة' : 'إضافة مجموعة'} onClose={() => setModal(null)}
+          footer={<><button className="btn btn-ghost" onClick={() => setModal(null)}>إلغاء</button><button className="btn btn-primary" onClick={saveEdit} disabled={saving}>{saving ? <Spin/> : 'حفظ'}</button></>}>
+          <div className="fg">
+            <label className="flabel">الفئة</label>
+            <select className="finput" value={editing.category || ''} onChange={e => setEditing(p => ({...p, category: e.target.value}))}>
+              <option value="">اختر...</option>
+              {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="fg">
+            <label className="flabel">الفئة الفرعية</label>
+            <input className="finput" value={editing.sub_category || ''} onChange={e => setEditing(p => ({...p, sub_category: e.target.value}))} />
+          </div>
+          <div className="fg">
+            <label className="flabel">ملاحظات</label>
+            <textarea className="finput" value={editing.notes || ''} onChange={e => setEditing(p => ({...p, notes: e.target.value}))} />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── Campaigns ── */
+function Campaigns() {
+  const [camps, setCamps] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: '', template_ids: [], target_criteria: {}, schedule: {} });
+  const [saving, setSaving] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    Promise.all([api('/api/campaigns'), api('/api/templates')])
+      .then(([c, t]) => { setCamps(c); setTemplates(t); })
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  async function create() {
+    if (!form.name) return toast('أدخل اسم الحملة', 'err');
+    setSaving(true);
+    try {
+      await api('/api/campaigns', { method: 'POST', body: JSON.stringify(form) });
+      toast('✅ تم إنشاء الحملة'); setModal(false); load();
+    } catch (e) { toast(e.message, 'err'); }
+    finally { setSaving(false); }
+  }
+
+  async function run(id) {
+    try {
+      await api(`/api/campaigns/${id}/run`, { method: 'POST' });
+      toast('🚀 بدأ تشغيل الحملة'); load();
+    } catch (e) { toast(e.message, 'err'); }
+  }
+
+  async function del(id) {
+    if (!confirm('حذف الحملة؟')) return;
+    try { await api(`/api/campaigns/${id}`, { method: 'DELETE' }); toast('تم الحذف'); load(); }
+    catch (e) { toast(e.message, 'err'); }
+  }
+
+  const STATUS = { draft: ['مسودة', 'gray'], running: ['يعمل', 'green'], paused: ['موقوف', 'yellow'], done: ['مكتمل', 'blue'] };
+
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div><div className="page-title">الحملات 🚀</div><div className="page-sub">{camps.length} حملة</div></div>
+        <button className="btn btn-primary" onClick={() => setModal(true)}>+ حملة جديدة</button>
+      </div>
+
+      {loading ? <div style={{display:'flex',gap:10,padding:'20px 0'}}><Spin /> جارٍ التحميل...</div> :
+        camps.length === 0 ? <div className="empty"><div className="empty-icon">🚀</div>لا توجد حملات</div> :
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {camps.map(c => {
+            const [label, color] = STATUS[c.status] || ['غير معروف', 'gray'];
+            return (
+              <div key={c.id} className="card" style={{display:'flex',alignItems:'center',gap:14}}>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:15,color:'var(--white)',marginBottom:6}}>{c.name}</div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    <Badge label={label} color={color} />
+                    {c.stats?.sent ? <Badge label={`📨 ${c.stats.sent}`} color="blue" /> : null}
+                    {c.stats?.deleted ? <Badge label={`🗑 ${c.stats.deleted}`} color="red" /> : null}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  {c.status !== 'running' && <button className="btn btn-success btn-sm" onClick={() => run(c.id)}>▶ تشغيل</button>}
+                  <button className="btn btn-danger btn-sm" onClick={() => del(c.id)}>🗑</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      }
+
+      {modal && (
+        <Modal title="حملة جديدة" onClose={() => setModal(false)}
+          footer={<><button className="btn btn-ghost" onClick={() => setModal(false)}>إلغاء</button><button className="btn btn-primary" onClick={create} disabled={saving}>{saving ? <Spin/> : 'إنشاء'}</button></>}>
+          <div className="fg">
+            <label className="flabel">اسم الحملة *</label>
+            <input className="finput" value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} placeholder="مثال: حملة رمضان" />
+          </div>
+          <div className="fg">
+            <label className="flabel">الفئة المستهدفة</label>
+            <input className="finput" placeholder="تعليمي، تجاري..." onChange={e => setForm(p => ({...p, target_criteria: {...p.target_criteria, category: e.target.value}}))} />
+          </div>
+          {templates.length > 0 && (
+            <div className="fg">
+              <label className="flabel">القوالب</label>
+              <select className="finput" multiple size={Math.min(templates.length, 4)}
+                onChange={e => setForm(p => ({...p, template_ids: [...e.target.selectedOptions].map(o => parseInt(o.value))}))}>
+                {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+          )}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── Templates ── */
+function Templates() {
+  const [templates, setTemplates] = useState([]);
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: '', base_content: '', variations: '' });
+  const [saving, setSaving] = useState(false);
+
+  const load = () => api('/api/templates').then(setTemplates).catch(e => toast(e.message, 'err'));
+  useEffect(load, []);
+
+  async function save() {
+    if (!form.name || !form.base_content) return toast('أدخل الاسم والمحتوى', 'err');
+    setSaving(true);
+    try {
+      const vars = form.variations ? form.variations.split('\n').filter(v => v.trim()) : [];
+      await api('/api/templates', { method: 'POST', body: JSON.stringify({ name: form.name, base_content: form.base_content, variations: vars }) });
+      toast('✅ تم حفظ القالب'); setModal(false); load();
+    } catch (e) { toast(e.message, 'err'); }
+    finally { setSaving(false); }
+  }
+
+  async function del(id) {
+    if (!confirm('حذف القالب؟')) return;
+    try { await api(`/api/templates/${id}`, { method: 'DELETE' }); toast('تم الحذف'); load(); }
+    catch (e) { toast(e.message, 'err'); }
+  }
+
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div><div className="page-title">القوالب 📝</div><div className="page-sub">{templates.length} قالب</div></div>
+        <button className="btn btn-primary" onClick={() => { setForm({ name: '', base_content: '', variations: '' }); setModal(true); }}>+ قالب جديد</button>
+      </div>
+
+      {templates.length === 0 ? <div className="empty"><div className="empty-icon">📝</div>لا توجد قوالب</div> :
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12}}>
+          {templates.map(t => (
+            <div key={t.id} className="card">
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:8,gap:8}}>
+                <span style={{fontWeight:700,color:'var(--white)',fontSize:15}}>{t.name}</span>
+                <button className="btn btn-danger btn-xs" onClick={() => del(t.id)}>🗑</button>
+              </div>
+              <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.6,marginBottom:10}}>{t.base_content?.slice(0, 120)}{t.base_content?.length > 120 ? '...' : ''}</div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                <Badge label={`نجاح ${t.success_score || 0}%`} color="green" />
+                <Badge label={`خطر ${t.ban_risk || 0}%`} color={t.ban_risk > 50 ? 'red' : 'yellow'} />
+                {t.variations?.length > 0 && <Badge label={`${t.variations.length} صيغة`} color="purple" />}
+              </div>
+            </div>
+          ))}
+        </div>
+      }
+
+      {modal && (
+        <Modal title="قالب جديد" onClose={() => setModal(false)}
+          footer={<><button className="btn btn-ghost" onClick={() => setModal(false)}>إلغاء</button><button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? <Spin/> : 'حفظ'}</button></>}>
+          <div className="fg">
+            <label className="flabel">اسم القالب *</label>
+            <input className="finput" value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} />
+          </div>
+          <div className="fg">
+            <label className="flabel">النص الأساسي *</label>
+            <textarea className="finput" value={form.base_content} onChange={e => setForm(p => ({...p, base_content: e.target.value}))} />
+          </div>
+          <div className="fg">
+            <label className="flabel">صيغ بديلة (كل سطر صيغة)</label>
+            <textarea className="finput" style={{minHeight:70}} value={form.variations} onChange={e => setForm(p => ({...p, variations: e.target.value}))} />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── Accounts ── */
+function Accounts() {
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(false);
+  const [step, setStep] = useState('phone');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [pass, setPass] = useState('');
+  const [working, setWorking] = useState(false);
+
+  const load = () => api('/api/accounts').then(setAccounts).catch(e => toast(e.message,'err')).finally(() => setLoading(false));
+  useEffect(load, []);
+
+  async function sendCode() {
+    if (!phone) return toast('أدخل رقم الهاتف','err');
+    setWorking(true);
+    try {
+      const r = await api('/api/accounts/add', { method: 'POST', body: JSON.stringify({ phone }) });
+      if (r.status === 'code_sent') { setStep('code'); toast('📱 تم إرسال الكود'); }
+      else toast(r.detail || 'خطأ', 'err');
+    } catch (e) { toast(e.message, 'err'); }
+    finally { setWorking(false); }
+  }
+
+  async function verify() {
+    setWorking(true);
+    try {
+      const r = await api('/api/accounts/verify', { method: 'POST', body: JSON.stringify({ phone, code, password: pass || undefined }) });
+      if (r.status === 'ok') { toast('✅ تم إضافة الحساب'); setModal(false); setStep('phone'); setPhone(''); setCode(''); load(); }
+      else if (r.status === '2fa_required') { toast('أدخل كلمة مرور التحقق بخطوتين','err'); }
+      else toast(r.detail || 'كود خاطئ', 'err');
+    } catch (e) { toast(e.message, 'err'); }
+    finally { setWorking(false); }
+  }
+
+  async function del(id) {
+    if (!confirm('حذف الحساب؟')) return;
+    try { await api(`/api/accounts/${id}`, { method: 'DELETE' }); toast('تم الحذف'); load(); }
+    catch (e) { toast(e.message, 'err'); }
+  }
+
+  const SC = { active: 'green', banned: 'red', flood: 'yellow', pending: 'gray' };
+
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div><div className="page-title">الحسابات 👤</div><div className="page-sub">{accounts.length} حساب</div></div>
+        <button className="btn btn-primary" onClick={() => { setModal(true); setStep('phone'); }}>+ إضافة حساب</button>
+      </div>
+
+      {loading ? <div style={{display:'flex',gap:10,padding:'20px 0'}}><Spin /> جارٍ التحميل...</div> :
+        <div className="tbl-wrap">
+          <table>
+            <thead><tr><th>الرقم</th><th>الحالة</th><th>الصحة</th><th>آخر نشاط</th><th></th></tr></thead>
+            <tbody>
+              {accounts.length === 0 ? (
+                <tr><td colSpan={5}><div className="empty"><div className="empty-icon">👤</div>لا توجد حسابات</div></td></tr>
+              ) : accounts.map(a => (
+                <tr key={a.id}>
+                  <td><span style={{fontWeight:600,color:'var(--white)',direction:'ltr',display:'inline-block'}}>{a.phone}</span></td>
+                  <td><Badge label={a.status} color={SC[a.status] || 'gray'} /></td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div className="prog-bar" style={{flex:1,maxWidth:80}}>
+                        <div className="prog-fill" style={{width:`${a.health_score}%`,background:a.health_score>70?'var(--accent2)':a.health_score>40?'var(--warn)':'var(--danger)'}} />
+                      </div>
+                      <span style={{fontSize:12}}>{a.health_score}%</span>
+                    </div>
+                  </td>
+                  <td style={{fontSize:12,color:'var(--muted)'}}>{a.last_active ? new Date(a.last_active).toLocaleString('ar') : '—'}</td>
+                  <td><button className="btn btn-danger btn-xs" onClick={() => del(a.id)}>🗑</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      }
+
+      {modal && (
+        <Modal title="إضافة حساب تيليجرام" onClose={() => setModal(false)}>
+          {step === 'phone' ? (
+            <>
+              <div className="fg">
+                <label className="flabel">رقم الهاتف (مع كود الدولة)</label>
+                <input className="finput" placeholder="+966501234567" value={phone} onChange={e => setPhone(e.target.value)} dir="ltr" />
+              </div>
+              <button className="btn btn-primary" style={{width:'100%'}} onClick={sendCode} disabled={working}>{working ? <Spin/> : '📤 إرسال الكود'}</button>
+            </>
+          ) : (
+            <>
+              <div className="fg">
+                <label className="flabel">الكود المرسل إلى {phone}</label>
+                <input className="finput" placeholder="12345" value={code} onChange={e => setCode(e.target.value)} dir="ltr" />
+              </div>
+              <div className="fg">
+                <label className="flabel">كلمة المرور (للحسابات ذات التحقق بخطوتين)</label>
+                <input className="finput" type="password" placeholder="اختياري" value={pass} onChange={e => setPass(e.target.value)} />
+              </div>
+              <button className="btn btn-primary" style={{width:'100%'}} onClick={verify} disabled={working}>{working ? <Spin/> : '✅ تحقق وإضافة'}</button>
+            </>
+          )}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── Analytics ── */
+function Analytics() {
+  const [overview, setOverview] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    Promise.all([api('/api/stats/overview'), api('/api/stats/messages_timeline'), api('/api/messages?limit=50')])
+      .then(([o, t, m]) => { setOverview(o); setTimeline(t); setMessages(m); })
+      .catch(e => toast(e.message, 'err'));
+  }, []);
+
+  const msg = overview?.messages || {};
+
+  return (
+    <div className="content">
+      <div className="page-header"><div className="page-title">التحليلات 📈</div></div>
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-icon" style={{background:'rgba(74,222,128,.15)'}}>📊</div><div><div className="stat-val">{msg.success_rate || 0}%</div><div className="stat-label">معدل النجاح</div></div></div>
+        <div className="stat-card"><div className="stat-icon" style={{background:'rgba(108,99,255,.15)'}}>📨</div><div><div className="stat-val">{msg.total || 0}</div><div className="stat-label">إجمالي الإرسال</div></div></div>
+        <div className="stat-card"><div className="stat-icon" style={{background:'rgba(248,113,113,.15)'}}>🗑</div><div><div className="stat-val">{msg.deleted || 0}</div><div className="stat-label">محذوفة</div></div></div>
+        <div className="stat-card"><div className="stat-icon" style={{background:'rgba(96,165,250,.15)'}}>✅</div><div><div className="stat-val">{(msg.total || 0) - (msg.deleted || 0)}</div><div className="stat-label">ناجحة</div></div></div>
+      </div>
+      <div className="card" style={{marginBottom:14}}>
+        <div className="sec-title">📈 اتجاه الرسائل (30 يوم)</div>
+        <BarChart data={timeline} xKey="date" yKey="count" color="#6c63ff" />
+      </div>
+      <div className="card">
+        <div className="sec-title">آخر الرسائل</div>
+        <div className="tbl-wrap">
+          <table>
+            <thead><tr><th>المحتوى</th><th>الحالة</th><th>التاريخ</th><th>سبب الحذف</th></tr></thead>
+            <tbody>
+              {messages.length === 0 ? <tr><td colSpan={4}><div className="empty">لا توجد رسائل</div></td></tr> :
+                messages.slice(0, 20).map(m => (
+                  <tr key={m.id}>
+                    <td style={{fontSize:12,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.content}</td>
+                    <td><Badge label={m.status} color={m.status === 'sent' ? 'green' : 'red'} /></td>
+                    <td style={{fontSize:11,color:'var(--muted)'}}>{m.sent_at ? new Date(m.sent_at).toLocaleString('ar') : '—'}</td>
+                    <td style={{fontSize:11,color:'var(--muted)'}}>{m.deletion_reason || '—'}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Audit Log ── */
+function AuditLog() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { api('/api/audit-log?limit=200').then(setLogs).finally(() => setLoading(false)); }, []);
+  const AC = { Orchestrator: 'purple', Planner: 'blue', Executor: 'green', Monitor: 'yellow', Analyzer: 'blue' };
+  return (
+    <div className="content">
+      <div className="page-header">
+        <div><div className="page-title">سجل التدقيق 📋</div></div>
+        <button className="btn btn-ghost btn-sm" onClick={() => api('/api/audit-log?limit=200').then(setLogs)}>🔄 تحديث</button>
+      </div>
+      {loading ? <div style={{display:'flex',gap:10,padding:'20px 0'}}><Spin /> جارٍ التحميل...</div> :
+        <div className="tbl-wrap">
+          <table>
+            <thead><tr><th>الوكيل</th><th>الإجراء</th><th>التفاصيل</th><th>الوقت</th></tr></thead>
+            <tbody>
+              {logs.length === 0 ? <tr><td colSpan={4}><div className="empty">لا توجد سجلات</div></td></tr> :
+                logs.map(l => (
+                  <tr key={l.id}>
+                    <td><Badge label={l.agent} color={AC[l.agent] || 'gray'} /></td>
+                    <td style={{fontSize:13}}>{l.action}</td>
+                    <td style={{fontSize:11,color:'var(--muted)',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{JSON.stringify(l.details).slice(0, 80)}</td>
+                    <td style={{fontSize:11,color:'var(--muted)',whiteSpace:'nowrap'}}>{new Date(l.created_at).toLocaleString('ar')}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  );
+}
+
+/* ── Settings ── */
+function Settings() {
+  return (
+    <div className="content">
+      <div className="page-header"><div className="page-title">الإعدادات ⚙️</div></div>
+      <div className="card" style={{maxWidth:580}}>
+        <div className="sec-title" style={{marginBottom:18}}>معلومات الاتصال</div>
+        <div style={{display:'flex',flexDirection:'column',gap:10,fontSize:13}}>
+          {[
+            ['🗄 قاعدة البيانات', 'SQLite محلي (system.db)'],
+            ['🤖 وكيل القائد', 'Google Gemini'],
+            ['🧠 وكيل المخطط', 'Google Gemini'],
+            ['⚙️ وكيل المنفذ', 'Groq'],
+            ['👁 وكيل المراقب', 'Groq'],
+            ['📊 وكيل المحلل', 'DeepSeek'],
+          ].map(([k, v]) => (
+            <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'10px 14px',background:'var(--card2)',borderRadius:9,border:'1px solid var(--border)'}}>
+              <span style={{color:'var(--muted)'}}>{k}</span>
+              <span style={{color:'var(--white)',fontWeight:600}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="sec-title" style={{margin:'20px 0 14px'}}>روابط سريعة</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <a href="/docs" target="_blank" className="btn btn-ghost btn-sm">📖 API Docs</a>
+          <a href="/api/stats/overview" target="_blank" className="btn btn-ghost btn-sm">📊 Stats JSON</a>
+          <a href="/api/groups" target="_blank" className="btn btn-ghost btn-sm">👥 Groups JSON</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   APP ROOT
+══════════════════════════════════════════════════════════════════════════ */
+const PAGES = [
+  { id: 'dashboard', icon: '📊', label: 'لوحة التحكم',  Comp: Dashboard  },
+  { id: 'groups',    icon: '👥', label: 'المجموعات',    Comp: Groups     },
+  { id: 'campaigns', icon: '🚀', label: 'الحملات',      Comp: Campaigns  },
+  { id: 'analytics', icon: '📈', label: 'التحليلات',    Comp: Analytics  },
+  { id: 'accounts',  icon: '👤', label: 'الحسابات',     Comp: Accounts   },
+  { id: 'templates', icon: '📝', label: 'القوالب',      Comp: Templates  },
+  { id: 'audit',     icon: '📋', label: 'سجل التدقيق',  Comp: AuditLog   },
+  { id: 'settings',  icon: '⚙️', label: 'الإعدادات',   Comp: Settings   },
+];
+
+function App() {
+  const [page, setPage]         = useState('dashboard');
+  const [copilot, setCopilot]   = useState('');
+  const [cpRunning, setCpRun]   = useState(false);
+  const [wsOn, setWsOn]         = useState(false);
+  const wsRef = useRef(null);
+
+  /* WebSocket */
+  useEffect(() => {
+    let retryTimer;
+    function connect() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/ws`);
+      wsRef.current = ws;
+      ws.onopen  = () => setWsOn(true);
+      ws.onclose = () => { setWsOn(false); retryTimer = setTimeout(connect, 4000); };
+      ws.onmessage = e => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.type === 'ping') return;
+          const MAP = { copilot_result: '🤖 الكوبيلوت أنهى المهمة', campaign_done: '🚀 اكتملت الحملة', account_added: '✅ تمت إضافة حساب', group_joined: '👥 تم الانضمام لمجموعة', message_sent: '📨 تم إرسال رسالة' };
+          if (MAP[d.type]) toast(MAP[d.type]);
+          if (d.type === 'copilot_result') setCpRun(false);
+        } catch {}
+      };
+    }
+    connect();
+    return () => { clearTimeout(retryTimer); wsRef.current?.close(); };
+  }, []);
+
+  async function runCopilot() {
+    if (!copilot.trim()) return;
+    setCpRun(true);
+    try {
+      await fetch('/api/copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: copilot }) });
+      toast('🤖 الكوبيلوت يعالج طلبك...');
+      setCopilot('');
+    } catch (e) { toast(e.message, 'err'); setCpRun(false); }
+  }
+
+  const cur = PAGES.find(p => p.id === page) || PAGES[0];
+  const { Comp } = cur;
+
+  return (
+    <Fragment>
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="logo-box">
+          <div className="logo-icon">🤖</div>
+          <div>
+            <div className="logo-text">TG AI System</div>
+            <div className="logo-sub">نظام إدارة ذكي</div>
+          </div>
+        </div>
+        <nav>
+          {PAGES.map(p => (
+            <button key={p.id} className={`nav-item${page === p.id ? ' active' : ''}`} onClick={() => setPage(p.id)}>
+              <span className="nav-icon">{p.icon}</span>
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Main */}
+      <div className="main">
+        {/* Topbar */}
+        <div className="topbar">
+          <span className="topbar-title">{cur.icon} {cur.label}</span>
+          <div className="copilot-wrap">
+            <input className="copilot-input"
+              placeholder="🤖 أكتب أمراً... مثال: انشر الإعلان في المجموعات التعليمية"
+              value={copilot}
+              onChange={e => setCopilot(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && runCopilot()}
+            />
+            <button className="btn btn-primary btn-sm" onClick={runCopilot} disabled={cpRunning}>
+              {cpRunning ? <Spin /> : '⚡ تنفيذ'}
+            </button>
+          </div>
+          <div className={`ws-badge`}>
+            <div className={`ws-dot ${wsOn ? 'on' : 'off'}`} />
+            {wsOn ? 'متصل' : 'غير متصل'}
+          </div>
+        </div>
+
+        {/* Page content */}
+        <Comp />
+      </div>
+
+      <ToastContainer />
+    </Fragment>
+  );
+}
+
+/* Mount */
+try {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+  document.getElementById('loading-screen').classList.add('hidden');
+} catch (err) {
+  document.getElementById('loading-screen').style.display = 'none';
+  const fe = document.getElementById('fatal-error');
+  fe.style.display = 'flex';
+  document.getElementById('fatal-msg').textContent = err.message;
+}
+</script>
+</body>
+</html>
