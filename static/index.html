@@ -1,91 +1,343 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>النظام يعمل ✅</title>
-    <style>
-        body {
-            margin: 0;
-            background: #0f1117;
-            color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
-            direction: rtl;
-        }
-        .card {
-            background: #1a1d27;
-            border: 1px solid #2d3150;
-            border-radius: 20px;
-            padding: 40px 30px;
-            max-width: 500px;
-            margin: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        h1 {
-            color: #6c63ff;
-            margin-bottom: 10px;
-        }
-        p {
-            color: #64748b;
-            margin-bottom: 30px;
-        }
-        .status {
-            display: inline-block;
-            background: #4ade80;
-            color: #0f1117;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        .info {
-            background: #22263a;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: right;
-            margin-top: 20px;
-        }
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        .info-label {
-            color: #64748b;
-        }
-        .info-value {
-            color: #e2e8f0;
-            font-weight: 600;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telegram AI System</title>
+<!-- React libraries from reliable CDN -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<!-- Recharts loaded but usage limited to avoid errors -->
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0f1117;--card:#1a1d27;--card2:#22263a;--border:#2d3150;
+    --accent:#6c63ff;--accent2:#4ade80;--danger:#f87171;--warn:#fbbf24;
+    --text:#e2e8f0;--muted:#64748b;--white:#fff;
+    --sidebar-w:220px;
+  }
+  body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+  #root{display:flex;min-height:100vh}
+  /* Sidebar */
+  .sidebar{width:var(--sidebar-w);background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100}
+  .sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .sidebar-logo .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .sidebar-logo span{font-weight:700;font-size:16px;color:var(--white)}
+  .nav{flex:1;padding:12px 8px;overflow-y:auto}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--muted);font-size:14px;transition:all .2s;margin-bottom:2px;user-select:none}
+  .nav-item:hover{background:var(--card2);color:var(--text)}
+  .nav-item.active{background:linear-gradient(135deg,rgba(108,99,255,.25),rgba(167,139,250,.15));color:var(--white);font-weight:600}
+  .nav-item .icon{font-size:18px;width:22px;text-align:center}
+  .nav-label{flex:1}
+  /* Main */
+  .main{margin-right:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+  /* Topbar */
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+  .topbar-title{font-size:17px;font-weight:700;color:var(--white);min-width:140px}
+  .copilot-wrap{flex:1;display:flex;gap:8px;max-width:700px}
+  .copilot-input{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:9px 16px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;direction:rtl}
+  .copilot-input:focus{border-color:var(--accent)}
+  .copilot-input::placeholder{color:var(--muted)}
+  .btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#a78bfa);color:#fff}
+  .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+  .btn-success{background:linear-gradient(135deg,#059669,var(--accent2));color:#fff}
+  .btn-danger{background:linear-gradient(135deg,#dc2626,var(--danger));color:#fff}
+  .btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .ws-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2)}
+  .ws-dot.off{background:var(--danger)}
+  /* Content */
+  .content{padding:24px;flex:1;overflow-y:auto}
+  .page-header{margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+  .page-title{font-size:22px;font-weight:800;color:var(--white)}
+  .page-sub{font-size:13px;color:var(--muted);margin-top:2px}
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+  .card-sm{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;align-items:center;gap:16px}
+  .stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .stat-body{flex:1}
+  .stat-val{font-size:26px;font-weight:800;color:var(--white)}
+  .stat-label{font-size:12px;color:var(--muted);margin-top:2px}
+  .stat-change{font-size:11px;color:var(--accent2);margin-top:3px}
+  /* Grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+  /* Table */
+  .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:var(--card2);padding:12px 14px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)}
+  tbody td{padding:11px 14px;border-bottom:1px solid rgba(45,49,80,.5);vertical-align:middle}
+  tbody tr:hover{background:rgba(108,99,255,.05)}
+  tbody tr:last-child td{border-bottom:none}
+  /* Badge */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+  .badge-green{background:rgba(74,222,128,.15);color:var(--accent2)}
+  .badge-red{background:rgba(248,113,113,.15);color:var(--danger)}
+  .badge-yellow{background:rgba(251,191,36,.15);color:var(--warn)}
+  .badge-purple{background:rgba(108,99,255,.15);color:#a78bfa}
+  .badge-blue{background:rgba(96,165,250,.15);color:#60a5fa}
+  .badge-gray{background:rgba(100,116,139,.15);color:var(--muted)}
+  /* Filter bar */
+  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+  .filter-input{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:160px}
+  .filter-input:focus{border-color:var(--accent)}
+  select.filter-input{cursor:pointer}
+  /* Form */
+  .form-group{margin-bottom:16px}
+  .form-label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .form-input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+  .form-input:focus{border-color:var(--accent)}
+  textarea.form-input{min-height:100px;resize:vertical}
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .modal-title{font-size:18px;font-weight:700;color:var(--white)}
+  .modal-close{background:var(--card2);border:1px solid var(--border);width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px}
+  /* Toast */
+  .toast-container{position:fixed;bottom:24px;left:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;min-width:240px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.4);animation:slideIn .3s ease}
+  .toast.success{border-color:var(--accent2)}
+  .toast.error{border-color:var(--danger)}
+  @keyframes slideIn{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}
+  /* Progress */
+  .progress-bar{height:6px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:4px;transition:width .5s ease}
+  /* Empty state */
+  .empty{text-align:center;padding:48px 20px;color:var(--muted)}
+  .empty-icon{font-size:48px;margin-bottom:12px}
+  /* Spinner */
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* Section title */
+  .section-title{font-size:15px;font-weight:700;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .section-title span{font-size:13px;color:var(--muted);font-weight:400}
+</style>
 </head>
 <body>
-    <div class="card">
-        <span class="status">✅ الخادم يعمل</span>
-        <h1>Telegram AI System</h1>
-        <p>تم تحميل الصفحة بنجاح. واجهة React قيد الإعداد.</p>
-        
-        <div class="info">
-            <div class="info-item">
-                <span class="info-label">المنصة:</span>
-                <span class="info-value">Railway</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">آخر نشر:</span>
-                <span class="info-value" id="time"></span>
-            </div>
-        </div>
-        <p style="margin-top: 20px; font-size: 13px;">إذا ظهرت هذه الرسالة، فالمشكلة كانت في تحميل React وسيتم إصلاحها قريباً.</p>
-    </div>
-    <script>
-        document.getElementById('time').textContent = new Date().toLocaleString('ar-SA');
-    </script>
+<div id="root"></div>
+<script>
+// تحقق من وجود React
+if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+  document.getElementById('root').innerHTML = '<div style="color:white;padding:50px;text-align:center">⏳ جاري تحميل React...</div>';
+  throw new Error('React not loaded');
+}
+
+const {useState,useEffect,useRef,useCallback,createElement:h,Fragment} = React;
+const RechartsLib = window.Recharts || {};
+const {LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,Legend} = RechartsLib;
+
+const API = '';
+const COLORS = ['#6c63ff','#4ade80','#f87171','#fbbf24','#60a5fa','#f472b6'];
+
+/* ══ helpers ══ */
+async function apiFetch(path,opts={}){
+  try{
+    const r=await fetch(API+path,{headers:{'Content-Type':'application/json'},...opts});
+    if(!r.ok)throw new Error(await r.text());
+    return await r.json();
+  }catch(e){console.error(path,e);throw e;}
+}
+
+/* ══ Toast system ══ */
+let _addToast=()=>{};
+function ToastContainer(){
+  const[toasts,setToasts]=useState([]);
+  _addToast=(msg,type='success')=>{
+    const id=Date.now();
+    setToasts(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3500);
+  };
+  return h('div',{className:'toast-container'},
+    toasts.map(t=>h('div',{key:t.id,className:`toast ${t.type}`},
+      h('span',null,t.type==='success'?'✅':'❌'),t.msg
+    ))
+  );
+}
+const toast=(m,t)=>_addToast(m,t);
+
+/* ══ Modal ══ */
+function Modal({title,onClose,children}){
+  return h('div',{className:'modal-overlay',onClick:e=>{if(e.target===e.currentTarget)onClose()}},
+    h('div',{className:'modal'},
+      h('div',{className:'modal-header'},
+        h('span',{className:'modal-title'},title),
+        h('button',{className:'modal-close',onClick:onClose},'×')
+      ),
+      children
+    )
+  );
+}
+
+/* ══ Badge ══ */
+function Badge({label,type='gray'}){
+  return h('span',{className:`badge badge-${type}`},label);
+}
+
+/* ══ StatCard ══ */
+function StatCard({icon,label,value,change,color='#6c63ff'}){
+  return h('div',{className:'stat-card'},
+    h('div',{className:'stat-icon',style:{background:`${color}22`}},icon),
+    h('div',{className:'stat-body'},
+      h('div',{className:'stat-val'},value),
+      h('div',{className:'stat-label'},label),
+      change&&h('div',{className:'stat-change'},change),
+    )
+  );
+}
+
+/* ══ PAGES (نسخة مبسطة بدون Recharts لضمان العمل) ══ */
+function Dashboard(){
+  const[stats,setStats]=useState(null);
+  const[loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    apiFetch('/api/stats/overview')
+      .then(setStats)
+      .catch(()=>{})
+      .finally(()=>setLoading(false));
+  },[]);
+
+  if(loading)return h('div',{className:'content'},h('div',{className:'spinner'}));
+
+  const s=stats||{accounts:{},groups:{},messages:{}};
+  return h('div',{className:'content'},
+    h('div',{className:'page-header'},
+      h('div',null,
+        h('div',{className:'page-title'},'لوحة التحكم 📊'),
+        h('div',{className:'page-sub'},'نظرة عامة على أداء النظام'),
+      )
+    ),
+    h('div',{className:'stat-grid'},
+      h(StatCard,{icon:'👤',label:'الحسابات النشطة',value:`${s.accounts.active||0}/${s.accounts.total||0}`,change:'↑ جاهزة للإرسال',color:'#6c63ff'}),
+      h(StatCard,{icon:'👥',label:'المجموعات المنضم إليها',value:`${s.groups.joined||0}`,change:`من ${s.groups.total||0} مجموعة`,color:'#4ade80'}),
+      h(StatCard,{icon:'📨',label:'الرسائل المرسلة',value:`${s.messages.total||0}`,change:`معدل نجاح ${s.messages.success_rate||0}%`,color:'#60a5fa'}),
+      h(StatCard,{icon:'🗑',label:'رسائل محذوفة',value:`${s.messages.deleted||0}`,change:'تم تصنيفها تلقائياً',color:'#f87171'}),
+    ),
+    h('div',{className:'card'},h('div',{className:'empty'},'الرسوم البيانية قيد التطوير...'))
+  );
+}
+
+function Groups(){
+  const[groups,setGroups]=useState([]);
+  const[loading,setLoading]=useState(true);
+  const load=()=>apiFetch('/api/groups').then(setGroups).finally(()=>setLoading(false));
+  useEffect(()=>{load()},[]);
+  return h('div',{className:'content'},
+    h('div',{className:'page-header'},h('div',{className:'page-title'},'المجموعات 👥')),
+    loading?h('div',{className:'spinner'}):
+    h('div',{className:'table-wrap'},h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'المجموعة'),h('th',null,'الأعضاء'),h('th',null,'الحالة'))),
+      h('tbody',null,groups.map(g=>h('tr',{key:g.id},
+        h('td',null,g.title),h('td',null,g.member_count),h('td',null,g.is_joined?'منضم':'غير منضم')
+      )))
+    ))
+  );
+}
+
+function Campaigns(){ return h('div',{className:'content'},h('div',{className:'page-title'},'الحملات (قيد التطوير)')); }
+function Analytics(){ return h('div',{className:'content'},h('div',{className:'page-title'},'التحليلات (قيد التطوير)')); }
+function Accounts(){
+  const[accounts,setAccounts]=useState([]);
+  const load=()=>apiFetch('/api/accounts').then(setAccounts);
+  useEffect(()=>{load()},[]);
+  return h('div',{className:'content'},
+    h('div',{className:'page-header'},h('div',{className:'page-title'},'الحسابات 👤')),
+    h('div',{className:'table-wrap'},h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'الرقم'),h('th',null,'الحالة'),h('th',null,'الصحة'))),
+      h('tbody',null,accounts.map(a=>h('tr',{key:a.id},
+        h('td',null,a.phone),h('td',null,a.status),h('td',null,a.health_score+'%')
+      )))
+    ))
+  );
+}
+function Templates(){ return h('div',{className:'content'},h('div',{className:'page-title'},'القوالب (قيد التطوير)')); }
+function AuditLogPage(){ return h('div',{className:'content'},h('div',{className:'page-title'},'سجل التدقيق (قيد التطوير)')); }
+function Settings(){ return h('div',{className:'content'},h('div',{className:'page-title'},'الإعدادات (قيد التطوير)')); }
+
+const PAGES=[
+  {id:'dashboard', icon:'📊', label:'لوحة التحكم',   comp:Dashboard},
+  {id:'groups',    icon:'👥', label:'المجموعات',      comp:Groups},
+  {id:'campaigns', icon:'🚀', label:'الحملات',        comp:Campaigns},
+  {id:'analytics', icon:'📈', label:'التحليلات',      comp:Analytics},
+  {id:'accounts',  icon:'👤', label:'الحسابات',       comp:Accounts},
+  {id:'templates', icon:'📝', label:'القوالب',        comp:Templates},
+  {id:'audit',     icon:'📋', label:'سجل التدقيق',   comp:AuditLogPage},
+  {id:'settings',  icon:'⚙️', label:'الإعدادات',     comp:Settings},
+];
+
+function App(){
+  const[page,setPage]=useState('dashboard');
+  const[copilot,setCopilot]=useState('');
+  const[wsConn,setWsConn]=useState(false);
+  const[copilotRunning,setCopilotRunning]=useState(false);
+
+  useEffect(()=>{
+    function connect(){
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+      ws.onopen = () => setWsConn(true);
+      ws.onclose = () => { setWsConn(false); setTimeout(connect, 3000); };
+      ws.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if(d.type==='ping')return;
+          toast(`📢 ${d.type}`);
+        } catch(err) {}
+      };
+      ws.onerror = () => setWsConn(false);
+    }
+    connect();
+  },[]);
+
+  async function runCopilot(){
+    if(!copilot.trim())return;
+    setCopilotRunning(true);
+    try{
+      await fetch('/api/copilot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:copilot})});
+      toast('🤖 الكوبيلوت يعمل...');
+      setCopilot('');
+    }catch{toast('فشل الاتصال','error');}
+    finally{setCopilotRunning(false);}
+  }
+
+  const ActivePage = PAGES.find(p=>p.id===page)?.comp || Dashboard;
+
+  return h(Fragment,null,
+    h('div',{className:'sidebar'},
+      h('div',{className:'sidebar-logo'},h('div',{className:'logo-icon'},'🤖'),h('span',null,'TG AI System')),
+      h('nav',{className:'nav'},
+        PAGES.map(p=>h('div',{key:p.id,className:`nav-item${page===p.id?' active':''}`,onClick:()=>setPage(p.id)},
+          h('span',{className:'icon'},p.icon),
+          h('span',{className:'nav-label'},p.label)
+        ))
+      )
+    ),
+    h('div',{className:'main'},
+      h('div',{className:'topbar'},
+        h('span',{className:'topbar-title'},(PAGES.find(p=>p.id===page)||PAGES[0]).label),
+        h('div',{className:'copilot-wrap'},
+          h('input',{className:'copilot-input',placeholder:'🤖 أكتب أمراً...',value:copilot,onChange:e=>setCopilot(e.target.value),onKeyDown:e=>e.key==='Enter'&&runCopilot()}),
+          h('button',{className:'btn btn-primary',onClick:runCopilot,disabled:copilotRunning},copilotRunning?h('span',{className:'spinner'}):' تنفيذ')
+        ),
+        h('div',{style:{display:'flex',alignItems:'center',gap:8}},
+          h('div',{className:`ws-dot${wsConn?'':' off'}`}),
+          h('span',{style:{fontSize:12,color:'var(--muted)'}},wsConn?'متصل':'غير متصل')
+        )
+      ),
+      h(ActivePage)
+    ),
+    h(ToastContainer)
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
 </body>
 </html>
