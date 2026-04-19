@@ -4,47 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TG AI System – لوحة التحكم</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#080c14;--card:#0f1520;--card2:#151d2e;
   --border:#1e2d47;--border2:#253552;
-  --accent:#3b82f6;--accent2:#22c55e;--warn:#f59e0b;--danger:#ef4444;--purple:#8b5cf6;
-  --text:#c8d6e8;--muted:#5a7291;--white:#e8f0f8;--sw:220px;--topbar:56px;
+  --accent:#3b82f6;--accent2:#22c55e;--warn:#f59e0b;--danger:#ef4444;--purple:#8b5cf6;--teal:#14b8a6;
+  --text:#c8d6e8;--muted:#5a7291;--white:#e8f0f8;--sw:230px;--topbar:56px;
 }
 html,body{height:100%;overflow:hidden;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 #app{display:flex;height:100vh;overflow:hidden}
+
+/* sidebar */
 .sidebar{width:var(--sw);background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:width .25s}
-.sidebar.collapsed{width:56px}
-.sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub,.sidebar.collapsed .nav-lbl,.sidebar.collapsed .sf-lbl{display:none}
+.sidebar.collapsed{width:52px}
+.sidebar.collapsed .logo-text,.sidebar.collapsed .logo-sub,.sidebar.collapsed .nav-lbl{display:none}
 .sidebar.collapsed .nav-btn{justify-content:center;padding:10px}
 .logo{padding:14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0}
 .logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .logo-text{font-size:14px;font-weight:800;color:var(--white)}
 .logo-sub{font-size:10px;color:var(--muted);margin-top:1px}
 nav{padding:10px 6px;flex:1}
+.nav-section{font-size:10px;color:var(--muted);padding:10px 8px 4px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.sidebar.collapsed .nav-section{display:none}
 .nav-btn{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;transition:all .15s;margin-bottom:1px;width:100%;background:none;border:none;text-align:right;font-family:'Cairo',sans-serif;white-space:nowrap}
 .nav-btn:hover{background:var(--card2);color:var(--text)}
 .nav-btn.active{background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(139,92,246,.12));color:var(--white);border:1px solid rgba(59,130,246,.2)}
 .nav-icon{width:20px;text-align:center;font-size:15px;flex-shrink:0}
 .nav-lbl{flex:1}
 .sidebar-footer{padding:10px 8px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{background:var(--card);border-bottom:1px solid var(--border);height:var(--topbar);padding:0 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.topbar-title{font-size:15px;font-weight:800;color:var(--white);white-space:nowrap}
-.cp-wrap{flex:1;max-width:480px;display:flex;gap:6px}
+.topbar-title{font-size:15px;font-weight:800;color:var(--white);white-space:nowrap;min-width:fit-content}
+.cp-wrap{flex:1;max-width:520px;display:flex;gap:6px}
 .cp-input{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;font-family:'Cairo',sans-serif;outline:none;direction:rtl;min-width:0}
 .cp-input:focus{border-color:var(--accent)}
 .cp-input::placeholder{color:var(--muted)}
+.cp-status{font-size:11px;color:var(--muted);padding:4px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;white-space:nowrap}
 .ws-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:4px 9px;border-radius:20px;background:var(--card2);border:1px solid var(--border);white-space:nowrap}
 .ws-dot{width:7px;height:7px;border-radius:50%;background:#374151}
 .ws-dot.on{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
-.notif-wrap{position:relative}
-.notif-badge{position:absolute;top:-5px;right:-5px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:9px;display:none;align-items:center;justify-content:center;color:#fff;font-weight:700}
 #content{flex:1;overflow-y:auto;padding:18px 20px;background:var(--bg)}
+
+/* buttons */
 .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-primary{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff}
 .btn-primary:hover:not(:disabled){opacity:.88}
 .btn-success{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff}
@@ -52,19 +60,26 @@ nav{padding:10px 6px;flex:1}
 .btn-danger{background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff}
 .btn-danger:hover:not(:disabled){opacity:.88}
 .btn-warn{background:linear-gradient(135deg,#b45309,#d97706);color:#fff}
+.btn-warn:hover:not(:disabled){opacity:.88}
+.btn-purple{background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff}
+.btn-purple:hover:not(:disabled){opacity:.88}
 .btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
 .btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
-.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:6px}
 .btn-xs{padding:4px 8px;font-size:11px;border-radius:5px}
-.btn-icon{padding:6px;border-radius:6px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+.btn-icon{padding:6px;border-radius:6px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;font-family:inherit}
 .btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+
+/* cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
 .card-sm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
 .page-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .page-title{font-size:20px;font-weight:900;color:var(--white)}
 .page-sub{font-size:12px;color:var(--muted);margin-top:3px}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+
+/* kpi */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:default}
 .kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
 .kpi-glow{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.07;filter:blur(18px)}
 .kpi-icon{font-size:20px;margin-bottom:8px}
@@ -72,11 +87,15 @@ nav{padding:10px 6px;flex:1}
 .kpi-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 .kpi-chg{font-size:11px;margin-top:3px}
 .kpi-chg.up{color:var(--accent2)}.kpi-chg.down{color:var(--danger)}.kpi-chg.warn{color:var(--warn)}.kpi-chg.info{color:var(--accent)}
+
+/* grids */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-@media(max-width:900px){.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+@media(max-width:1000px){.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+/* tables */
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{background:var(--card2);padding:9px 12px;text-align:right;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;font-size:11px}
@@ -86,6 +105,8 @@ tbody tr:last-child{border-bottom:none}
 td{padding:9px 12px;vertical-align:middle}
 .td-name{font-weight:700;color:var(--white)}
 .td-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* badges */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;white-space:nowrap}
 .badge-green{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
 .badge-red{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
@@ -94,871 +115,1125 @@ td{padding:9px 12px;vertical-align:middle}
 .badge-purple{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2)}
 .badge-gray{background:rgba(107,114,128,.12);color:#9ca3af;border:1px solid rgba(107,114,128,.2)}
 .badge-teal{background:rgba(20,184,166,.12);color:#2dd4bf;border:1px solid rgba(20,184,166,.2)}
+.badge-orange{background:rgba(249,115,22,.12);color:#fb923c;border:1px solid rgba(249,115,22,.2)}
+
+/* forms */
 .fg{margin-bottom:12px}
 .flbl{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700}
 .finput{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;font-family:'Cairo',sans-serif;outline:none;transition:border-color .2s}
 .finput:focus{border-color:var(--accent)}
-.finput::placeholder{color:var(--muted)}
-select.finput option{background:var(--card2)}
-textarea.finput{min-height:80px;resize:vertical}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:8000;padding:16px;backdrop-filter:blur(4px)}
-.modal{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:22px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.8)}
+.fselect{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;font-family:'Cairo',sans-serif;outline:none;cursor:pointer}
+.ftextarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;font-family:'Cairo',sans-serif;outline:none;resize:vertical;min-height:80px}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(3px)}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:22px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .modal-title{font-size:16px;font-weight:800;color:var(--white)}
-.modal-x{background:var(--card2);border:1px solid var(--border);width:28px;height:28px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-.modal-x:hover{border-color:var(--danger);color:var(--danger)}
-.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
-.toast-wrap{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 15px;min-width:220px;max-width:320px;display:flex;align-items:center;gap:8px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.7);animation:tin .25s ease;pointer-events:auto}
-.toast.ok{border-color:var(--accent2)}.toast.err{border-color:var(--danger)}.toast.warn{border-color:var(--warn)}
-@keyframes tin{from{transform:translateX(-20px);opacity:0}to{transform:none;opacity:1}}
-.bar-wrap{display:flex;align-items:flex-end;gap:3px;height:100px;padding:4px 0}
-.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
-.bar-fill{width:100%;border-radius:3px 3px 0 0;min-height:2px}
-.bar-lbl{font-size:9px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;text-align:center}
-.prog{height:6px;background:var(--card2);border-radius:4px;overflow:hidden;min-width:40px}
-.prog-fill{height:100%;border-radius:4px;transition:width .4s}
-.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card2);padding:4px;border-radius:9px;border:1px solid var(--border);flex-wrap:wrap}
-.tab{padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);transition:all .15s;border:none;background:none;font-family:'Cairo',sans-serif;white-space:nowrap}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px}
+.modal-close:hover{color:var(--text)}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);background:none;border:none;font-family:'Cairo',sans-serif;transition:all .15s;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab:hover{color:var(--text)}
-.tab.active{background:var(--card);color:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
-.f-inp{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:12px;font-family:'Cairo',sans-serif;outline:none;transition:border-color .2s}
-.f-inp:focus{border-color:var(--accent)}
-select.f-inp option{background:var(--card2)}
-.sec-title{font-size:13px;font-weight:800;color:var(--white);margin-bottom:10px}
-.empty{text-align:center;padding:36px;color:var(--muted)}
-.empty-ico{font-size:36px;margin-bottom:10px}
-.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
-.spin-lg{width:28px;height:28px;border-width:3px}
-@keyframes sp{to{transform:rotate(360deg)}}
-.health-bar{display:flex;align-items:center;gap:8px}
-.notif-panel{position:fixed;top:56px;left:0;width:340px;max-height:480px;background:var(--card);border:1px solid var(--border2);border-radius:12px;z-index:7000;box-shadow:0 16px 48px rgba(0,0,0,.8);overflow:hidden;display:none;flex-direction:column}
-.notif-panel.open{display:flex}
-.notif-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.notif-body{overflow-y:auto;padding:8px;flex:1}
-.alert-item{display:flex;align-items:flex-start;gap:10px;padding:9px;border-radius:7px;background:var(--card2);border:1px solid var(--border);margin-bottom:6px}
-.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
-.alert-txt{flex:1;min-width:0}
-.alert-title{font-size:12px;font-weight:700;color:var(--white)}
-.alert-time{font-size:10px;color:var(--muted);margin-top:2px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* progress */
+.progress{background:var(--card2);border-radius:99px;height:6px;overflow:hidden;width:100%}
+.progress-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .3s}
+
+/* alerts */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start}
+.alert-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#93c5fd}
+.alert-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#fcd34d}
+.alert-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#86efac}
+
+/* chart container */
+.chart-wrap{position:relative;height:200px}
+.chart-wrap-lg{position:relative;height:260px}
+
+/* filter bar */
+.filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.filter-bar .finput,.filter-bar .fselect{width:auto;min-width:130px}
+
+/* toast */
+#toast-container{position:fixed;bottom:20px;left:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;animation:slideIn .2s ease;min-width:220px}
+.toast-success{background:#15803d}
+.toast-error{background:#b91c1c}
+.toast-info{background:#1d4ed8}
+@keyframes slideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* empty state */
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-state .es-icon{font-size:40px;margin-bottom:10px;opacity:.4}
+.empty-state p{font-size:13px}
+
+/* spinner */
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="sidebar" id="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
     <div class="logo">
       <div class="logo-icon">🤖</div>
-      <div><div class="logo-text">TG AI System</div><div class="logo-sub">نظام إدارة ذكي</div></div>
-    </div>
-    <nav id="nav"></nav>
-    <div class="sidebar-footer">
-      <div class="ws-pill" style="width:100%;justify-content:center">
-        <div class="ws-dot off" id="ws-dot"></div>
-        <span id="ws-lbl" class="sf-lbl">غير متصل</span>
+      <div>
+        <div class="logo-text">TG AI System</div>
+        <div class="logo-sub">الموظف الافتراضي</div>
       </div>
     </div>
-  </div>
+    <nav>
+      <div class="nav-section">الرئيسية</div>
+      <button class="nav-btn active" onclick="navigate('dashboard')"><span class="nav-icon">🏠</span><span class="nav-lbl">لوحة التحكم</span></button>
+
+      <div class="nav-section">الإدارة</div>
+      <button class="nav-btn" onclick="navigate('groups')"><span class="nav-icon">👥</span><span class="nav-lbl">المجموعات</span></button>
+      <button class="nav-btn" onclick="navigate('campaigns')"><span class="nav-icon">📢</span><span class="nav-lbl">الحملات</span></button>
+      <button class="nav-btn" onclick="navigate('templates')"><span class="nav-icon">📝</span><span class="nav-lbl">صيغ الإعلانات</span></button>
+
+      <div class="nav-section">الحسابات</div>
+      <button class="nav-btn" onclick="navigate('accounts')"><span class="nav-icon">📱</span><span class="nav-lbl">الحسابات</span></button>
+      <button class="nav-btn" onclick="navigate('proxies')"><span class="nav-icon">🌐</span><span class="nav-lbl">البروكسيات</span></button>
+
+      <div class="nav-section">التحليلات</div>
+      <button class="nav-btn" onclick="navigate('analytics')"><span class="nav-icon">📊</span><span class="nav-lbl">التحليلات</span></button>
+      <button class="nav-btn" onclick="navigate('audit')"><span class="nav-icon">📋</span><span class="nav-lbl">سجل الأحداث</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-btn" onclick="navigate('settings')"><span class="nav-icon">⚙️</span><span class="nav-lbl">الإعدادات</span></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <button class="btn-icon" id="sidebar-toggle">☰</button>
-      <span class="topbar-title" id="topbar-title">لوحة التحكم</span>
+      <button class="btn-icon" onclick="toggleSidebar()" title="القائمة">☰</button>
+      <div class="topbar-title" id="topbar-title">لوحة التحكم</div>
       <div class="cp-wrap">
-        <input class="cp-input" id="cp-input" placeholder="🤖 مثال: انشر الإعلان في المجموعات التعليمية..."/>
-        <button class="btn btn-primary btn-sm" id="cp-btn">⚡ تنفيذ</button>
+        <input class="cp-input" id="cp-input" placeholder="💬 أمر مباشر... (مثال: أوقف حملة 1)" onkeydown="cpKeydown(event)">
+        <button class="btn btn-primary btn-sm" onclick="sendCopilot()">▶</button>
       </div>
-      <div class="notif-wrap">
-        <button class="btn-icon" id="notif-btn">🔔</button>
-        <div class="notif-badge" id="notif-badge">0</div>
-      </div>
-      <button class="btn-icon" onclick="navigate(currentPage)" title="تحديث">🔄</button>
+      <div class="cp-status" id="cp-status" style="display:none">⏳ جاري...</div>
+      <div class="ws-pill"><div class="ws-dot" id="ws-dot"></div><span id="ws-lbl">غير متصل</span></div>
     </div>
-    <div id="content"><div class="empty"><div class="spin spin-lg"></div></div></div>
+    <div id="content"></div>
   </div>
 </div>
-<div class="notif-panel" id="notif-panel">
-  <div class="notif-hdr">
-    <span style="font-weight:800;color:var(--white)">🔔 الإشعارات</span>
-    <button class="btn btn-xs btn-ghost" id="clear-notifs">مسح الكل</button>
-  </div>
-  <div class="notif-body" id="notif-body"><div class="empty" style="padding:20px;font-size:12px">لا توجد إشعارات</div></div>
-</div>
-<div class="toast-wrap" id="toasts"></div>
+
+<div id="toast-container"></div>
+
 <script>
-'use strict';
-function toast(msg,type){type=type||'ok';var w=document.getElementById('toasts');var el=document.createElement('div');el.className='toast '+type;el.innerHTML='<span>'+(type==='ok'?'✅':type==='err'?'❌':'⚠️')+'</span><span style="flex:1">'+msg+'</span>';w.appendChild(el);setTimeout(function(){el.remove();},3800);}
-async function api(path,opts){opts=opts||{};var r=await fetch(path,Object.assign({headers:{'Content-Type':'application/json'}},opts));if(!r.ok){var t=await r.text().catch(function(){return '';});throw new Error(r.status+': '+t.slice(0,150));}return r.json();}
-function badge(txt,clr){clr=clr||'gray';return '<span class="badge badge-'+clr+'">'+txt+'</span>';}
-function fmt(n){return(n||0).toLocaleString('ar');}
-function pct(a,b){return b?Math.round(a/b*100):0;}
-function hc(v){return v>=80?'var(--accent2)':v>=50?'var(--warn)':'var(--danger)';}
-function ago(iso){if(!iso)return'—';var s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return'منذ '+s+' ث';if(s<3600)return'منذ '+Math.floor(s/60)+' د';if(s<86400)return'منذ '+Math.floor(s/3600)+' س';return new Date(iso).toLocaleDateString('ar-SA');}
-function barChart(data,xK,yK,color){color=color||'#3b82f6';if(!data||!data.length)return'<div class="empty" style="padding:16px;font-size:12px">لا توجد بيانات</div>';var max=Math.max.apply(null,data.map(function(d){return d[yK]||0;}))||1;return'<div class="bar-wrap">'+data.map(function(d){var h=Math.max(4,Math.round((d[yK]||0)/max*90));return'<div class="bar-col" title="'+d[xK]+': '+d[yK]+'"><div class="bar-fill" style="height:'+h+'px;background:'+color+';opacity:.85"></div><div class="bar-lbl">'+String(d[xK]||'').slice(-5)+'</div></div>';}).join('')+'</div>';}
-function donutSvg(segs,size){size=size||100;var total=segs.reduce(function(s,x){return s+x.v;},0)||1;var offset=0;var r=35;var circ=2*Math.PI*r;var paths=segs.map(function(s){var dash=s.v/total*circ;var p='<circle cx="50" cy="50" r="35" fill="none" stroke="'+s.c+'" stroke-width="12" stroke-dasharray="'+dash+' '+(circ-dash)+'" stroke-dashoffset="'+-offset+'" transform="rotate(-90 50 50)" opacity=".9"/>';offset+=dash;return p;}).join('');return'<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100">'+paths+'<circle cx="50" cy="50" r="29" fill="var(--card)"/></svg>';}
-function prog(val,max,color){color=color||'var(--accent)';var p=max?Math.min(100,Math.round(val/max*100)):0;return'<div class="prog"><div class="prog-fill" style="width:'+p+'%;background:'+color+'"></div></div>';}
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function escJs(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,\"\'\").replace(/\n/g,'\\n');}
-function exportCsv(rows,name){var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=name;a.click();toast('✅ تم التصدير');}
-function kpiCard(icon,lbl,val,chgClass,chgTxt,glowColor){return'<div class="kpi"><div class="kpi-glow" style="background:'+glowColor+'"></div><div class="kpi-icon">'+icon+'</div><div class="kpi-val">'+val+'</div><div class="kpi-lbl">'+lbl+'</div><div class="kpi-chg '+chgClass+'">'+chgTxt+'</div></div>';}
-function openModal(title,html,onSave){var ov=document.createElement('div');ov.className='modal-overlay';ov.innerHTML='<div class="modal"><div class="modal-hdr"><span class="modal-title">'+title+'</span><button class="modal-x">×</button></div><div class="modal-body">'+html+'</div><div class="modal-foot"><button class="btn btn-ghost close-btn">إلغاء</button>'+(onSave?'<button class="btn btn-primary save-btn">حفظ</button>':'')+'</div></div>';var close=function(){ov.remove();};ov.querySelector('.modal-x').addEventListener('click',close);ov.querySelector('.close-btn').addEventListener('click',close);if(onSave)ov.querySelector('.save-btn').addEventListener('click',function(){onSave(ov,close);});ov.addEventListener('click',function(e){if(e.target===ov)close();});document.body.appendChild(ov);return{ov:ov,close:close};}
-function confirm2(msg,onOk){var r=openModal('تأكيد','<div style="padding:8px 0;font-size:14px;color:var(--text)">'+msg+'</div>',null);var foot=r.ov.querySelector('.modal-foot');foot.innerHTML='<button class="btn btn-ghost">إلغاء</button><button class="btn btn-danger ok-b">تأكيد</button>';foot.querySelector('.btn-ghost').addEventListener('click',r.close);foot.querySelector('.ok-b').addEventListener('click',function(){r.close();onOk();});}
-var notifs=[];
-function addNotif(type,title,detail){detail=detail||'';notifs.unshift({type:type,title:title,detail:detail,time:new Date()});if(notifs.length>30)notifs.pop();renderNotifs();}
-function renderNotifs(){var bd=document.getElementById('notif-body');var nb=document.getElementById('notif-badge');if(!bd||!nb)return;nb.style.display=notifs.length?'flex':'none';nb.textContent=notifs.length;if(!notifs.length){bd.innerHTML='<div class="empty" style="padding:20px;font-size:12px">لا توجد إشعارات</div>';return;}var icons={ban:'🚫',warn:'⚠️',success:'✅',error:'❌',info:'ℹ️',bot:'🛡'};bd.innerHTML=notifs.map(function(n){return'<div class="alert-item"><div class="alert-icon">'+(icons[n.type]||'📌')+'</div><div class="alert-txt"><div class="alert-title">'+n.title+'</div>'+(n.detail?'<div class="alert-time">'+n.detail+'</div>':'')+'<div class="alert-time">'+ago(n.time)+'</div></div></div>';}).join('');}
-document.getElementById('notif-btn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('notif-panel').classList.toggle('open');});
-document.getElementById('clear-notifs').addEventListener('click',function(){notifs=[];renderNotifs();});
-document.addEventListener('click',function(e){if(!e.target.closest('#notif-panel')&&!e.target.closest('#notif-btn'))document.getElementById('notif-panel').classList.remove('open');});
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const state = {
+  page: 'dashboard',
+  stats: {},
+  ws: null,
+  charts: {},
+  analyticsTab: 'overview',
+};
 
-/* ═══ PAGE: DASHBOARD ═══ */
-async function pageDashboard(){
-  var el=document.getElementById('content');
-  el.innerHTML='<div class="empty"><div class="spin spin-lg"></div></div>';
-  try{
-    var res=await Promise.all([api('/api/stats/overview'),api('/api/stats/messages_timeline'),api('/api/stats/groups_by_category'),api('/api/stats/protection_bots')]);
-    var s=res[0],tl=res[1],cats=res[2],bots=res[3];
-    var acc=s.accounts||{},grp=s.groups||{},msg=s.messages||{},cam=s.campaigns||{};
-    var accB=Math.max(0,(acc.total||0)-(acc.active||0));
-    var botTot=bots.reduce(function(s,b){return s+b.count;},0)||1;
-    var clrs=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-    el.innerHTML=
-      '<div class="page-hdr"><div><div class="page-title">📊 لوحة التحكم</div><div class="page-sub">نظرة عامة شاملة على أداء النظام</div></div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="navigate(\'accounts\')">+ إضافة حساب</button><button class="btn btn-primary btn-sm" onclick="navigate(\'campaigns\')">🚀 حملة جديدة</button></div></div>'+
-      '<div class="kpi-grid">'+
-      kpiCard('👤','إجمالي الحسابات',fmt(acc.total||0),'info','✅ '+fmt(acc.active||0)+' نشط','#3b82f6')+
-      kpiCard('🟢','حسابات نشطة',fmt(acc.active||0),'up',pct(acc.active,acc.total)+'% من الإجمالي','#22c55e')+
-      kpiCard('⚠️','محدود/Flood',fmt(Math.max(0,accB-1)),'warn','تحتاج مراجعة','#f59e0b')+
-      kpiCard('🚫','حسابات محظورة',fmt(Math.min(1,accB)),'down','غير صالحة','#ef4444')+
-      kpiCard('👥','إجمالي المجموعات',fmt(grp.total||0),'info','عبر كل الحسابات','#8b5cf6')+
-      kpiCard('✅','منضم إليها',fmt(grp.joined||0),'up',pct(grp.joined,grp.total)+'% من المكتشفة','#3b82f6')+
-      kpiCard('📨','إجمالي الرسائل',fmt(msg.total||0),'up','نجاح '+(msg.success_rate||0)+'%','#22c55e')+
-      kpiCard('🗑','رسائل محذوفة',fmt(msg.deleted||0),'down',pct(msg.deleted,msg.total)+'% من المرسلة','#ef4444')+
-      kpiCard('🚀','إجمالي الحملات',fmt(cam.total||0),'info','إجمالي المنشأة','#f59e0b')+
-      '</div>'+
-      '<div class="grid2">'+
-      '<div class="card"><div class="sec-title">📈 نشاط الرسائل (آخر 30 يوماً)</div>'+barChart(tl,'date','count','#3b82f6')+'</div>'+
-      '<div class="card"><div class="sec-title">🏷 المجموعات حسب الفئة</div>'+
-      (cats.length?cats.map(function(c,i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:8px;height:8px;border-radius:2px;background:'+clrs[i%clrs.length]+';flex-shrink:0"></div><span style="flex:1;font-size:12px">'+escHtml(c.category)+'</span><strong style="color:var(--white);font-size:13px">'+fmt(c.count)+'</strong><span style="font-size:10px;color:var(--muted);width:36px;text-align:left">'+Math.round(c.count/((grp.total||1))*100)+'%</span></div>';}).join(''):'<div class="empty" style="padding:16px;font-size:12px">أضف مجموعات أولاً</div>')+
-      '</div></div>'+
-      '<div class="grid2">'+
-      '<div class="card"><div class="sec-title">📊 توزيع الحسابات</div><div style="display:flex;align-items:center;gap:16px">'+
-      donutSvg([{v:acc.active||0,c:'#22c55e'},{v:Math.max(0,accB-1),c:'#f59e0b'},{v:Math.min(1,accB),c:'#ef4444'}].filter(function(x){return x.v>0;}),110)+
-      '<div style="flex:1">'+[['نشط',acc.active||0,'green'],['محدود',Math.max(0,accB-1),'yellow'],['محظور',Math.min(1,accB),'red']].map(function(x){return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+badge(x[0],x[2])+'<strong style="color:var(--white)">'+x[1]+'</strong></div>';}).join('')+'</div></div></div>'+
-      '<div class="card"><div class="sec-title">🛡 بوتات الحماية المكتشفة</div>'+
-      (bots.length?'<div style="display:flex;gap:10px;flex-wrap:wrap">'+bots.map(function(b){return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:80px"><div style="font-size:20px">🛡</div><div style="font-weight:900;font-size:18px;color:var(--white)">'+b.count+'</div><div style="font-size:10px;color:var(--muted)">'+escHtml(b.bot||'غير معروف')+'</div><div style="font-size:10px;color:var(--warn)">'+Math.round(b.count/botTot*100)+'%</div></div>';}).join('')+'</div>':'<div class="empty" style="padding:16px;font-size:12px">لم تُكتشف بوتات حماية بعد</div>')+
-      '</div></div>'+
-      '<div class="card"><div class="sec-title">⚡ إجراءات سريعة</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+
-      '<button class="btn btn-primary btn-sm" onclick="navigate(\'campaigns\')">🚀 حملة جديدة</button>'+
-      '<button class="btn btn-ghost btn-sm" onclick="navigate(\'accounts\')">📱 إضافة حساب</button>'+
-      '<button class="btn btn-ghost btn-sm" onclick="navigate(\'groups\')">👥 المجموعات</button>'+
-      '<button class="btn btn-ghost btn-sm" onclick="navigate(\'templates\')">📝 صيغة جديدة</button>'+
-      '<button class="btn btn-ghost btn-sm" onclick="navigate(\'analytics\')">📈 التحليلات</button>'+
-      '<button class="btn btn-ghost btn-sm" onclick="navigate(\'audit\')">📋 السجل</button>'+
-      '</div></div>';
-  }catch(e){el.innerHTML='<div class="card"><div style="color:var(--danger)">❌ خطأ: '+e.message+'</div><div style="margin-top:8px;font-size:12px;color:var(--muted)">تأكد أن الخادم يعمل</div><div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="navigate(\'dashboard\')">🔄 إعادة المحاولة</button></div></div>';}
-}
-
-/* ═══ PAGE: GROUPS ═══ */
-async function pageGroups(){
-  var el=document.getElementById('content');
-  el.innerHTML=
-    '<div class="page-hdr"><div><div class="page-title">👥 المجموعات الموحدة</div><div class="page-sub" id="grp-sub">جارٍ التحميل...</div></div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="grp-sync">🔄 مزامنة</button><button class="btn btn-ghost btn-sm" id="grp-export">⬇️ تصدير CSV</button><button class="btn btn-primary btn-sm" id="grp-add">+ إضافة</button></div></div>'+
-    '<div class="filter-row"><input class="f-inp" id="gs" placeholder="🔍 بحث..." style="flex:1;min-width:140px">'+
-    '<select class="f-inp" id="gc"><option value="">كل الفئات</option>'+['تعليمي','تجاري','رياضي','ترفيهي','ديني','تقني','طبي','أخرى'].map(function(c){return '<option>'+c+'</option>';}).join('')+'</select>'+
-    '<select class="f-inp" id="gj"><option value="">كل الحالات</option><option value="true">منضم</option><option value="false">غير منضم</option></select>'+
-    '<select class="f-inp" id="gp"><option value="">كل الحماية</option><option value="none">بدون</option><option value="جبل">جبل</option><option value="الماسة">الماسة</option></select>'+
-    '<button class="btn btn-ghost btn-sm" id="grp-go">تطبيق</button><button class="btn btn-ghost btn-sm" id="grp-clear">مسح</button></div>'+
-    '<div id="grp-stats" style="margin-bottom:10px"></div><div id="grp-table"></div>';
-  var allData=[];
-  async function load(){
-    var tbl=document.getElementById('grp-table');tbl.innerHTML='<div class="empty"><div class="spin"></div></div>';
-    var s=document.getElementById('gs').value||'',c=document.getElementById('gc').value||'',j=document.getElementById('gj').value||'';
-    var p=new URLSearchParams();if(s)p.set('search',s);if(c)p.set('category',c);if(j!=='')p.set('is_joined',j);
-    try{
-      allData=await api('/api/groups?'+p);
-      var pf=document.getElementById('gp').value||'',d=allData.slice();
-      if(pf==='none')d=d.filter(function(g){return !g.protection_bot;});else if(pf)d=d.filter(function(g){return g.protection_bot===pf;});
-      document.getElementById('grp-sub').textContent=d.length+' مجموعة';
-      var tot=d.length,joined=d.filter(function(g){return g.is_joined;}).length,banned=d.filter(function(g){return g.is_banned;}).length;
-      document.getElementById('grp-stats').innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-        [['إجمالي',tot,'blue'],['منضم',joined,'green'],['محظور',banned,'red'],['مغادر',tot-joined,'gray'],['مع حماية',d.filter(function(g){return g.protection_bot;}).length,'yellow']].map(function(x){
-          return '<div class="card-sm" style="display:inline-flex;align-items:center;gap:8px">'+badge(x[0],x[2])+'<strong style="color:var(--white)">'+fmt(x[1])+'</strong></div>';}).join('')+'</div>';
-      if(!d.length){tbl.innerHTML='<div class="empty"><div class="empty-ico">👥</div>لا توجد مجموعات تطابق الفلاتر</div>';return;}
-      var aB={high:'green',medium:'yellow',low:'red',unknown:'gray'},aL={high:'عالي',medium:'متوسط',low:'منخفض',unknown:'غير معروف'};
-      tbl.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>المجموعة</th><th>الأعضاء</th><th>الفئة</th><th>الحالة</th><th>الحماية</th><th>النشاط</th><th>الطلاب</th><th>إجراءات</th></tr></thead><tbody>'+
-        d.map(function(g){var sr=Math.round((g.student_ratio||0)*100);return '<tr>'+
-          '<td><div class="td-name">'+escHtml(g.title||'—')+'</div>'+(g.username?'<div class="td-sub">@'+escHtml(g.username)+'</div>':'')+'</td>'+
-          '<td style="font-weight:700;color:var(--white)">'+fmt(g.member_count)+'</td>'+
-          '<td>'+(g.category?badge(g.category,'purple'):'<span style="color:var(--muted)">—</span>')+'</td>'+
-          '<td>'+badge(g.is_joined?'منضم':'غير منضم',g.is_joined?'green':'gray')+'</td>'+
-          '<td>'+(g.protection_bot?badge(g.protection_bot,'red'):'<span style="color:var(--muted)">لا يوجد</span>')+'</td>'+
-          '<td>'+badge(aL[g.activity_level]||'غير معروف',aB[g.activity_level]||'gray')+'</td>'+
-          '<td><div style="font-size:12px;font-weight:700;color:var(--white)">'+sr+'%</div>'+prog(sr,100,'var(--accent)')+'</td>'+
-          '<td><div style="display:flex;gap:3px">'+
-          '<button class="btn-icon" onclick="quickSend('+g.id+',\''+escJs(g.title||'')+'\')">📨</button>'+
-          '<button class="btn-icon" onclick="editGroup('+g.id+',\''+escJs(g.category||'')+'\',\''+escJs(g.sub_category||'')+'\',\''+escJs(g.notes||'')+'\',load)">✏️</button>'+
-          '<button class="btn-icon" onclick="copyLink(\''+escJs(g.username||'')+'\',\''+escJs(g.telegram_id||'')+'\')">🔗</button>'+
-          '<button class="btn-icon" style="color:var(--warn)" onclick="blacklistGroup('+g.id+',\''+escJs(g.title||'')+'\',load)">🚫</button>'+
-          '</div></td></tr>';}).join('')+'</tbody></table></div>';
-    }catch(e){tbl.innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-  }
-  document.getElementById('grp-go').addEventListener('click',load);
-  document.getElementById('grp-clear').addEventListener('click',function(){['gs','gc','gj','gp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});load();});
-  document.getElementById('gs').addEventListener('input',function(){setTimeout(load,450);});
-  ['gc','gj','gp'].forEach(function(id){document.getElementById(id).addEventListener('change',load);});
-  document.getElementById('grp-sync').addEventListener('click',function(){
-    openModal('مزامنة المجموعات','<div class="fg"><label class="flbl">معرّف الحساب</label><input class="finput" id="m-aid" type="number" placeholder="1" dir="ltr"></div>',
-      async function(ov,close){var id=parseInt(ov.querySelector('#m-aid').value);if(!id)return toast('أدخل معرّف الحساب','err');
-        var btn=ov.querySelector('.save-btn');btn.disabled=true;btn.textContent='جارٍ...';
-        try{var r=await api('/api/groups/action',{method:'POST',body:JSON.stringify({action:'sync_dialogs',account_id:id})});toast('✅ تمت المزامنة – '+(r.added||0)+' مجموعة جديدة');close();load();}
-        catch(e){toast(e.message,'err');}finally{btn.disabled=false;btn.textContent='حفظ';}});
-  });
-  document.getElementById('grp-export').addEventListener('click',function(){
-    if(!allData.length)return toast('لا توجد بيانات','warn');
-    exportCsv([['ID','العنوان','Username','الأعضاء','الحالة','الفئة','الحماية','الطلاب%']].concat(allData.map(function(g){return [g.id,g.title,g.username||'',g.member_count,g.is_joined?'منضم':'غير منضم',g.category||'',g.protection_bot||'',Math.round((g.student_ratio||0)*100)+'%'];})),'groups.csv');
-  });
-  document.getElementById('grp-add').addEventListener('click',function(){editGroup(null,'','','',load);});
-  load();
-}
-
-function editGroup(id,cat,sub,notes,onDone){
-  openModal(id?'تعديل مجموعة':'إضافة مجموعة',
-    '<div class="fg"><label class="flbl">الفئة</label><select class="finput" id="m-cat">'+['تعليمي','تجاري','رياضي','ترفيهي','ديني','تقني','طبي','أخرى'].map(function(c){return '<option'+(c===cat?' selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'+
-    '<div class="fg"><label class="flbl">الفئة الفرعية</label><input class="finput" id="m-sub" value="'+escHtml(sub||'')+'"></div>'+
-    '<div class="fg"><label class="flbl">بوت الحماية</label><select class="finput" id="m-bot"><option value="">غير محدد</option>'+['جبل','الماسة','شيلد'].map(function(b){return '<option>'+b+'</option>';}).join('')+'</select></div>'+
-    '<div class="fg"><label class="flbl">مستوى النشاط</label><select class="finput" id="m-act"><option value="">غير محدد</option><option value="high">عالي</option><option value="medium">متوسط</option><option value="low">منخفض</option></select></div>'+
-    '<div class="fg"><label class="flbl">نسبة الطلاب (0-100)</label><input class="finput" id="m-sr" type="number" min="0" max="100" value="0" dir="ltr"></div>'+
-    '<div class="fg"><label class="flbl">ملاحظات</label><textarea class="finput" id="m-notes">'+escHtml(notes||'')+'</textarea></div>',
-    async function(ov,close){
-      var data={category:ov.querySelector('#m-cat').value,sub_category:ov.querySelector('#m-sub').value,protection_bot:ov.querySelector('#m-bot').value||null,activity_level:ov.querySelector('#m-act').value||null,student_ratio:(parseInt(ov.querySelector('#m-sr').value)||0)/100,notes:ov.querySelector('#m-notes').value};
-      try{await api('/api/groups/action',{method:'POST',body:JSON.stringify({action:'update',group_id:id,data:data})});toast('✅ تم الحفظ');close();if(onDone)onDone();}
-      catch(e){toast(e.message,'err');}});
-}
-function quickSend(gid,gtitle){
-  openModal('📨 إرسال إعلان – '+gtitle,'<div class="fg"><label class="flbl">معرّف الحساب</label><input class="finput" id="qs-acc" type="number" placeholder="1" dir="ltr"></div><div class="fg"><label class="flbl">نص الإعلان</label><textarea class="finput" id="qs-txt" style="min-height:100px"></textarea></div>',
-    async function(ov,close){var acc=parseInt(ov.querySelector('#qs-acc').value),txt=ov.querySelector('#qs-txt').value.trim();if(!acc||!txt)return toast('أدخل الحساب والنص','err');
-      try{await api('/api/messages/send',{method:'POST',body:JSON.stringify({account_id:acc,group_id:gid,content:txt})});toast('✅ تم الإرسال');close();}catch(e){toast(e.message,'err');}});
-}
-function copyLink(username,tgid){var link=username?'https://t.me/'+username:tgid||'';if(!link)return toast('لا يوجد رابط','warn');navigator.clipboard.writeText(link).then(function(){toast('✅ تم نسخ الرابط');}).catch(function(){toast('تعذر النسخ','err');});}
-function blacklistGroup(id,title,onDone){confirm2('إضافة "'+title+'" للقائمة السوداء؟',async function(){try{await api('/api/groups/action',{method:'POST',body:JSON.stringify({action:'update',group_id:id,data:{notes:'قائمة سوداء'}})});toast('⛔ تمت الإضافة');if(onDone)onDone();}catch(e){toast(e.message,'err');}});}
-
-/* ═══ PAGE: CAMPAIGNS ═══ */
-async function pageCampaigns(){
-  var el=document.getElementById('content');
-  el.innerHTML='<div class="page-hdr"><div><div class="page-title">🚀 الحملات الإعلانية</div><div class="page-sub" id="camp-sub">جارٍ التحميل...</div></div><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="camp-exp">⬇️ تصدير</button><button class="btn btn-primary btn-sm" id="new-camp">+ حملة جديدة</button></div></div><div id="camp-list"><div class="empty"><div class="spin"></div></div></div>';
-  async function load(){
-    var list=document.getElementById('camp-list');
-    try{
-      var res=await Promise.all([api('/api/campaigns'),api('/api/templates').catch(function(){return[];})]);
-      var camps=res[0],tmpls=res[1];
-      document.getElementById('camp-sub').textContent=camps.length+' حملة';
-      if(!camps.length){list.innerHTML='<div class="empty"><div class="empty-ico">🚀</div>لا توجد حملات</div>';return;}
-      var SC={draft:['مسودة','gray'],running:['يعمل 🟢','green'],paused:['موقوف ⏸','yellow'],done:['مكتمل ✓','blue']};
-      var tM={};tmpls.forEach(function(t){tM[t.id]=t.name;});
-      list.innerHTML='<div style="display:grid;gap:10px">'+camps.map(function(c){
-        var lb=SC[c.status]||['غير معروف','gray'],st=c.stats||{},sent=st.sent||0,del=st.deleted||0,suc=sent-del,pc=sent?Math.round(suc/sent*100):0;
-        return '<div class="card" style="padding:16px"><div style="display:flex;align-items:flex-start;gap:12px">'+
-          '<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span style="font-weight:800;font-size:15px;color:var(--white)">'+escHtml(c.name)+'</span>'+badge(lb[0],lb[1])+'</div>'+
-          '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-bottom:8px"><span>📨 <strong style="color:var(--white)">'+fmt(sent)+'</strong> مرسلة</span><span>✅ <strong style="color:var(--accent2)">'+fmt(suc)+'</strong> ناجحة</span><span>🗑 <strong style="color:var(--danger)">'+fmt(del)+'</strong> محذوفة</span><span>📊 <strong style="color:var(--warn)">'+pc+'%</strong> نجاح</span></div>'+
-          (sent?'<div class="prog" style="margin-bottom:6px"><div class="prog-fill" style="width:'+pc+'%;background:'+(pc>70?'var(--accent2)':pc>40?'var(--warn)':'var(--danger)')+'"></div></div>':'')+
-          (c.template_ids&&c.template_ids.length?'<div style="font-size:11px;color:var(--muted)">📝 '+c.template_ids.map(function(id){return tM[id]||'#'+id;}).join(' · ')+'</div>':'')+
-          (c.target_criteria&&c.target_criteria.category?'<div style="font-size:11px;color:var(--muted);margin-top:2px">🎯 '+escHtml(c.target_criteria.category)+'</div>':'')+
-          '</div><div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'+
-          (c.status!=='running'?'<button class="btn btn-success btn-sm run-c" data-id="'+c.id+'">▶ تشغيل</button>':'')+
-          (c.status==='running'?'<button class="btn btn-warn btn-sm paus-c" data-id="'+c.id+'">⏸ إيقاف</button>':'')+
-          '<button class="btn btn-ghost btn-sm view-c" data-id="'+c.id+'">📈 تفاصيل</button>'+
-          '<button class="btn btn-ghost btn-sm edit-c" data-id="'+c.id+'" data-n="'+escHtml(c.name)+'" data-cat="'+escHtml((c.target_criteria&&c.target_criteria.category)||'')+'">✏️ تعديل</button>'+
-          '<button class="btn btn-danger btn-sm del-c" data-id="'+c.id+'" data-n="'+escHtml(c.name)+'">🗑 حذف</button>'+
-          '</div></div></div>';
-      }).join('')+'</div>';
-      list.querySelectorAll('.run-c').forEach(function(b){b.addEventListener('click',async function(){b.disabled=true;b.textContent='...';try{await api('/api/campaigns/'+b.dataset.id+'/run',{method:'POST'});toast('🚀 بدأت الحملة');load();}catch(e){toast(e.message,'err');}finally{b.disabled=false;b.textContent='▶ تشغيل';}});});
-      list.querySelectorAll('.paus-c').forEach(function(b){b.addEventListener('click',async function(){try{await api('/api/campaigns/'+b.dataset.id,{method:'PATCH',body:JSON.stringify({status:'paused'})});toast('⏸ توقفت');load();}catch(e){toast(e.message,'err');}});});
-      list.querySelectorAll('.view-c').forEach(function(b){b.addEventListener('click',function(){campDetails(b.dataset.id,camps,tmpls);});});
-      list.querySelectorAll('.edit-c').forEach(function(b){b.addEventListener('click',function(){campEdit(parseInt(b.dataset.id),b.dataset.n,b.dataset.cat,load);});});
-      list.querySelectorAll('.del-c').forEach(function(b){b.addEventListener('click',function(){confirm2('حذف الحملة "'+b.dataset.n+'"؟',async function(){try{await api('/api/campaigns/'+b.dataset.id,{method:'DELETE'});toast('تم الحذف');load();}catch(e){toast(e.message,'err');}});});});
-    }catch(e){list.innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-  }
-  document.getElementById('new-camp').addEventListener('click',async function(){var t=await api('/api/templates').catch(function(){return[];});campCreate(t,load);});
-  document.getElementById('camp-exp').addEventListener('click',async function(){try{var cs=await api('/api/campaigns');exportCsv([['ID','الاسم','الحالة','مرسلة','محذوفة']].concat(cs.map(function(c){return [c.id,c.name,c.status,c.stats&&c.stats.sent||0,c.stats&&c.stats.deleted||0];})),'campaigns.csv');}catch(e){toast(e.message,'err');}});
-  load();
-}
-function campDetails(id,camps,tmpls){var c=camps.find(function(x){return x.id==id;});if(!c)return toast('لم يتم العثور','err');var st=c.stats||{},sent=st.sent||0,del=st.deleted||0,tM={};(tmpls||[]).forEach(function(t){tM[t.id]=t.name;});var lb={draft:'مسودة',running:'يعمل',paused:'موقوف',done:'مكتمل'},lbc={draft:'gray',running:'green',paused:'yellow',done:'blue'};openModal('📈 تفاصيل: '+c.name,'<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">'+kpiCard('📨','مرسلة',fmt(sent),'info','','#3b82f6')+kpiCard('✅','ناجحة',fmt(sent-del),'up','','#22c55e')+kpiCard('🗑','محذوفة',fmt(del),'down','','#ef4444')+'</div><div class="fg"><label class="flbl">الحالة</label><div>'+badge(lb[c.status]||c.status,lbc[c.status]||'gray')+'</div></div><div class="fg"><label class="flbl">الفئة</label><div>'+(c.target_criteria&&c.target_criteria.category||'كل الفئات')+'</div></div><div>'+prog(sent-del,Math.max(sent,1),sent>del?'var(--accent2)':'var(--danger)')+'</div>',null);}
-function campCreate(tmpls,onDone){openModal('✨ حملة جديدة','<div class="fg"><label class="flbl">اسم الحملة *</label><input class="finput" id="m-name" placeholder="مثال: حملة رمضان 2026"></div><div class="fg"><label class="flbl">الفئة المستهدفة</label><select class="finput" id="m-cat"><option value="">كل الفئات</option>'+['تعليمي','تجاري','رياضي','ترفيهي','ديني','تقني','طبي','أخرى'].map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></div><div class="fg"><label class="flbl">الحد الأدنى للأعضاء</label><input class="finput" id="m-min" type="number" placeholder="0" dir="ltr"></div>'+(tmpls.length?'<div class="fg"><label class="flbl">القوالب (Ctrl+Click لتعدد)</label><select class="finput" id="m-tmpls" multiple size="'+Math.min(4,tmpls.length)+'">'+tmpls.map(function(t){return '<option value="'+t.id+'">'+escHtml(t.name)+' (نجاح '+(t.success_score||0)+'%)</option>';}).join('')+'</select></div>':'<div style="color:var(--warn);font-size:12px;padding:8px">⚠️ أضف قوالب أولاً</div>'),async function(ov,close){var name=ov.querySelector('#m-name').value.trim();if(!name)return toast('أدخل اسم الحملة','err');var cat=ov.querySelector('#m-cat').value||'',min=parseInt(ov.querySelector('#m-min').value)||0,sel=ov.querySelector('#m-tmpls'),tids=sel?Array.from(sel.selectedOptions).map(function(o){return parseInt(o.value);}):[];var btn=ov.querySelector('.save-btn');btn.disabled=true;btn.textContent='جارٍ...';try{await api('/api/campaigns',{method:'POST',body:JSON.stringify({name:name,target_criteria:{category:cat,min_members:min},template_ids:tids})});toast('✅ تم الإنشاء');close();if(onDone)onDone();}catch(e){toast(e.message,'err');}finally{btn.disabled=false;btn.textContent='حفظ';}});}
-function campEdit(id,name,cat,onDone){openModal('✏️ تعديل الحملة','<div class="fg"><label class="flbl">الاسم</label><input class="finput" id="m-name" value="'+escHtml(name)+'"></div><div class="fg"><label class="flbl">الفئة</label><input class="finput" id="m-cat" value="'+escHtml(cat)+'"></div><div class="fg"><label class="flbl">الحالة</label><select class="finput" id="m-st"><option value="draft">مسودة</option><option value="paused">موقوف</option><option value="done">مكتمل</option></select></div>',async function(ov,close){try{await api('/api/campaigns/'+id,{method:'PATCH',body:JSON.stringify({name:ov.querySelector('#m-name').value,target_criteria:{category:ov.querySelector('#m-cat').value},status:ov.querySelector('#m-st').value})});toast('✅ تم التحديث');close();if(onDone)onDone();}catch(e){toast(e.message,'err');}});}
-
-/* ═══ PAGE: TEMPLATES ═══ */
-async function pageTemplates(){
-  var el=document.getElementById('content');
-  el.innerHTML='<div class="page-hdr"><div><div class="page-title">📝 صيغ الإعلانات</div><div class="page-sub" id="tmpl-sub">جارٍ التحميل...</div></div><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="tmpl-exp">⬇️ تصدير</button><button class="btn btn-primary btn-sm" id="new-tmpl">+ صيغة جديدة</button></div></div><div id="tmpl-info" style="margin-bottom:12px"></div><div id="tmpl-tbl"></div>';
-  async function load(){
-    var tbl=document.getElementById('tmpl-tbl');
-    try{
-      var data=await api('/api/templates');
-      document.getElementById('tmpl-sub').textContent=data.length+' صيغة';
-      var tvars=data.reduce(function(s,t){return s+(t.variations||[]).length;},0),avgS=data.length?Math.round(data.reduce(function(s,t){return s+(t.success_score||0);},0)/data.length):0,avgR=data.length?Math.round(data.reduce(function(s,t){return s+(t.ban_risk||0);},0)/data.length):0;
-      document.getElementById('tmpl-info').innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'+[['📝',data.length,'الصيغ','blue'],['🔀',tvars,'التشعبات','purple'],['✅',avgS+'%','متوسط النجاح','green'],['⚠️',avgR+'%','متوسط الخطر',avgR>50?'red':'yellow']].map(function(x){return '<div class="card-sm" style="display:inline-flex;align-items:center;gap:6px">'+x[0]+' <strong style="color:var(--white)">'+x[1]+'</strong><span style="color:var(--muted);font-size:12px">'+x[2]+'</span></div>';}).join('')+'</div>';
-      if(!data.length){tbl.innerHTML='<div class="empty"><div class="empty-ico">📝</div>لا توجد صيغ</div>';return;}
-      tbl.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>الصيغة</th><th>المحتوى</th><th>التشعبات</th><th>النجاح</th><th>الخطر</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody>'+
-        data.map(function(t){var rk=t.ban_risk||0,rbc=rk<30?'green':rk<60?'yellow':'red',rlbl=rk<30?'منخفض':rk<60?'متوسط':'عالٍ';return '<tr>'+
-          '<td class="td-name">'+escHtml(t.name)+'</td>'+
-          '<td style="max-width:180px"><div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml((t.base_content||'').slice(0,80))+'</div></td>'+
-          '<td style="text-align:center;color:var(--purple);font-weight:700">'+((t.variations||[]).length)+'</td>'+
-          '<td><div style="display:flex;align-items:center;gap:5px">'+prog(t.success_score||0,100,'var(--accent2)')+'<span style="font-size:12px;font-weight:700;color:var(--accent2)">'+(t.success_score||0)+'%</span></div></td>'+
-          '<td>'+badge(rlbl,rbc)+'</td>'+
-          '<td style="font-size:11px;color:var(--muted)">'+(t.created_at?new Date(t.created_at).toLocaleDateString('ar-SA'):'—')+'</td>'+
-          '<td><div style="display:flex;gap:3px">'+
-          '<button class="btn-icon" onclick="prevTmpl('+t.id+')">👁</button>'+
-          '<button class="btn-icon" onclick="editTmpl('+t.id+',\''+escJs(t.name)+'\',load)">✏️</button>'+
-          '<button class="btn-icon" onclick="testTmpl('+t.id+',\''+escJs(t.name)+'\')">🧪</button>'+
-          '<button class="btn-icon" onclick="cloneTmpl('+t.id+',\''+escJs(t.name)+'\',load)">📋</button>'+
-          '<button class="btn-icon" style="color:var(--danger)" onclick="delTmpl('+t.id+',\''+escJs(t.name)+'\',load)">🗑</button>'+
-          '</div></td></tr>';}).join('')+'</tbody></table></div>';
-    }catch(e){tbl.innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-  }
-  document.getElementById('new-tmpl').addEventListener('click',function(){openModal('📝 صيغة جديدة','<div class="fg"><label class="flbl">الاسم *</label><input class="finput" id="m-name" placeholder="صيغة الطالب v1"></div><div class="fg"><label class="flbl">النص الأساسي *</label><textarea class="finput" id="m-cnt" style="min-height:100px"></textarea></div><div class="fg"><label class="flbl">صيغ بديلة (كل سطر = صيغة)</label><textarea class="finput" id="m-vars" style="min-height:70px" placeholder="صيغة 1&#10;صيغة 2"></textarea></div><div class="fg"><label class="flbl">درجة الخطر (0-100)</label><input class="finput" id="m-risk" type="number" min="0" max="100" value="20" dir="ltr"></div>',async function(ov,close){var name=ov.querySelector('#m-name').value.trim(),cnt=ov.querySelector('#m-cnt').value.trim();if(!name||!cnt)return toast('أدخل الاسم والمحتوى','err');var vars=ov.querySelector('#m-vars').value.split('\n').filter(function(v){return v.trim();}),risk=parseInt(ov.querySelector('#m-risk').value)||20,btn=ov.querySelector('.save-btn');btn.disabled=true;btn.textContent='جارٍ...';try{await api('/api/templates',{method:'POST',body:JSON.stringify({name:name,base_content:cnt,variations:vars,ban_risk:risk})});toast('✅ تم الإنشاء');close();load();}catch(e){toast(e.message,'err');}finally{btn.disabled=false;btn.textContent='حفظ';}});});
-  document.getElementById('tmpl-exp').addEventListener('click',async function(){try{var data=await api('/api/templates');exportCsv([['ID','الاسم','المحتوى','التشعبات','النجاح%','الخطر%']].concat(data.map(function(t){return [t.id,t.name,t.base_content,(t.variations||[]).length,t.success_score||0,t.ban_risk||0];})),'templates.csv');}catch(e){toast(e.message,'err');}});
-  load();
-}
-async function prevTmpl(id){try{var data=await api('/api/templates'),t=data.find(function(x){return x.id===id;});if(!t)return toast('لم يتم العثور','err');openModal('👁 معاينة: '+t.name,'<div class="fg"><label class="flbl">النص الأساسي</label><div style="background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto">'+escHtml(t.base_content||'—')+'</div></div>'+((t.variations||[]).length?'<div class="fg"><label class="flbl">الصيغ البديلة ('+t.variations.length+')</label>'+t.variations.map(function(v,i){return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;margin-bottom:5px;font-size:12px"><span style="color:var(--muted)">'+(i+1)+'. </span>'+escHtml(v)+'</div>';}).join('')+'</div>':''),null);}catch(e){toast(e.message,'err');}}
-function editTmpl(id,name,onDone){openModal('✏️ تعديل: '+name,'<div class="fg"><label class="flbl">الاسم</label><input class="finput" id="m-name" value="'+escHtml(name)+'"></div><div class="fg"><label class="flbl">درجة النجاح (0-100)</label><input class="finput" id="m-suc" type="number" min="0" max="100" value="50" dir="ltr"></div><div class="fg"><label class="flbl">درجة الخطر (0-100)</label><input class="finput" id="m-risk" type="number" min="0" max="100" value="20" dir="ltr"></div>',async function(ov,close){try{await api('/api/templates/'+id,{method:'PATCH',body:JSON.stringify({name:ov.querySelector('#m-name').value,success_score:parseInt(ov.querySelector('#m-suc').value)||50,ban_risk:parseInt(ov.querySelector('#m-risk').value)||20})});toast('✅ تم التحديث');close();if(onDone)onDone();}catch(e){toast(e.message,'err');}});}
-function testTmpl(id,name){openModal('🧪 اختبار: '+name,'<div class="fg"><label class="flbl">معرّف الحساب</label><input class="finput" id="t-acc" type="number" placeholder="1" dir="ltr"></div><div class="fg"><label class="flbl">معرّف المجموعة</label><input class="finput" id="t-grp" type="number" placeholder="1" dir="ltr"></div>',async function(ov,close){var acc=parseInt(ov.querySelector('#t-acc').value),grp=parseInt(ov.querySelector('#t-grp').value);if(!acc||!grp)return toast('أدخل معرّفات الحساب والمجموعة','err');try{await api('/api/messages/send',{method:'POST',body:JSON.stringify({account_id:acc,group_id:grp,content:'اختبار صيغة: '+name})});toast('✅ تم الإرسال التجريبي');close();}catch(e){toast(e.message,'err');}});}
-async function cloneTmpl(id,name,onDone){try{var data=await api('/api/templates'),t=data.find(function(x){return x.id===id;});if(!t)return toast('لم يتم العثور','err');await api('/api/templates',{method:'POST',body:JSON.stringify({name:name+' (نسخة)',base_content:t.base_content,variations:t.variations||[],ban_risk:t.ban_risk||0})});toast('✅ تم النسخ');if(onDone)onDone();}catch(e){toast(e.message,'err');}}
-function delTmpl(id,name,onDone){confirm2('حذف الصيغة "'+name+'"؟',async function(){try{await api('/api/templates/'+id,{method:'DELETE'});toast('تم الحذف');if(onDone)onDone();}catch(e){toast(e.message,'err');}});}
-
-/* ═══ PAGE: ACCOUNTS ═══ */
-async function pageAccounts(){
-  var el=document.getElementById('content');
-  el.innerHTML='<div class="page-hdr"><div><div class="page-title">📱 الحسابات</div><div class="page-sub" id="acc-sub">جارٍ التحميل...</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="acc-check">🔍 فحص الكل</button><button class="btn btn-ghost btn-sm" id="acc-exp">⬇️ تصدير</button><button class="btn btn-primary btn-sm" id="add-acc">+ إضافة حساب</button></div></div><div id="acc-kpi" style="margin-bottom:14px"></div><div id="acc-tbl"><div class="empty"><div class="spin"></div></div></div>';
-  async function load(){
-    var tbl=document.getElementById('acc-tbl');
-    try{
-      var data=await api('/api/accounts');
-      document.getElementById('acc-sub').textContent=data.length+' حساب';
-      var tot=data.length,act=data.filter(function(a){return a.status==='active';}).length,ban=data.filter(function(a){return a.status==='banned';}).length,
-          fld=data.filter(function(a){return a.status==='flood';}).length;
-      document.getElementById('acc-kpi').innerHTML=
-        '<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">'+
-        kpiCard('📱','إجمالي',fmt(tot),'info','','#3b82f6')+
-        kpiCard('🟢','نشط',fmt(act),'up','','#22c55e')+
-        kpiCard('⚠️','محدود',fmt(fld),'warn','','#f59e0b')+
-        kpiCard('🚫','محظور',fmt(ban),'down','','#ef4444')+
-        '</div>';
-      if(!data.length){tbl.innerHTML='<div class="empty"><div class="empty-ico">📱</div>لا توجد حسابات</div>';return;}
-      var SC={active:['نشط','green'],banned:['محظور','red'],flood:['محدود','yellow'],pending:['بانتظار','gray']};
-      tbl.innerHTML='<div class="tbl-wrap"><table>'+
-        '<thead><tr><th>رقم الهاتف</th><th>الحالة</th><th>درجة الصحة</th><th>البروكسي</th><th>آخر نشاط</th><th>تاريخ الإضافة</th><th>إجراءات</th></tr></thead>'+
-        '<tbody>'+data.map(function(a){
-          var lb=SC[a.status]||['غير معروف','gray'];var h=Math.round(a.health_score||0);
-          var px=a.proxy?((a.proxy.scheme||'socks5')+'://'+a.proxy.hostname+':'+a.proxy.port):'—';
-          return '<tr>'+
-            '<td><div class="td-name" style="direction:ltr;text-align:right">'+escHtml(a.phone)+'</div></td>'+
-            '<td>'+badge(lb[0],lb[1])+'</td>'+
-            '<td><div class="health-bar"><div class="prog" style="width:70px"><div class="prog-fill" style="width:'+h+'%;background:'+hc(h)+'"></div></div><span style="font-weight:700;font-size:12px;color:'+hc(h)+'">'+h+'%</span></div></td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+px+'</td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+ago(a.last_active)+'</td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+(a.created_at?new Date(a.created_at).toLocaleDateString('ar-SA'):'—')+'</td>'+
-            '<td><div style="display:flex;gap:3px">'+
-            '<button class="btn-icon" onclick="checkAcc('+a.id+',\''+escJs(a.phone)+'\')">🔍</button>'+
-            '<button class="btn-icon" onclick="changeProxy('+a.id+',\''+escJs(a.phone)+'\')">🌐</button>'+
-            '<button class="btn-icon" onclick="viewAccGrps('+a.id+',\''+escJs(a.phone)+'\')">👥</button>'+
-            '<button class="btn-icon" style="color:var(--danger)" onclick="delAcc('+a.id+',\''+escJs(a.phone)+'\',load)">🗑</button>'+
-            '</div></td></tr>';
-        }).join('')+'</tbody></table></div>';
-    }catch(e){tbl.innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-  }
-
-  document.getElementById('add-acc').addEventListener('click',function(){addAccount(load);});
-  document.getElementById('acc-check').addEventListener('click',function(){toast('🔍 جارٍ فحص الحسابات...','warn');});
-  document.getElementById('acc-exp').addEventListener('click',async function(){
-    try{
-      var data=await api('/api/accounts');
-      exportCsv([['ID','الهاتف','الحالة','الصحة','آخر نشاط']].concat(data.map(function(a){return [a.id,a.phone,a.status,a.health_score||0,a.last_active||''];})),'accounts.csv');
-    }catch(e){toast(e.message,'err');}
-  });
-  load();
-}
-
-function addAccount(onDone){
-  var r=openModal('➕ إضافة حساب – الخطوة 1/2',
-    '<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">📱 أدخل رقم الهاتف وسيصلك كود تيليجرام</div>'+
-    '<div class="fg"><label class="flbl">رقم الهاتف (مع كود الدولة) *</label><input class="finput" id="m-ph" placeholder="+966501234567" dir="ltr"></div>'+
-    '<div class="fg"><label class="flbl">بروكسي (اختياري – مثال: socks5://host:port)</label><input class="finput" id="m-px" placeholder="socks5://127.0.0.1:1080" dir="ltr"></div>',
-    async function(ov,close){
-      var phone=ov.querySelector('#m-ph').value.trim();
-      if(!phone||!phone.startsWith('+'))return toast('أدخل رقم يبدأ بـ +','err');
-      var pxRaw=ov.querySelector('#m-px').value.trim();var proxy=null;
-      if(pxRaw){try{var u=new URL(pxRaw);proxy={scheme:u.protocol.replace(':',''),hostname:u.hostname,port:parseInt(u.port)||1080};}catch{return toast('صيغة البروكسي خاطئة','err');}}
-      var btn=ov.querySelector('.save-btn');btn.disabled=true;btn.textContent='جارٍ الإرسال...';
-      try{
-        var res=await api('/api/accounts/add',{method:'POST',body:JSON.stringify({phone:phone,proxy:proxy})});
-        if(res.status==='code_sent'){
-          close();
-          var r2=openModal('🔑 إدخال الكود – الخطوة 2/2',
-            '<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px">📲 تم إرسال الكود إلى <strong>'+escHtml(phone)+'</strong></div>'+
-            '<div class="fg"><label class="flbl">كود التحقق *</label><input class="finput" id="m-code" placeholder="12345" dir="ltr" maxlength="6" autocomplete="one-time-code"></div>'+
-            '<div class="fg"><label class="flbl">كلمة المرور (إذا فعّلت التحقق بخطوتين)</label><input class="finput" type="password" id="m-pass"></div>',
-            async function(ov2,close2){
-              var code=ov2.querySelector('#m-code').value.trim();var pass=ov2.querySelector('#m-pass').value;
-              if(!code)return toast('أدخل الكود','err');
-              var btn2=ov2.querySelector('.save-btn');btn2.disabled=true;btn2.textContent='جارٍ التحقق...';
-              try{
-                var res2=await api('/api/accounts/verify',{method:'POST',body:JSON.stringify({phone:phone,code:code,password:pass||undefined})});
-                if(res2.status==='ok'){toast('✅ تم إضافة الحساب بنجاح');close2();if(onDone)onDone();}
-                else toast(res2.detail||'كود خاطئ أو منتهي','err');
-              }catch(e){toast(e.message,'err');}finally{btn2.disabled=false;btn2.textContent='حفظ';}
-            }
-          );
-        }else toast(res.detail||'خطأ','err');
-      }catch(e){toast(e.message,'err');}finally{btn.disabled=false;btn.textContent='حفظ';}
+// ═══════════════════════════════════════════════════════════
+// WEBSOCKET
+// ═══════════════════════════════════════════════════════════
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  state.ws = new WebSocket(`${proto}://${location.host}/ws`);
+  state.ws.onopen = () => {
+    document.getElementById('ws-dot').classList.add('on');
+    document.getElementById('ws-lbl').textContent = 'متصل';
+  };
+  state.ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('on');
+    document.getElementById('ws-lbl').textContent = 'غير متصل';
+    setTimeout(connectWS, 4000);
+  };
+  state.ws.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'ping') return;
+    if (d.type === 'copilot_result') {
+      document.getElementById('cp-status').style.display = 'none';
+      toast(d.data?.result || 'تم التنفيذ', 'success');
+    } else if (d.type === 'account_added') toast(`✅ حساب ${d.phone} أُضيف`, 'success');
+    else if (d.type === 'group_joined') toast(`✅ انضممت لـ ${d.title}`, 'success');
+    else if (d.type === 'groups_synced') toast(`🔄 مزامنة: ${d.added} مجموعة جديدة`, 'info');
+    else if (d.type === 'message_sent') toast(`📨 رسالة لـ ${d.group}`, 'info');
+    else if (d.type === 'campaign_done') toast(`✅ الحملة ${d.id} اكتملت`, 'success');
+    // refresh current page stats
+    if (['account_added','groups_synced','message_sent','campaign_done'].includes(d.type)) {
+      if (state.page === 'dashboard') renderDashboard();
     }
-  );
-}
-
-function checkAcc(id,phone){
-  toast('🔍 جارٍ فحص '+phone+'...','warn');
-  setTimeout(function(){toast('✅ الحساب '+phone+' يستجيب بشكل طبيعي');},1800);
-}
-
-function changeProxy(id,phone){
-  openModal('🌐 تغيير البروكسي – '+phone,
-    '<div class="fg"><label class="flbl">البروكسي الجديد</label><input class="finput" id="m-px" placeholder="socks5://host:port" dir="ltr"></div>'+
-    '<div style="font-size:12px;color:var(--muted)">اتركه فارغاً للإرسال بدون بروكسي</div>',
-    function(ov,close){
-      var raw=ov.querySelector('#m-px').value.trim();
-      if(raw){try{new URL(raw);}catch{return toast('صيغة خاطئة','err');}}
-      toast('✅ تم تحديث البروكسي لـ '+phone);close();
-    }
-  );
-}
-
-async function viewAccGrps(id,phone){
-  try{
-    var data=await api('/api/groups');
-    var mine=data.filter(function(g){return g.account_id===id;});
-    openModal('👥 مجموعات '+phone,
-      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">'+mine.length+' مجموعة</div>'+
-      '<div style="max-height:300px;overflow-y:auto">'+
-      (mine.length?mine.map(function(g){
-        return '<div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;background:var(--card2);margin-bottom:4px">'+
-          '<span style="font-size:13px">'+escHtml(g.title||'—')+'</span>'+
-          '<span style="font-size:12px;color:var(--muted)">'+fmt(g.member_count)+' عضو</span></div>';
-      }).join(''):'<div class="empty" style="padding:20px;font-size:12px">لا توجد مجموعات مزامنة</div>')+
-      '</div>',null
-    );
-  }catch(e){toast(e.message,'err');}
-}
-
-function delAcc(id,phone,onDone){
-  confirm2('حذف الحساب '+phone+'؟ سيتم حذف جميع بياناته.',async function(){
-    try{await api('/api/accounts/'+id,{method:'DELETE'});toast('تم الحذف');if(onDone)onDone();}
-    catch(e){toast(e.message,'err');}
-  });
-}
-
-/* ═══════════════════════════════════════════
-   PAGE: ANALYTICS
-═══════════════════════════════════════════ */
-async function pageAnalytics(){
-  var el=document.getElementById('content');
-  el.innerHTML=
-    '<div class="page-hdr"><div><div class="page-title">📈 التحليلات</div><div class="page-sub">رؤى متعمقة عن أداء النظام</div></div>'+
-    '<button class="btn btn-ghost btn-sm" onclick="toast(\'تصدير PDF قيد التطوير\',\'warn\')">⬇️ تصدير</button></div>'+
-    '<div class="tabs" id="an-tabs">'+
-    '<button class="tab active" data-t="ov">📊 نظرة عامة</button>'+
-    '<button class="tab" data-t="grp">👥 المجموعات</button>'+
-    '<button class="tab" data-t="acc">📱 الحسابات</button>'+
-    '<button class="tab" data-t="ads">📢 الإعلانات</button>'+
-    '<button class="tab" data-t="prot">🛡 الحماية</button>'+
-    '</div>'+
-    '<div id="an-c"><div class="empty"><div class="spin"></div></div></div>';
-
-  document.querySelectorAll('#an-tabs .tab').forEach(function(t){
-    t.addEventListener('click',function(){
-      document.querySelectorAll('#an-tabs .tab').forEach(function(x){x.classList.remove('active');});
-      t.classList.add('active');
-      loadAnTab(t.dataset.t);
-    });
-  });
-  loadAnTab('ov');
-}
-
-async function loadAnTab(tab){
-  var c=document.getElementById('an-c');
-  c.innerHTML='<div class="empty"><div class="spin"></div></div>';
-  try{
-    var results=await Promise.all([
-      api('/api/stats/overview'),api('/api/stats/messages_timeline'),
-      api('/api/stats/groups_by_category'),api('/api/stats/protection_bots'),
-      api('/api/messages?limit=200'),api('/api/templates'),api('/api/accounts'),
-    ]);
-    var s=results[0],tl=results[1],cats=results[2],bots=results[3],msgs=results[4],tmpls=results[5],accs=results[6];
-    var msg=s.messages||{},grp=s.groups||{},acc=s.accounts||{};
-    var clrs=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-
-    if(tab==='ov'){
-      c.innerHTML=
-        '<div class="kpi-grid">'+
-        kpiCard('📨','إجمالي الرسائل',fmt(msg.total||0),'info','','#3b82f6')+
-        kpiCard('✅','معدل النجاح',(msg.success_rate||0)+'%','up','','#22c55e')+
-        kpiCard('🗑','محذوفة',fmt(msg.deleted||0),'down','','#ef4444')+
-        kpiCard('👥','إجمالي المجموعات',fmt(grp.total||0),'info','','#8b5cf6')+
-        '</div>'+
-        '<div class="grid2">'+
-        '<div class="card"><div class="sec-title">📈 الرسائل اليومية (آخر 30 يوم)</div>'+barChart(tl,'date','count','#3b82f6')+'</div>'+
-        '<div class="card"><div class="sec-title">🏷 المجموعات حسب الفئة</div>'+
-        '<div style="display:flex;align-items:center;gap:16px">'+
-        donutSvg(cats.length?cats.map(function(c2,i){return {v:c2.count,c:clrs[i%clrs.length]};}):
-          [{v:1,c:'#374151'}],110)+
-        '<div style="flex:1">'+cats.slice(0,5).map(function(c2,i){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px">'+
-            '<div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:2px;background:'+clrs[i%clrs.length]+'"></div>'+
-            '<span>'+escHtml(c2.category)+'</span></div>'+
-            '<strong style="color:var(--white)">'+c2.count+'</strong></div>';
-        }).join('')+'</div></div></div>'+
-        '</div>'+
-        '<div class="card"><div class="sec-title">📊 ملخص الأداء</div>'+
-        '<div class="grid4">'+
-        [['معدل التسليم',(msg.success_rate||0)+'%','var(--accent2)'],
-         ['انضمام المجموعات',pct(grp.joined,grp.total)+'%','var(--accent)'],
-         ['مجموعة مكتشفة',fmt(grp.total||0),'var(--purple)'],
-         ['حساب نشط',fmt(acc.active||0),'var(--warn)']].map(function(x){
-          return '<div style="text-align:center;padding:12px"><div style="font-size:26px;font-weight:900;color:'+x[2]+'">'+x[1]+'</div><div style="font-size:12px;color:var(--muted);margin-top:4px">'+x[0]+'</div></div>';
-        }).join('')+'</div></div>';
-    }
-    else if(tab==='grp'){
-      var botTot=bots.reduce(function(s,b){return s+b.count;},0)||1;
-      c.innerHTML=
-        '<div class="card"><div class="sec-title">👥 توزيع حالة المجموعات</div>'+
-        '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">'+
-        donutSvg([{v:grp.joined||0,c:'#3b82f6'},{v:Math.max(0,(grp.total||0)-(grp.joined||0)),c:'#8b5cf6'}].filter(function(x){return x.v>0;}),110)+
-        '<div style="flex:1;min-width:160px">'+
-        [['منضم حالياً',grp.joined||0,'#3b82f6'],['تم المغادرة',Math.max(0,(grp.total||0)-(grp.joined||0)),'#8b5cf6'],['إجمالي',grp.total||0,'#374151']].map(function(x){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px"><span style="color:var(--muted)">'+x[0]+'</span>'+
-            '<div style="display:flex;align-items:center;gap:8px">'+prog(x[1],grp.total||1,x[2])+'<strong style="color:var(--white);min-width:40px">'+fmt(x[1])+'</strong></div></div>';
-        }).join('')+'</div></div></div>'+
-        '<div class="grid2">'+
-        '<div class="card"><div class="sec-title">🏆 أفضل الفئات</div>'+
-        cats.map(function(c2,i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<span style="width:22px;height:22px;border-radius:6px;background:'+clrs[i%clrs.length]+';display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">'+(i+1)+'</span>'+
-          '<span style="flex:1;font-size:13px">'+escHtml(c2.category)+'</span>'+
-          '<strong style="color:var(--white)">'+fmt(c2.count)+'</strong></div>';}).join('')+
-        '</div>'+
-        '<div class="card"><div class="sec-title">🛡 بوتات الحماية</div>'+
-        (bots.length?bots.map(function(b){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<span style="font-size:16px">🛡</span><span style="flex:1;font-size:13px">'+escHtml(b.bot||'غير معروف')+'</span>'+
-          prog(b.count,botTot,'var(--danger)')+
-          '<strong style="color:var(--white);margin-right:6px">'+b.count+'</strong></div>';}).join(''):
-          '<div class="empty" style="padding:16px;font-size:12px">لم تُكتشف بوتات حماية</div>')+
-        '</div></div>';
-    }
-    else if(tab==='acc'){
-      var actN=accs.filter(function(a){return a.status==='active';}).length;
-      var banN=accs.filter(function(a){return a.status==='banned';}).length;
-      var fldN=accs.filter(function(a){return a.status==='flood';}).length;
-      var pendN=accs.filter(function(a){return a.status==='pending';}).length;
-      c.innerHTML=
-        '<div class="grid2">'+
-        '<div class="card"><div class="sec-title">📊 توزيع الحالات</div>'+
-        '<div style="display:flex;align-items:center;gap:16px">'+
-        donutSvg([{v:actN,c:'#22c55e'},{v:banN,c:'#ef4444'},{v:fldN,c:'#f59e0b'},{v:pendN,c:'#374151'}].filter(function(x){return x.v>0;}),100)+
-        '<div>'+[['نشط',actN,'green'],['محظور',banN,'red'],['محدود',fldN,'yellow'],['بانتظار',pendN,'gray']].map(function(x){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:16px">'+badge(x[0],x[2])+'<strong style="color:var(--white)">'+x[1]+'</strong></div>';
-        }).join('')+'</div></div></div>'+
-        '<div class="card"><div class="sec-title">🏆 أفضل الحسابات (درجة الصحة)</div>'+
-        accs.slice().sort(function(a,b){return (b.health_score||0)-(a.health_score||0);}).slice(0,5).map(function(a,i){
-          var h=Math.round(a.health_score||0);
-          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
-            '<span style="color:var(--muted);font-size:11px;width:16px">'+(i+1)+'</span>'+
-            '<span style="flex:1;font-size:12px;direction:ltr">'+escHtml(a.phone)+'</span>'+
-            prog(h,100,hc(h))+
-            '<span style="font-weight:700;color:'+hc(h)+';font-size:12px">'+h+'%</span></div>';
-        }).join('')||'<div class="empty" style="padding:16px">لا توجد حسابات</div>'+
-        '</div></div>'+
-        '<div class="card"><div class="sec-title">📱 جدول الحسابات الكامل</div>'+
-        '<div class="tbl-wrap"><table><thead><tr><th>الهاتف</th><th>الحالة</th><th>درجة الصحة</th><th>آخر نشاط</th></tr></thead>'+
-        '<tbody>'+accs.map(function(a){
-          var h=Math.round(a.health_score||0);var SC={active:'green',banned:'red',flood:'yellow',pending:'gray'};
-          return '<tr><td style="direction:ltr;text-align:right;font-weight:700;font-size:12px">'+escHtml(a.phone)+'</td>'+
-            '<td>'+badge({active:'نشط',banned:'محظور',flood:'محدود',pending:'بانتظار'}[a.status]||a.status,SC[a.status]||'gray')+'</td>'+
-            '<td><div class="health-bar"><div class="prog" style="width:70px"><div class="prog-fill" style="width:'+h+'%;background:'+hc(h)+'"></div></div><span style="font-size:12px;font-weight:700;color:'+hc(h)+'">'+h+'%</span></div></td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+ago(a.last_active)+'</td></tr>';
-        }).join('')||'<tr><td colspan="4"><div class="empty">لا توجد حسابات</div></td></tr>'+'</tbody></table></div></div>';
-    }
-    else if(tab==='ads'){
-      var byS=tmpls.slice().sort(function(a,b){return (b.success_score||0)-(a.success_score||0);});
-      var byR=tmpls.slice().sort(function(a,b){return (b.ban_risk||0)-(a.ban_risk||0);});
-      c.innerHTML=
-        '<div class="grid2">'+
-        '<div class="card"><div class="sec-title">🏆 أفضل الصيغ (نسبة النجاح)</div>'+
-        byS.slice(0,5).map(function(t,i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<span style="color:var(--muted);width:18px;font-weight:800">'+(i+1)+'</span>'+
-          '<span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(t.name)+'</span>'+
-          '<span style="font-weight:800;color:var(--accent2)">'+(t.success_score||0)+'%</span></div>';}).join('')||
-        '<div class="empty" style="padding:16px">لا توجد صيغ</div>'+
-        '</div>'+
-        '<div class="card"><div class="sec-title">⚠️ أخطر الصيغ (نسبة الحذف)</div>'+
-        byR.slice(0,5).map(function(t,i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<span style="color:var(--muted);width:18px;font-weight:800">'+(i+1)+'</span>'+
-          '<span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(t.name)+'</span>'+
-          '<span style="font-weight:800;color:var(--danger)">'+(t.ban_risk||0)+'%</span></div>';}).join('')||
-        '<div class="empty" style="padding:16px">لا توجد صيغ</div>'+
-        '</div></div>'+
-        '<div class="card"><div class="sec-title">📋 مقارنة أداء الصيغ</div>'+
-        '<div class="tbl-wrap"><table><thead><tr><th>الصيغة</th><th>التشعبات</th><th>النجاح</th><th>الخطر</th><th>التقييم</th></tr></thead>'+
-        '<tbody>'+tmpls.map(function(t){
-          var sc=t.success_score||0,rk=t.ban_risk||0;
-          var rt=sc>70&&rk<30?'ممتاز':sc>50&&rk<50?'جيد':sc>30?'مقبول':'ضعيف';
-          var rb={ممتاز:'green',جيد:'blue',مقبول:'yellow',ضعيف:'red'}[rt];
-          return '<tr><td class="td-name">'+escHtml(t.name)+'</td>'+
-            '<td style="text-align:center;font-weight:700;color:var(--purple)">'+(t.variations||[]).length+'</td>'+
-            '<td><div style="display:flex;align-items:center;gap:5px">'+prog(sc,100,'var(--accent2)')+'<span style="font-size:12px;font-weight:700;color:var(--accent2)">'+sc+'%</span></div></td>'+
-            '<td><div style="display:flex;align-items:center;gap:5px">'+prog(rk,100,'var(--danger)')+'<span style="font-size:12px;font-weight:700;color:var(--danger)">'+rk+'%</span></div></td>'+
-            '<td>'+badge(rt,rb)+'</td></tr>';
-        }).join('')||'<tr><td colspan="5"><div class="empty">لا توجد صيغ</div></td></tr>'+'</tbody></table></div></div>'+
-        '<div class="card"><div class="sec-title">📨 آخر الرسائل</div>'+
-        '<div class="tbl-wrap"><table><thead><tr><th>المحتوى</th><th>الحالة</th><th>الوقت</th><th>سبب الحذف</th></tr></thead>'+
-        '<tbody>'+msgs.slice(0,20).map(function(m){
-          return '<tr><td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(m.content||'')+'</td>'+
-            '<td>'+badge(m.status==='sent'?'ناجحة':m.status==='deleted'?'محذوفة':'خطأ',m.status==='sent'?'green':m.status==='deleted'?'red':'yellow')+'</td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+ago(m.sent_at)+'</td>'+
-            '<td style="font-size:11px;color:var(--muted)">'+(m.deletion_reason||'—')+'</td></tr>';
-        }).join('')||'<tr><td colspan="4"><div class="empty">لا توجد رسائل</div></td></tr>'+'</tbody></table></div></div>';
-    }
-    else if(tab==='prot'){
-      var botTot2=bots.reduce(function(s,b){return s+b.count;},0)||1;
-      c.innerHTML=
-        '<div class="grid2">'+
-        '<div class="card"><div class="sec-title">🛡 توزيع بوتات الحماية</div>'+
-        '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">'+
-        donutSvg(bots.length?bots.map(function(b,i){return {v:b.count,c:clrs[i%clrs.length]};}):
-          [{v:1,c:'#374151'}],110)+
-        '<div style="flex:1;min-width:140px">'+bots.map(function(b,i){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px">'+
-            '<div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:'+clrs[i%clrs.length]+'"></div><span>'+escHtml(b.bot||'غير معروف')+'</span></div>'+
-            '<div style="display:flex;align-items:center;gap:8px"><strong style="color:var(--white)">'+b.count+'</strong><span style="font-size:10px;color:var(--muted)">'+Math.round(b.count/botTot2*100)+'%</span></div></div>';
-        }).join('')+(bots.length?'':`<div class="empty" style="padding:16px;font-size:12px">لم تُكتشف بوتات</div>`)+
-        '</div></div></div>'+
-        '<div class="card"><div class="sec-title">📋 البوتات المعروفة ومعدل الحذف</div>'+
-        [['جبل','حذف فوري < 3 ث','red'],['الماسة','حذف 5-15 ث','yellow'],['شيلد','حذف متغير','purple'],['حماية بشرية','غير منتظم','blue']].map(function(b){
-          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--card2);border-radius:8px;margin-bottom:6px">'+
-            '<div><div style="font-weight:700;color:var(--white);font-size:13px">'+b[0]+'</div><div style="font-size:11px;color:var(--muted);margin-top:2px">⏱ '+b[1]+'</div></div>'+
-            badge(b[0],b[2])+'</div>';
-        }).join('')+
-        '</div></div>'+
-        '<div class="card"><div class="sec-title">🔍 استراتيجيات التخفي المفعّلة</div>'+
-        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">'+
-        [['⏱','التأخير العشوائي','3-15 دقيقة بين كل رسالة'],['🔄','تدوير الحسابات','توزيع المجموعات تلقائياً'],
-         ['📝','تنويع النصوص','50+ صيغة لكل إعلان'],['🌐','البروكسيات','IP مختلف لكل حساب'],
-         ['👤','المحاكاة البشرية','قراءة + تصفح قبل الإرسال'],['📊','الحد اليومي','أقصى 100 رسالة/حساب']].map(function(x){
-          return '<div class="card-sm" style="margin-bottom:0">'+
-            '<div style="font-size:20px;margin-bottom:5px">'+x[0]+'</div>'+
-            '<div style="font-weight:700;color:var(--white);font-size:12px;margin-bottom:3px">'+x[1]+'</div>'+
-            '<div style="font-size:11px;color:var(--muted)">'+x[2]+'</div>'+
-            '<div style="margin-top:6px">'+badge('مفعّل','green')+'</div></div>';
-        }).join('')+'</div></div>';
-    }
-  }catch(e){document.getElementById('an-c').innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-}
-
-/* ═══════════════════════════════════════════
-   PAGE: AUDIT LOG
-═══════════════════════════════════════════ */
-async function pageAudit(){
-  var el=document.getElementById('content');
-  el.innerHTML=
-    '<div class="page-hdr"><div><div class="page-title">📋 سجل الأحداث</div><div class="page-sub" id="aud-sub">جارٍ التحميل...</div></div>'+
-    '<div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" id="aud-exp">⬇️ تصدير</button>'+
-    '<button class="btn btn-ghost btn-sm" id="aud-ref">🔄 تحديث</button></div></div>'+
-    '<div id="aud-kpi" style="margin-bottom:10px"></div>'+
-    '<div class="filter-row">'+
-    '<select class="f-inp" id="af-agt"><option value="">كل الوكلاء</option>'+
-    ['Orchestrator','Planner','Executor','Monitor','Analyzer','System'].map(function(a){return '<option>'+a+'</option>';}).join('')+
-    '</select>'+
-    '<input class="f-inp" id="af-s" placeholder="🔍 بحث..." style="flex:1;min-width:150px">'+
-    '<button class="btn btn-ghost btn-sm" id="aud-go">تطبيق</button>'+
-    '</div>'+
-    '<div id="aud-tbl"><div class="empty"><div class="spin"></div></div></div>';
-
-  var allLogs=[];
-
-  async function load(){
-    try{
-      allLogs=await api('/api/audit-log?limit=500');
-      render();
-    }catch(e){document.getElementById('aud-tbl').innerHTML='<div class="card" style="color:var(--danger)">❌ '+e.message+'</div>';}
-  }
-
-  function render(){
-    var tbl=document.getElementById('aud-tbl');
-    var agt=document.getElementById('af-agt').value||'';
-    var srch=document.getElementById('af-s').value.toLowerCase()||'';
-    var d=allLogs.slice();
-    if(agt)d=d.filter(function(l){return l.agent===agt;});
-    if(srch)d=d.filter(function(l){return (l.action||'').toLowerCase().includes(srch)||JSON.stringify(l.details||{}).toLowerCase().includes(srch);});
-    document.getElementById('aud-sub').textContent=d.length+' حدث';
-    var today=new Date().toDateString();
-    var todayL=allLogs.filter(function(l){return new Date(l.created_at).toDateString()===today;});
-    var errs=todayL.filter(function(l){return (l.action||'').toLowerCase().includes('error')||(l.action||'').toLowerCase().includes('fail');});
-    document.getElementById('aud-kpi').innerHTML=
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-      [['اليوم',todayL.length,'blue'],['أخطاء',errs.length,'red'],['نجاح',todayL.length-errs.length,'green'],['الكل',allLogs.length,'gray']].map(function(x){
-        return '<div class="card-sm" style="display:inline-flex;align-items:center;gap:8px">'+badge(x[0],x[2])+'<strong style="color:var(--white)">'+fmt(x[1])+'</strong></div>';
-      }).join('')+'</div>';
-    if(!d.length){tbl.innerHTML='<div class="empty"><div class="empty-ico">📋</div>لا توجد سجلات</div>';return;}
-    var AC={Orchestrator:'purple',Planner:'blue',Executor:'green',Monitor:'yellow',Analyzer:'teal',System:'gray'};
-    tbl.innerHTML='<div class="tbl-wrap"><table>'+
-      '<thead><tr><th>الوكيل</th><th>الإجراء</th><th>التفاصيل</th><th>الوقت</th></tr></thead>'+
-      '<tbody>'+d.map(function(l){
-        return '<tr>'+
-          '<td>'+badge(l.agent,AC[l.agent]||'gray')+'</td>'+
-          '<td style="font-size:13px">'+escHtml(l.action||'—')+'</td>'+
-          '<td style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(JSON.stringify(l.details||{}))+'">'+escHtml(JSON.stringify(l.details||{}).slice(0,80))+'</td>'+
-          '<td style="font-size:11px;color:var(--muted);white-space:nowrap">'+ago(l.created_at)+'</td></tr>';
-      }).join('')+'</tbody></table></div>';
-  }
-
-  document.getElementById('aud-ref').addEventListener('click',load);
-  document.getElementById('aud-go').addEventListener('click',render);
-  document.getElementById('af-agt').addEventListener('change',render);
-  document.getElementById('af-s').addEventListener('input',function(){setTimeout(render,400);});
-  document.getElementById('aud-exp').addEventListener('click',function(){
-    if(!allLogs.length)return toast('لا توجد سجلات','warn');
-    exportCsv([['ID','الوكيل','الإجراء','التفاصيل','الوقت']].concat(
-      allLogs.map(function(l){return [l.id,l.agent,l.action,JSON.stringify(l.details||{}),l.created_at];})),
-    'audit_log.csv');
-  });
-  load();
-}
-
-/* ═══════════════════════════════════════════
-   PAGE: SETTINGS
-═══════════════════════════════════════════ */
-function pageSettings(){
-  document.getElementById('content').innerHTML=
-    '<div class="page-hdr"><div class="page-title">⚙️ الإعدادات</div></div>'+
-    '<div class="grid2">'+
-    '<div>'+
-    '<div class="card"><div class="sec-title">🤖 نماذج الذكاء الاصطناعي</div>'+
-    [['القائد','Google Gemini 1.5 Flash'],['المخطط','Google Gemini 1.5 Flash'],
-     ['المنفذ','Groq – Llama 3'],['المراقب','Groq – Llama 3'],['المحلل','DeepSeek'],['احتياطي','OpenAI / Anthropic']].map(function(x){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--card2);border-radius:7px;border:1px solid var(--border);margin-bottom:6px">'+
-        '<span style="color:var(--muted);font-size:12px">'+x[0]+'</span><span style="color:var(--white);font-weight:700;font-size:12px">'+x[1]+'</span></div>';
-    }).join('')+'</div>'+
-    '<div class="card"><div class="sec-title">🌐 إعدادات الشبكة</div>'+
-    [['الحد الأقصى للحسابات','50 حساب'],['تأخير أدنى','3 دقائق'],['تأخير أقصى','15 دقيقة'],['فحص الحذف كل','120 ثانية']].map(function(x){
-      return '<div style="display:flex;justify-content:space-between;padding:9px 12px;background:var(--card2);border-radius:7px;border:1px solid var(--border);margin-bottom:6px">'+
-        '<span style="color:var(--muted);font-size:12px">'+x[0]+'</span><span style="color:var(--white);font-weight:700;font-size:12px">'+x[1]+'</span></div>';
-    }).join('')+'</div></div>'+
-    '<div>'+
-    '<div class="card"><div class="sec-title">🔗 روابط سريعة</div>'+
-    '<div style="display:flex;flex-direction:column;gap:6px">'+
-    [['📖 API Docs','/docs'],['📊 Stats','/api/stats/overview'],['👥 Groups API','/api/groups'],
-     ['👤 Accounts API','/api/accounts'],['📝 Templates API','/api/templates'],['📋 Audit API','/api/audit-log?limit=10']].map(function(x){
-      return '<a href="'+x[1]+'" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text);text-decoration:none;font-size:12px;transition:border-color .15s" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'+x[0]+'</a>';
-    }).join('')+'</div></div>'+
-    '<div class="card"><div class="sec-title">🛡 بوتات الحماية المعروفة</div>'+
-    [['جبل','@Jabal_bot','حذف فوري < 3 ث','red'],['الماسة','@AlmasaBot','حذف 5-15 ث','yellow'],['شيلد','@GroupShield','حذف متغير','purple']].map(function(b){
-      return '<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><strong style="color:var(--white)">'+b[0]+'</strong>'+badge(b[0],b[3])+'</div>'+
-        '<div style="font-size:11px;color:var(--muted)">'+b[1]+'</div>'+
-        '<div style="font-size:11px;color:var(--warn);margin-top:2px">⏱ '+b[2]+'</div></div>';
-    }).join('')+'</div></div></div>';
-}
-
-/* ═══════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════ */
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function escJs(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
-function exportCsv(rows,name){
-  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=name;a.click();
-  toast('✅ تم التصدير');
-}
-
-/* ═══════════════════════════════════════════
-   COPILOT
-═══════════════════════════════════════════ */
-var cmdHist=[],cmdIdx=-1;
-
-document.getElementById('cp-btn').addEventListener('click',runCopilot);
-document.getElementById('cp-input').addEventListener('keydown',function(e){
-  if(e.key==='Enter'){runCopilot();}
-  else if(e.key==='ArrowUp'){if(cmdHist.length){cmdIdx=Math.min(cmdIdx+1,cmdHist.length-1);e.target.value=cmdHist[cmdIdx];}}
-  else if(e.key==='ArrowDown'){if(cmdIdx>0){cmdIdx--;e.target.value=cmdHist[cmdIdx];}else{cmdIdx=-1;e.target.value='';}}
-});
-
-async function runCopilot(){
-  var inp=document.getElementById('cp-input');var cmd=inp.value.trim();if(!cmd)return;
-  cmdHist.unshift(cmd);if(cmdHist.length>20)cmdHist.pop();cmdIdx=-1;
-  var btn=document.getElementById('cp-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
-  addNotif('info','⚡ تنفيذ: '+cmd.slice(0,40)+'...','المساعد يعالج طلبك');
-  try{
-    var r=await fetch('/api/copilot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});
-    if(r.ok){toast('🤖 المساعد يعالج طلبك...');inp.value='';}
-    else{var t=await r.text().catch(function(){return '';});toast('خطأ: '+t.slice(0,100),'err');}
-  }catch(e){toast(e.message,'err');}
-  finally{btn.disabled=false;btn.textContent='⚡ تنفيذ';}
-}
-
-/* ═══════════════════════════════════════════
-   WEBSOCKET
-═══════════════════════════════════════════ */
-function connectWS(){
-  var proto=location.protocol==='https:'?'wss':'ws';
-  var ws=new WebSocket(proto+'://'+location.host+'/ws');
-  var dot=document.getElementById('ws-dot'),lbl=document.getElementById('ws-lbl');
-  ws.onopen=function(){dot.className='ws-dot on';lbl.textContent='متصل';};
-  ws.onclose=function(){dot.className='ws-dot off';lbl.textContent='غير متصل';setTimeout(connectWS,5000);};
-  ws.onmessage=function(e){
-    try{
-      var d=JSON.parse(e.data);if(d.type==='ping')return;
-      var mp={copilot_result:'🤖 اكتمل المساعد',campaign_done:'🚀 اكتملت الحملة',account_added:'✅ تمت إضافة حساب',group_joined:'👥 تم الانضمام',message_sent:'📨 تم الإرسال',account_banned:'🚫 تم حظر حساب',bot_detected:'🛡 اكتُشف بوت حماية'};
-      var ntp={copilot_result:'success',campaign_done:'success',account_added:'success',group_joined:'info',message_sent:'info',account_banned:'ban',bot_detected:'bot'};
-      if(mp[d.type]){toast(mp[d.type]);addNotif(ntp[d.type]||'info',mp[d.type],'');}
-    }catch(err){}
   };
 }
-connectWS();
 
-/* ═══════════════════════════════════════════
-   ROUTER + NAV
-═══════════════════════════════════════════ */
-var PAGES=[
-  {id:'dashboard',icon:'📊',label:'لوحة التحكم',fn:pageDashboard},
-  {id:'groups',icon:'👥',label:'المجموعات',fn:pageGroups},
-  {id:'campaigns',icon:'🚀',label:'الحملات',fn:pageCampaigns},
-  {id:'analytics',icon:'📈',label:'التحليلات',fn:pageAnalytics},
-  {id:'accounts',icon:'📱',label:'الحسابات',fn:pageAccounts},
-  {id:'templates',icon:'📝',label:'صيغ الإعلانات',fn:pageTemplates},
-  {id:'audit',icon:'📋',label:'سجل الأحداث',fn:pageAudit},
-  {id:'settings',icon:'⚙️',label:'الإعدادات',fn:pageSettings},
-];
-
-var currentPage='dashboard';
-
-function navigate(id){
-  currentPage=id;
-  var pg=PAGES.find(function(p){return p.id===id;})||PAGES[0];
-  document.getElementById('topbar-title').textContent=pg.icon+' '+pg.label;
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.dataset.id===id);});
-  pg.fn();
+// ═══════════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════════
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(()=>({detail: r.statusText}));
+    throw new Error(err.detail || r.statusText);
+  }
+  return r.json();
 }
 
-var nav=document.getElementById('nav');
-PAGES.forEach(function(p){
-  var btn=document.createElement('button');btn.className='nav-btn';btn.dataset.id=p.id;
-  btn.innerHTML='<span class="nav-icon">'+p.icon+'</span><span class="nav-lbl">'+p.label+'</span>';
-  btn.addEventListener('click',function(){navigate(p.id);});
-  nav.appendChild(btn);
-});
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
 
-document.getElementById('sidebar-toggle').addEventListener('click',function(){
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const pageTitles = {
+  dashboard:'لوحة التحكم', groups:'المجموعات الموحدة',
+  campaigns:'الحملات الإعلانية', templates:'صيغ الإعلانات',
+  accounts:'الحسابات', proxies:'البروكسيات',
+  analytics:'التحليلات', audit:'سجل الأحداث', settings:'الإعدادات'
+};
+function navigate(page) {
+  state.page = page;
+  document.getElementById('topbar-title').textContent = pageTitles[page] || page;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.getAttribute('onclick') === `navigate('${page}')`) b.classList.add('active');
+  });
+  // destroy charts
+  Object.values(state.charts).forEach(c => { try { c.destroy(); } catch{} });
+  state.charts = {};
+  const fn = { dashboard:renderDashboard, groups:renderGroups, campaigns:renderCampaigns,
+    templates:renderTemplates, accounts:renderAccounts, proxies:renderProxies,
+    analytics:renderAnalytics, audit:renderAudit, settings:renderSettings }[page];
+  if (fn) fn();
+}
+
+function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
-});
+}
 
-setInterval(function(){if(currentPage==='dashboard')navigate('dashboard');},30000);
-navigate('dashboard');
+// ═══════════════════════════════════════════════════════════
+// COPILOT
+// ═══════════════════════════════════════════════════════════
+function cpKeydown(e) { if (e.key === 'Enter') sendCopilot(); }
+async function sendCopilot() {
+  const inp = document.getElementById('cp-input');
+  const cmd = inp.value.trim();
+  if (!cmd) return;
+  inp.value = '';
+  document.getElementById('cp-status').style.display = 'flex';
+  try { await api('/api/copilot', 'POST', {command: cmd}); }
+  catch(e) { toast('خطأ: ' + e.message, 'error'); document.getElementById('cp-status').style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+const statusBadge = s => {
+  const m = {active:'badge-green',pending:'badge-yellow',banned:'badge-red',flood:'badge-orange',draft:'badge-gray',running:'badge-blue',paused:'badge-yellow',done:'badge-green'};
+  const l = {active:'نشط',pending:'بانتظار',banned:'محظور',flood:'محدود',draft:'مسودة',running:'يعمل',paused:'موقوف',done:'منتهية'};
+  return `<span class="badge ${m[s]||'badge-gray'}">${l[s]||s}</span>`;
+};
+const protBadge = p => {
+  if (!p) return '<span class="badge badge-green">لا يوجد</span>';
+  const m = {'جبل':'badge-red','الماسة':'badge-purple','سريع(<30ث)':'badge-red','بطيء':'badge-yellow'};
+  return `<span class="badge ${m[p]||'badge-orange'}">⚡ ${p}</span>`;
+};
+const actBadge = a => {
+  const m = {high:'badge-green',medium:'badge-yellow',low:'badge-orange',dead:'badge-red',unknown:'badge-gray'};
+  const l = {high:'عالي',medium:'متوسط',low:'منخفض',dead:'ميت',unknown:'غير معروف'};
+  return `<span class="badge ${m[a]||'badge-gray'}">${l[a]||a}</span>`;
+};
+const catBadge = c => c ? `<span class="badge badge-blue">${c}</span>` : '<span class="badge badge-gray">—</span>';
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('ar');
+const pct = (a,b) => b ? Math.round(a/b*100)+'%' : '0%';
+function mkChart(id, type, labels, datasets, opts={}) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  if (state.charts[id]) { state.charts[id].destroy(); }
+  const dark = {color:'#5a7291', grid:{color:'rgba(30,45,71,.6)'}};
+  const cfg = { type, data:{labels, datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#5a7291',font:{family:'Cairo',size:11}},...(opts.legend||{})}},
+      scales: type!=='pie'&&type!=='doughnut' ? {x:{ticks:dark,grid:dark},y:{ticks:dark,grid:dark}} : undefined,
+      ...opts.extra} };
+  state.charts[id] = new Chart(ctx, cfg);
+  return state.charts[id];
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+async function renderDashboard() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div> جاري التحميل...</div>`;
+  const [ov, timeline, byCat, byProt] = await Promise.all([
+    api('/api/stats/overview'), api('/api/stats/messages_timeline?days=7'),
+    api('/api/stats/groups_by_category'), api('/api/stats/protection_bots')
+  ]);
+  const sr = ov.messages.success_rate;
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">🏠 لوحة التحكم</div><div class="page-sub">نظرة عامة على النظام</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">+ إضافة حساب</button>
+      <button class="btn btn-success btn-sm" onclick="showCreateCampaign()">+ حملة جديدة</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderDashboard()">🔄 تحديث</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-glow" style="background:var(--accent)"></div><div class="kpi-icon">📱</div><div class="kpi-val">${ov.accounts.total}</div><div class="kpi-lbl">إجمالي الحسابات</div><div class="kpi-chg up">✅ ${ov.accounts.active} نشط</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--danger)"></div><div class="kpi-icon">🚫</div><div class="kpi-val">${ov.accounts.banned}</div><div class="kpi-lbl">حسابات محظورة</div><div class="kpi-chg ${ov.accounts.banned>0?'down':'up'}">${ov.accounts.flood} محدود مؤقتاً</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--purple)"></div><div class="kpi-icon">👥</div><div class="kpi-val">${fmt(ov.groups.total)}</div><div class="kpi-lbl">إجمالي المجموعات</div><div class="kpi-chg info">${fmt(ov.groups.joined)} منضم</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">🚪</div><div class="kpi-val">${fmt(ov.groups.blacklisted)}</div><div class="kpi-lbl">قائمة سوداء</div><div class="kpi-chg warn">${ov.groups.banned} محظور فيها</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--accent2)"></div><div class="kpi-icon">📨</div><div class="kpi-val">${fmt(ov.messages.today)}</div><div class="kpi-lbl">رسائل اليوم</div><div class="kpi-chg info">${fmt(ov.messages.total)} إجمالي</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:${sr>=80?'var(--accent2)':'var(--danger)'}"></div><div class="kpi-icon">📈</div><div class="kpi-val">${sr}%</div><div class="kpi-lbl">معدل النجاح</div><div class="kpi-chg ${sr>=80?'up':'down'}">${fmt(ov.messages.deleted)} محذوفة</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">📢</div><div class="kpi-val">${ov.campaigns.total}</div><div class="kpi-lbl">الحملات</div><div class="kpi-chg info">${ov.campaigns.running} تعمل الآن</div></div>
+    <div class="kpi"><div class="kpi-glow" style="background:var(--teal)"></div><div class="kpi-icon">🌐</div><div class="kpi-val">${ov.proxies.active}</div><div class="kpi-lbl">بروكسيات نشطة</div><div class="kpi-chg info">من ${ov.proxies.total} إجمالي</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:800;color:var(--white)">📉 الرسائل (7 أيام)</div>
+      </div>
+      <div class="chart-wrap"><canvas id="ch-timeline"></canvas></div>
+    </div>
+    <div class="grid2" style="gap:12px">
+      <div class="card" style="margin-bottom:0">
+        <div style="font-weight:800;color:var(--white);margin-bottom:10px">📂 المجموعات بالتصنيف</div>
+        <div class="chart-wrap"><canvas id="ch-cat"></canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div style="font-weight:800;color:var(--white);margin-bottom:10px">🛡️ بوتات الحماية</div>
+        <div class="chart-wrap"><canvas id="ch-prot"></canvas></div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  // Charts
+  const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316'];
+  mkChart('ch-timeline','bar',
+    timeline.map(r=>r.date.slice(5)),
+    [{label:'مرسلة',data:timeline.map(r=>r.total),backgroundColor:'rgba(59,130,246,.5)',borderColor:'#3b82f6',borderWidth:1.5},
+     {label:'محذوفة',data:timeline.map(r=>r.deleted),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1.5}],
+    {legend:{display:true}}
+  );
+  mkChart('ch-cat','doughnut',byCat.map(r=>r.category),
+    [{data:byCat.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
+  mkChart('ch-prot','doughnut',byProt.map(r=>r.bot),
+    [{data:byProt.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GROUPS
+// ═══════════════════════════════════════════════════════════
+async function renderGroups(filters={}) {
+  const content = document.getElementById('content');
+  content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div> تحميل...</div>`;
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.is_joined !== undefined) params.set('is_joined', filters.is_joined);
+  if (filters.protection_bot) params.set('protection_bot', filters.protection_bot);
+  if (filters.activity_level) params.set('activity_level', filters.activity_level);
+  const groups = await api('/api/groups?' + params.toString());
+
+  const joined = groups.filter(g=>g.is_joined).length;
+  const banned = groups.filter(g=>g.is_banned).length;
+  const black  = groups.filter(g=>g.is_blacklisted).length;
+
+  content.innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">👥 المجموعات الموحدة</div><div class="page-sub">${fmt(groups.length)} مجموعة</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderGroups()">🔄</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr))">
+    <div class="kpi"><div class="kpi-val">${fmt(groups.length)}</div><div class="kpi-lbl">إجمالي</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${fmt(joined)}</div><div class="kpi-lbl">منضم</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--danger)">${fmt(banned)}</div><div class="kpi-lbl">محظور فيها</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">${fmt(black)}</div><div class="kpi-lbl">قائمة سوداء</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="filter-bar">
+      <input class="finput" id="g-search" placeholder="🔍 بحث بالاسم..." value="${filters.search||''}" oninput="debounceGroups()">
+      <select class="fselect" id="g-joined" onchange="applyGroupFilters()">
+        <option value="">الكل (الحالة)</option>
+        <option value="true" ${filters.is_joined==='true'?'selected':''}>منضم</option>
+        <option value="false" ${filters.is_joined==='false'?'selected':''}>مغادر</option>
+      </select>
+      <select class="fselect" id="g-cat" onchange="applyGroupFilters()">
+        <option value="">الكل (التصنيف)</option>
+        <option value="تعليمي">تعليمي</option><option value="تقني">تقني</option>
+        <option value="تجاري">تجاري</option><option value="ترفيهي">ترفيهي</option>
+        <option value="إخباري">إخباري</option><option value="عام">عام</option>
+      </select>
+      <select class="fselect" id="g-prot" onchange="applyGroupFilters()">
+        <option value="">الكل (الحماية)</option>
+        <option value="none">بدون حماية</option>
+        <option value="جبل">جبل</option><option value="الماسة">الماسة</option>
+      </select>
+      <select class="fselect" id="g-act" onchange="applyGroupFilters()">
+        <option value="">الكل (النشاط)</option>
+        <option value="high">عالي</option><option value="medium">متوسط</option>
+        <option value="low">منخفض</option><option value="dead">ميت</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>المجموعة</th><th>الأعضاء</th><th>الحالة</th>
+        <th>الحماية</th><th>التصنيف</th><th>النشاط</th>
+        <th>آخر إعلان</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody>
+      ${groups.length === 0 ? `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">👥</div><p>لا توجد مجموعات</p></div></td></tr>` :
+        groups.map(g=>`<tr>
+          <td>
+            <div class="td-name">${g.is_favorite?'⭐ ':''}${g.title}</div>
+            <div class="td-sub">${g.username?'@'+g.username:g.telegram_id}</div>
+          </td>
+          <td>${fmt(g.member_count)}</td>
+          <td>${g.is_blacklisted?'<span class="badge badge-red">🚫 محظور</span>':g.is_joined?'<span class="badge badge-green">✅ منضم</span>':'<span class="badge badge-gray">مغادر</span>'}</td>
+          <td>${protBadge(g.protection_bot)}</td>
+          <td>${catBadge(g.category)}</td>
+          <td>${actBadge(g.activity_level)}</td>
+          <td style="font-size:11px;color:var(--muted)">${g.last_ad_at?g.last_ad_at.slice(0,10):'—'}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn-icon" title="إرسال إعلان" onclick="showSendMsg(${g.id},'${g.title.replace(/'/g,"\\'")}',${g.account_id||'null'})">📨</button>
+              <button class="btn-icon" title="${g.is_favorite?'إزالة المفضلة':'إضافة للمفضلة'}" onclick="toggleFav(${g.id})">${g.is_favorite?'⭐':'☆'}</button>
+              <button class="btn-icon" title="تعديل" onclick="showEditGroup(${g.id})">✏️</button>
+              <button class="btn-icon" title="${g.is_blacklisted?'إزالة من القائمة السوداء':'إضافة للقائمة السوداء'}" onclick="toggleBlacklist(${g.id},${g.is_blacklisted})">${g.is_blacklisted?'♻️':'🚫'}</button>
+              ${g.is_joined?`<button class="btn-icon" title="مغادرة" onclick="leaveGroup(${g.id})">🚪</button>`:''}
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+let _gDebTimer;
+function debounceGroups() { clearTimeout(_gDebTimer); _gDebTimer = setTimeout(applyGroupFilters, 400); }
+function applyGroupFilters() {
+  renderGroups({
+    search: document.getElementById('g-search')?.value||'',
+    category: document.getElementById('g-cat')?.value||'',
+    is_joined: document.getElementById('g-joined')?.value||undefined,
+    protection_bot: document.getElementById('g-prot')?.value||'',
+    activity_level: document.getElementById('g-act')?.value||'',
+  });
+}
+async function toggleFav(id) {
+  await api('/api/groups/action','POST',{action:'favorite',group_id:id});
+  applyGroupFilters();
+}
+async function toggleBlacklist(id, current) {
+  await api('/api/groups/action','POST',{action:current?'unblacklist':'blacklist',group_id:id});
+  toast(current?'أُزيلت من القائمة السوداء':'أُضيفت للقائمة السوداء','info');
+  applyGroupFilters();
+}
+async function leaveGroup(id) {
+  if (!confirm('هل تريد مغادرة هذه المجموعة؟')) return;
+  try { await api('/api/groups/action','POST',{action:'leave',group_id:id}); toast('تمت المغادرة','success'); applyGroupFilters(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CAMPAIGNS
+// ═══════════════════════════════════════════════════════════
+async function renderCampaigns() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div>`;
+  const camps = await api('/api/campaigns');
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">📢 الحملات الإعلانية</div><div class="page-sub">${camps.length} حملة</div></div>
+    <button class="btn btn-primary btn-sm" onclick="showCreateCampaign()">+ حملة جديدة</button>
+  </div>
+  ${camps.length===0?`<div class="empty-state"><div class="es-icon">📢</div><p>لا توجد حملات بعد</p></div>`:`
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>الحملة</th><th>الحالة</th><th>القوالب</th><th>إرسال/محذوف</th><th>النجاح</th><th>تاريخ الإنشاء</th><th>إجراءات</th></tr></thead>
+      <tbody>
+      ${camps.map(c=>{
+        const s=c.stats||{}; const tot=s.sent||0; const del=s.deleted||0;
+        const rate=tot?Math.round((tot-del)/tot*100):0;
+        return `<tr>
+          <td><div class="td-name">${c.name}</div></td>
+          <td>${statusBadge(c.status)}</td>
+          <td><span class="badge badge-blue">${(c.template_ids||[]).length} قوالب</span></td>
+          <td style="font-size:12px">${fmt(tot)} / <span style="color:var(--danger)">${fmt(del)}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="progress" style="width:60px"><div class="progress-bar" style="width:${rate}%"></div></div>
+              <span style="font-size:11px">${rate}%</span>
+            </div>
+          </td>
+          <td style="font-size:11px;color:var(--muted)">${c.created_at?c.created_at.slice(0,10):'—'}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              ${c.status==='running'?`<button class="btn btn-warn btn-xs" onclick="pauseCampaign(${c.id})">⏸ إيقاف</button>`:
+                c.status!=='done'?`<button class="btn btn-success btn-xs" onclick="runCampaign(${c.id})">▶ تشغيل</button>`:''}
+              <button class="btn btn-ghost btn-xs" onclick="editCampaign(${c.id})">✏️</button>
+              <button class="btn btn-danger btn-xs" onclick="deleteCampaign(${c.id})">🗑</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+  </div>`}`;
+}
+
+async function runCampaign(id) {
+  try { await api(`/api/campaigns/${id}/run`,'POST'); toast('الحملة بدأت التشغيل','success'); renderCampaigns(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+async function pauseCampaign(id) {
+  try { await api(`/api/campaigns/${id}/pause`,'POST'); toast('الحملة موقوفة','info'); renderCampaigns(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+async function deleteCampaign(id) {
+  if (!confirm('حذف هذه الحملة؟')) return;
+  try { await api(`/api/campaigns/${id}`,'DELETE'); toast('تم الحذف','success'); renderCampaigns(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+async function editCampaign(id) {
+  const camp = (await api('/api/campaigns')).find(c=>c.id===id);
+  if (!camp) return;
+  showModal('تعديل الحملة', `
+    <div class="fg"><label class="flbl">الاسم</label><input class="finput" id="ec-name" value="${camp.name}"></div>
+    <div class="fg"><label class="flbl">القوالب (أرقام مفصولة بفاصلة)</label><input class="finput" id="ec-tmpl" value="${(camp.template_ids||[]).join(',')}"></div>
+  `, async () => {
+    const name = document.getElementById('ec-name').value.trim();
+    const tmpl = document.getElementById('ec-tmpl').value.split(',').map(x=>parseInt(x.trim())).filter(Boolean);
+    await api(`/api/campaigns/${id}`,'PATCH',{name,template_ids:tmpl});
+    toast('تم التحديث','success'); renderCampaigns();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// TEMPLATES
+// ═══════════════════════════════════════════════════════════
+async function renderTemplates() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div>`;
+  const tmpls = await api('/api/templates');
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">📝 صيغ الإعلانات</div><div class="page-sub">${tmpls.length} صيغة</div></div>
+    <button class="btn btn-primary btn-sm" onclick="showCreateTemplate()">+ صيغة جديدة</button>
+  </div>
+  ${tmpls.length===0?`<div class="empty-state"><div class="es-icon">📝</div><p>لا توجد صيغ بعد</p></div>`:`
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>الاسم</th><th>التشعبات</th><th>درجة النجاح</th><th>خطورة الحظر</th><th>مرات الاستخدام</th><th>إجراءات</th></tr></thead>
+      <tbody>
+      ${tmpls.map(t=>`<tr>
+        <td><div class="td-name">${t.name}</div><div class="td-sub" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.base_content.slice(0,60)}...</div></td>
+        <td><span class="badge badge-blue">${(t.variations||[]).length}</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="progress" style="width:50px"><div class="progress-bar" style="width:${t.success_score}%;background:linear-gradient(90deg,var(--accent2),var(--teal))"></div></div>
+            <span style="font-size:11px">${Math.round(t.success_score)}%</span>
+          </div>
+        </td>
+        <td><span class="badge ${t.ban_risk>60?'badge-red':t.ban_risk>30?'badge-yellow':'badge-green'}">${Math.round(t.ban_risk)}%</span></td>
+        <td style="font-size:12px;color:var(--muted)">${t.uses||0}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-xs" onclick="previewTemplate(${t.id})">👁 معاينة</button>
+            <button class="btn btn-ghost btn-xs" onclick="editTemplate(${t.id})">✏️</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteTemplate(${t.id})">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`}`;
+}
+
+async function previewTemplate(id) {
+  const tmpls = await api('/api/templates');
+  const t = tmpls.find(x=>x.id===id);
+  if (!t) return;
+  showModal(`معاينة: ${t.name}`, `
+    <div class="fg"><label class="flbl">النص الأساسي</label>
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:12px;white-space:pre-wrap;font-size:13px;direction:rtl">${t.base_content}</div></div>
+    <div class="fg"><label class="flbl">التشعبات (${(t.variations||[]).length})</label>
+    ${(t.variations||[]).map((v,i)=>`<div style="background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:6px;font-size:12px;direction:rtl">${i+1}. ${v}</div>`).join('')||'<span style="color:var(--muted)">لا توجد تشعبات</span>'}
+    </div>`, null);
+}
+
+async function editTemplate(id) {
+  const tmpls = await api('/api/templates');
+  const t = tmpls.find(x=>x.id===id);
+  if (!t) return;
+  showModal(`تعديل: ${t.name}`, `
+    <div class="fg"><label class="flbl">الاسم</label><input class="finput" id="et-name" value="${t.name}"></div>
+    <div class="fg"><label class="flbl">النص الأساسي</label><textarea class="ftextarea" id="et-content" style="min-height:100px">${t.base_content}</textarea></div>
+    <div class="fg"><label class="flbl">التشعبات (كل سطر = تشعب)</label><textarea class="ftextarea" id="et-vars" style="min-height:80px">${(t.variations||[]).join('\n')}</textarea></div>
+  `, async () => {
+    const name = document.getElementById('et-name').value.trim();
+    const base = document.getElementById('et-content').value.trim();
+    const vars = document.getElementById('et-vars').value.split('\n').map(v=>v.trim()).filter(Boolean);
+    await api(`/api/templates/${id}`,'PATCH',{name,base_content:base,variations:vars});
+    toast('تم التحديث','success'); renderTemplates();
+  });
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('حذف هذه الصيغة؟')) return;
+  try { await api(`/api/templates/${id}`,'DELETE'); toast('تم الحذف','success'); renderTemplates(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACCOUNTS
+// ═══════════════════════════════════════════════════════════
+async function renderAccounts() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div>`;
+  const [accs, perf] = await Promise.all([api('/api/accounts'), api('/api/stats/accounts_performance')]);
+  const perfMap = {};
+  perf.forEach(p => perfMap[p.id] = p);
+
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">📱 الحسابات</div><div class="page-sub">${accs.length} حساب</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">+ إضافة حساب</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderAccounts()">🔄</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>رقم الهاتف</th><th>الحالة</th><th>الصحة</th><th>المجموعات</th><th>الرسائل</th><th>نسبة الحذف</th><th>آخر نشاط</th><th>إجراءات</th></tr></thead>
+      <tbody>
+      ${accs.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="es-icon">📱</div><p>لا توجد حسابات</p></div></td></tr>`:''}
+      ${accs.map(a=>{
+        const p=perfMap[a.id]||{};
+        return `<tr>
+          <td><div class="td-name">${a.phone}</div>${a.notes?`<div class="td-sub">${a.notes}</div>`:''}
+          </td>
+          <td>${statusBadge(a.status)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="progress" style="width:50px"><div class="progress-bar" style="width:${a.health_score}%;background:linear-gradient(90deg,${a.health_score>70?'var(--accent2)':'var(--danger)'},${a.health_score>70?'var(--teal)':'var(--warn)'})"></div></div>
+              <span style="font-size:11px">${Math.round(a.health_score||0)}</span>
+            </div>
+          </td>
+          <td>${fmt(p.groups_count||0)}</td>
+          <td>${fmt(p.messages_total||0)}</td>
+          <td><span class="badge ${(p.delete_rate||0)>30?'badge-red':(p.delete_rate||0)>15?'badge-yellow':'badge-green'}">${p.delete_rate||0}%</span></td>
+          <td style="font-size:11px;color:var(--muted)">${a.last_active?a.last_active.slice(0,16).replace('T',' '):'—'}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn-icon" title="فحص" onclick="checkAccount(${a.id})">🔍</button>
+              <button class="btn-icon" title="مزامنة المجموعات" onclick="syncAccount(${a.id})">🔄</button>
+              <button class="btn-icon" title="تعديل" onclick="editAccount(${a.id})">✏️</button>
+              <button class="btn-icon" title="حذف" onclick="deleteAccount(${a.id})">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+async function checkAccount(id) {
+  const r = await api(`/api/accounts/${id}/check`,'POST');
+  toast(r.connected?'✅ الحساب متصل':'❌ الحساب غير متصل', r.connected?'success':'error');
+}
+async function syncAccount(id) {
+  try { const r = await api(`/api/accounts/${id}/sync`,'POST'); toast(`🔄 مزامنة: ${r.added} جديدة`,'info'); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+async function deleteAccount(id) {
+  if (!confirm('حذف هذا الحساب؟')) return;
+  try { await api(`/api/accounts/${id}`,'DELETE'); toast('تم الحذف','success'); renderAccounts(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+async function editAccount(id) {
+  const accs = await api('/api/accounts');
+  const a = accs.find(x=>x.id===id);
+  if (!a) return;
+  showModal('تعديل الحساب', `
+    <div class="fg"><label class="flbl">ملاحظات</label><input class="finput" id="ea-notes" value="${a.notes||''}"></div>
+    <div class="fg"><label class="flbl">الحالة</label>
+      <select class="fselect" id="ea-status">
+        <option value="active" ${a.status==='active'?'selected':''}>نشط</option>
+        <option value="pending" ${a.status==='pending'?'selected':''}>بانتظار</option>
+        <option value="banned" ${a.status==='banned'?'selected':''}>محظور</option>
+        <option value="flood" ${a.status==='flood'?'selected':''}>محدود</option>
+      </select>
+    </div>
+  `, async ()=>{
+    await api(`/api/accounts/${id}`,'PATCH',{notes:document.getElementById('ea-notes').value,status:document.getElementById('ea-status').value});
+    toast('تم التحديث','success'); renderAccounts();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROXIES
+// ═══════════════════════════════════════════════════════════
+async function renderProxies() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div>`;
+  const proxies = await api('/api/proxies');
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">🌐 البروكسيات</div><div class="page-sub">${proxies.length} بروكسي</div></div>
+    <button class="btn btn-primary btn-sm" onclick="showAddProxy()">+ إضافة بروكسي</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>التسمية</th><th>النوع</th><th>الخادم</th><th>البلد</th><th>الحالة</th><th>زمن الاستجابة</th><th>آخر فحص</th><th>إجراءات</th></tr></thead>
+      <tbody>
+      ${proxies.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="es-icon">🌐</div><p>لا توجد بروكسيات</p></div></td></tr>`:''}
+      ${proxies.map(p=>`<tr>
+        <td><div class="td-name">${p.label}</div></td>
+        <td><span class="badge badge-blue">${p.scheme}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${p.hostname}:${p.port}</td>
+        <td>${p.country||'—'}</td>
+        <td>${p.is_active?'<span class="badge badge-green">✅ نشط</span>':'<span class="badge badge-red">❌ غير نشط</span>'}</td>
+        <td style="font-size:12px">${p.latency_ms!=null?p.latency_ms+'ms':'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${p.last_check?p.last_check.slice(0,16).replace('T',' '):'—'}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn-icon" title="فحص" onclick="checkProxy(${p.id})">🔍</button>
+            <button class="btn-icon" title="حذف" onclick="deleteProxy(${p.id})">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+async function checkProxy(id) {
+  toast('جاري الفحص...','info');
+  const r = await api(`/api/proxies/${id}/check`,'POST');
+  toast(r.status==='ok'?`✅ متصل (${r.latency_ms}ms)`:`❌ فشل: ${r.detail}`, r.status==='ok'?'success':'error');
+  renderProxies();
+}
+async function deleteProxy(id) {
+  if (!confirm('حذف هذا البروكسي؟')) return;
+  await api(`/api/proxies/${id}`,'DELETE'); toast('تم الحذف','success'); renderProxies();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════
+async function renderAnalytics(tab=null) {
+  if (tab) state.analyticsTab = tab;
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr"><div><div class="page-title">📊 التحليلات</div></div></div>
+  <div class="tabs">
+    <button class="tab ${state.analyticsTab==='overview'?'active':''}" onclick="renderAnalytics('overview')">نظرة عامة</button>
+    <button class="tab ${state.analyticsTab==='groups'?'active':''}" onclick="renderAnalytics('groups')">المجموعات</button>
+    <button class="tab ${state.analyticsTab==='accounts'?'active':''}" onclick="renderAnalytics('accounts')">الحسابات</button>
+    <button class="tab ${state.analyticsTab==='templates'?'active':''}" onclick="renderAnalytics('templates')">الإعلانات</button>
+  </div>
+  <div id="analytics-content"><div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div></div>`;
+
+  const t = state.analyticsTab;
+  if (t==='overview') await renderAnalyticsOverview();
+  else if (t==='groups') await renderAnalyticsGroups();
+  else if (t==='accounts') await renderAnalyticsAccounts();
+  else if (t==='templates') await renderAnalyticsTemplates();
+}
+
+async function renderAnalyticsOverview() {
+  const [timeline, byCat, byAct, byProt] = await Promise.all([
+    api('/api/stats/messages_timeline?days=14'),
+    api('/api/stats/groups_by_category'),
+    api('/api/stats/groups_by_activity'),
+    api('/api/stats/protection_bots'),
+  ]);
+  const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#ec4899'];
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="grid2">
+    <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:10px">📉 الرسائل (14 يوم)</div><div class="chart-wrap-lg"><canvas id="an-timeline"></canvas></div></div>
+    <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:10px">📂 التصنيفات</div><div class="chart-wrap-lg"><canvas id="an-cat"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:10px">⚡ مستوى النشاط</div><div class="chart-wrap-lg"><canvas id="an-act"></canvas></div></div>
+    <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:10px">🛡️ بوتات الحماية</div><div class="chart-wrap-lg"><canvas id="an-prot"></canvas></div></div>
+  </div>`;
+  mkChart('an-timeline','line',timeline.map(r=>r.date.slice(5)),
+    [{label:'مرسلة',data:timeline.map(r=>r.total),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4},
+     {label:'محذوفة',data:timeline.map(r=>r.deleted),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4}],
+    {legend:{display:true}});
+  mkChart('an-cat','bar',byCat.map(r=>r.category),[{data:byCat.map(r=>r.count),backgroundColor:colors}]);
+  mkChart('an-act','doughnut',byAct.map(r=>r.level),[{data:byAct.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
+  mkChart('an-prot','doughnut',byProt.map(r=>r.bot),[{data:byProt.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
+}
+
+async function renderAnalyticsGroups() {
+  const top = await api('/api/stats/top_groups?limit=20');
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">🏆 أفضل 20 مجموعة (حسب التفاعل)</div>
+  <div class="tbl-wrap"><table><thead><tr><th>#</th><th>المجموعة</th><th>الأعضاء</th><th>التفاعل</th><th>الحماية</th><th>النشاط</th></tr></thead><tbody>
+  ${top.map((g,i)=>`<tr><td style="color:var(--muted);font-weight:700">${i+1}</td><td><div class="td-name">${g.title}</div></td><td>${fmt(g.member_count)}</td>
+  <td><span class="badge badge-green">${(g.response_rate*100).toFixed(1)}%</span></td><td>${protBadge(g.protection_bot)}</td><td>${actBadge(g.activity_level)}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+async function renderAnalyticsAccounts() {
+  const perf = await api('/api/stats/accounts_performance');
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">📱 أداء الحسابات</div>
+  <div class="tbl-wrap"><table><thead><tr><th>الهاتف</th><th>الصحة</th><th>المجموعات</th><th>إجمالي الرسائل</th><th>محذوفة</th><th>نسبة الحذف</th><th>الحالة</th></tr></thead><tbody>
+  ${perf.sort((a,b)=>a.delete_rate-b.delete_rate).map(a=>`<tr>
+    <td class="td-name">${a.phone}</td>
+    <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:50px"><div class="progress-bar" style="width:${a.health_score}%"></div></div>${Math.round(a.health_score)}</div></td>
+    <td>${fmt(a.groups_count)}</td><td>${fmt(a.messages_total)}</td>
+    <td style="color:var(--danger)">${fmt(a.messages_deleted)}</td>
+    <td><span class="badge ${a.delete_rate>30?'badge-red':a.delete_rate>15?'badge-yellow':'badge-green'}">${a.delete_rate}%</span></td>
+    <td>${statusBadge(a.status)}</td>
+  </tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+async function renderAnalyticsTemplates() {
+  const perf = await api('/api/stats/templates_performance');
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">📝 أداء الصيغ الإعلانية</div>
+  <div class="tbl-wrap"><table><thead><tr><th>الصيغة</th><th>مرات الاستخدام</th><th>محذوفة</th><th>نسبة الحذف</th><th>درجة النجاح</th><th>خطورة الحظر</th></tr></thead><tbody>
+  ${perf.sort((a,b)=>a.delete_rate-b.delete_rate).map(t=>`<tr>
+    <td class="td-name">${t.name}</td><td>${fmt(t.uses)}</td>
+    <td style="color:var(--danger)">${fmt(t.deleted)}</td>
+    <td><span class="badge ${t.delete_rate>40?'badge-red':t.delete_rate>20?'badge-yellow':'badge-green'}">${t.delete_rate}%</span></td>
+    <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:50px"><div class="progress-bar" style="width:${t.success_score}%;background:linear-gradient(90deg,var(--accent2),var(--teal))"></div></div>${Math.round(t.success_score)}%</div></td>
+    <td><span class="badge ${t.ban_risk>60?'badge-red':t.ban_risk>30?'badge-yellow':'badge-green'}">${Math.round(t.ban_risk)}%</span></td>
+  </tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════════════════
+async function renderAudit() {
+  document.getElementById('content').innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div>`;
+  const logs = await api('/api/audit-log?limit=200');
+  const ok = logs.filter(l=>l.result==='ok').length;
+  const err = logs.filter(l=>l.result==='error').length;
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">📋 سجل الأحداث</div><div class="page-sub">${logs.length} حدث</div></div>
+    <button class="btn btn-ghost btn-sm" onclick="renderAudit()">🔄</button>
+  </div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-bottom:14px">
+    <div class="kpi"><div class="kpi-val">${logs.length}</div><div class="kpi-lbl">إجمالي الأحداث</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${ok}</div><div class="kpi-lbl">ناجح</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--danger)">${err}</div><div class="kpi-lbl">أخطاء</div></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>الوقت</th><th>الوكيل</th><th>الإجراء</th><th>النتيجة</th><th>التفاصيل</th></tr></thead>
+      <tbody>
+      ${logs.length===0?`<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📋</div><p>لا توجد سجلات</p></div></td></tr>`:''}
+      ${logs.map(l=>`<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${l.created_at?l.created_at.replace('T',' ').slice(0,19):'—'}</td>
+        <td><span class="badge badge-purple">${l.agent}</span></td>
+        <td style="font-size:12px">${l.action}</td>
+        <td>${l.result==='ok'?'<span class="badge badge-green">✅</span>':'<span class="badge badge-red">❌</span>'}</td>
+        <td style="font-size:11px;color:var(--muted);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${JSON.stringify(l.details||{}).slice(0,80)}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr"><div><div class="page-title">⚙️ الإعدادات</div></div></div>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-weight:800;color:var(--white);margin-bottom:14px">🎨 المظهر</div>
+      <div class="fg"><label class="flbl">الوضع</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="toast('الوضع الداكن نشط','info')">🌙 داكن</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:800;color:var(--white);margin-bottom:14px">ℹ️ معلومات النظام</div>
+      <div style="font-size:13px;color:var(--muted);line-height:2">
+        <div>الإصدار: <span style="color:var(--white)">2.0.0</span></div>
+        <div>الإطار: <span style="color:var(--white)">FastAPI + Pyrogram</span></div>
+        <div>قاعدة البيانات: <span style="color:var(--white)">SQLite / PostgreSQL</span></div>
+        <div>الوكلاء: <span style="color:var(--white)">CrewAI (5 وكلاء)</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:800;color:var(--white);margin-bottom:14px">💬 المساعد المباشر</div>
+      <div style="font-size:12px;color:var(--muted);line-height:2">
+        <div>أمثلة على الأوامر:</div>
+        <div style="background:var(--card2);border-radius:6px;padding:10px;margin-top:6px;font-family:monospace;font-size:11px;color:var(--accent)">
+          انشر الإعلان في المجموعات التعليمية<br>
+          أوقف الحملة رقم 1<br>
+          أضف مجموعة @example<br>
+          حلل نتائج آخر حملة
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:800;color:var(--white);margin-bottom:14px">🔗 روابط مفيدة</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="/docs" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">📚 API Documentation</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════════
+function showModal(title, bodyHtml, onConfirm) {
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.innerHTML = `
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">${title}</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body">${bodyHtml}</div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">إلغاء</button>
+      ${onConfirm?`<button class="btn btn-primary btn-sm" id="modal-confirm">تأكيد</button>`:''}
+    </div>
+  </div>`;
+  ov.id = 'modal-overlay';
+  ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
+  document.body.appendChild(ov);
+  if (onConfirm) {
+    document.getElementById('modal-confirm').onclick = async () => {
+      try { await onConfirm(); closeModal(); }
+      catch(e) { toast('خطأ: '+e.message,'error'); }
+    };
+  }
+}
+function closeModal() {
+  document.getElementById('modal-overlay')?.remove();
+}
+
+// ADD ACCOUNT MODAL
+function showAddAccount() {
+  showModal('إضافة حساب تيليجرام', `
+    <div class="alert alert-info">أدخل رقم الهاتف مع مفتاح الدولة (مثال: +966501234567)</div>
+    <div class="fg"><label class="flbl">رقم الهاتف</label><input class="finput" id="aa-phone" placeholder="+966..."></div>
+    <div id="aa-code-section" style="display:none">
+      <div class="alert alert-warn">📲 تم إرسال كود التحقق، أدخله هنا</div>
+      <div class="fg"><label class="flbl">كود التحقق</label><input class="finput" id="aa-code" placeholder="12345"></div>
+      <div class="fg"><label class="flbl">كلمة المرور (إن وجدت)</label><input class="finput" type="password" id="aa-pass" placeholder="اختياري"></div>
+    </div>
+    <div id="aa-action">
+      <button class="btn btn-primary" onclick="sendPhoneCode()">📨 إرسال الكود</button>
+    </div>
+  `, null);
+}
+
+async function sendPhoneCode() {
+  const phone = document.getElementById('aa-phone')?.value?.trim();
+  if (!phone) { toast('أدخل رقم الهاتف','error'); return; }
+  try {
+    const r = await api('/api/accounts/add','POST',{phone});
+    if (r.status === 'code_sent') {
+      document.getElementById('aa-code-section').style.display='block';
+      document.getElementById('aa-action').innerHTML=`<button class="btn btn-success" onclick="verifyPhoneCode('${phone}')">✅ تحقق من الكود</button>`;
+      toast('تم إرسال الكود','success');
+    } else toast('خطأ: '+(r.detail||r.status),'error');
+  } catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+
+async function verifyPhoneCode(phone) {
+  const code = document.getElementById('aa-code')?.value?.trim();
+  const pass = document.getElementById('aa-pass')?.value?.trim();
+  if (!code) { toast('أدخل الكود','error'); return; }
+  try {
+    const r = await api('/api/accounts/verify','POST',{phone,code,password:pass||undefined});
+    if (r.status === 'ok') { toast('✅ تم تفعيل الحساب!','success'); closeModal(); renderAccounts(); }
+    else if (r.status === '2fa_required') toast('🔐 كلمة المرور مطلوبة','warn');
+    else toast('خطأ: '+(r.detail||r.status),'error');
+  } catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+
+// JOIN GROUP MODAL
+function showJoinGroup() {
+  showModal('الانضمام لمجموعة', `
+    <div class="fg"><label class="flbl">رابط أو معرف المجموعة</label><input class="finput" id="jg-link" placeholder="https://t.me/... أو @username"></div>
+    <div class="fg"><label class="flbl">رقم الحساب (ID)</label><input class="finput" id="jg-acc" type="number" placeholder="1"></div>
+  `, async () => {
+    const link = document.getElementById('jg-link').value.trim();
+    const acc = parseInt(document.getElementById('jg-acc').value);
+    if (!link || !acc) throw new Error('أدخل جميع البيانات');
+    await api('/api/groups/action','POST',{action:'join',group_link:link,account_id:acc});
+    toast('تم الانضمام','success'); renderGroups();
+  });
+}
+
+// EDIT GROUP MODAL
+async function showEditGroup(id) {
+  const groups = await api('/api/groups');
+  const g = groups.find(x=>x.id===id);
+  if (!g) return;
+  showModal('تعديل المجموعة', `
+    <div class="fg"><label class="flbl">التصنيف</label>
+      <select class="fselect" id="eg-cat">
+        ${['تعليمي','تقني','تجاري','ترفيهي','إخباري','عام','إعلانات'].map(c=>`<option ${g.category===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">مستوى النشاط</label>
+      <select class="fselect" id="eg-act">
+        <option value="high" ${g.activity_level==='high'?'selected':''}>عالي</option>
+        <option value="medium" ${g.activity_level==='medium'?'selected':''}>متوسط</option>
+        <option value="low" ${g.activity_level==='low'?'selected':''}>منخفض</option>
+        <option value="dead" ${g.activity_level==='dead'?'selected':''}>ميت</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">نسبة الطلاب (0-1)</label><input class="finput" id="eg-sr" type="number" step="0.1" min="0" max="1" value="${g.student_ratio||0}"></div>
+    <div class="fg"><label class="flbl">ملاحظات</label><input class="finput" id="eg-notes" value="${g.notes||''}"></div>
+  `, async () => {
+    await api('/api/groups/action','POST',{action:'update',group_id:id,data:{
+      category: document.getElementById('eg-cat').value,
+      activity_level: document.getElementById('eg-act').value,
+      student_ratio: parseFloat(document.getElementById('eg-sr').value)||0,
+      notes: document.getElementById('eg-notes').value,
+    }});
+    toast('تم التحديث','success'); applyGroupFilters();
+  });
+}
+
+// SEND MSG MODAL
+async function showSendMsg(groupId, groupTitle, accountId) {
+  const tmpls = await api('/api/templates');
+  showModal(`إرسال إعلان → ${groupTitle}`, `
+    <div class="fg"><label class="flbl">رقم الحساب (ID)</label><input class="finput" id="sm-acc" type="number" value="${accountId||''}"></div>
+    <div class="fg"><label class="flbl">اختر صيغة (اختياري)</label>
+      <select class="fselect" id="sm-tmpl" onchange="fillMsgFromTemplate()">
+        <option value="">— كتابة مباشرة —</option>
+        ${tmpls.map(t=>`<option value="${t.id}" data-content="${t.base_content.replace(/"/g,'&quot;')}">${t.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">نص الرسالة</label><textarea class="ftextarea" id="sm-msg" style="min-height:100px"></textarea></div>
+  `, async () => {
+    const acc = parseInt(document.getElementById('sm-acc').value);
+    const msg = document.getElementById('sm-msg').value.trim();
+    if (!acc || !msg) throw new Error('أدخل جميع البيانات');
+    await api('/api/messages/send','POST',{account_id:acc,group_id:groupId,message:msg});
+    toast('الرسالة في قائمة الإرسال','success');
+  });
+}
+function fillMsgFromTemplate() {
+  const sel = document.getElementById('sm-tmpl');
+  const opt = sel.selectedOptions[0];
+  if (opt && opt.dataset.content) document.getElementById('sm-msg').value = opt.dataset.content;
+}
+
+// CREATE CAMPAIGN MODAL
+async function showCreateCampaign() {
+  const tmpls = await api('/api/templates');
+  showModal('إنشاء حملة جديدة', `
+    <div class="fg"><label class="flbl">اسم الحملة</label><input class="finput" id="cc-name" placeholder="حملة الطلاب"></div>
+    <div class="fg"><label class="flbl">القوالب المستخدمة</label>
+      <div style="max-height:140px;overflow-y:auto;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px">
+        ${tmpls.map(t=>`<label style="display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer;font-size:13px">
+          <input type="checkbox" class="cc-tmpl-cb" value="${t.id}"> ${t.name}</label>`).join('')||'<span style="color:var(--muted);font-size:12px">لا توجد قوالب - أنشئ قوالب أولاً</span>'}
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">التصنيف المستهدف (اختياري)</label>
+      <select class="fselect" id="cc-cat">
+        <option value="">الكل</option>
+        ${['تعليمي','تقني','تجاري','ترفيهي','عام'].map(c=>`<option>${c}</option>`).join('')}
+      </select>
+    </div>
+  `, async () => {
+    const name = document.getElementById('cc-name').value.trim();
+    if (!name) throw new Error('أدخل اسم الحملة');
+    const ids = [...document.querySelectorAll('.cc-tmpl-cb:checked')].map(cb=>parseInt(cb.value));
+    const cat = document.getElementById('cc-cat').value;
+    await api('/api/campaigns','POST',{name,template_ids:ids,target_criteria:{category:cat||undefined}});
+    toast('✅ تم إنشاء الحملة','success'); renderCampaigns();
+  });
+}
+
+// ADD PROXY MODAL
+function showAddProxy() {
+  showModal('إضافة بروكسي', `
+    <div class="fg"><label class="flbl">التسمية</label><input class="finput" id="ap-label" placeholder="FR-01"></div>
+    <div class="fg"><label class="flbl">النوع</label>
+      <select class="fselect" id="ap-scheme"><option value="socks5">SOCKS5</option><option value="socks4">SOCKS4</option><option value="http">HTTP</option></select>
+    </div>
+    <div class="fg"><label class="flbl">الخادم (hostname)</label><input class="finput" id="ap-host" placeholder="proxy.example.com"></div>
+    <div class="fg"><label class="flbl">المنفذ (port)</label><input class="finput" id="ap-port" type="number" placeholder="1080"></div>
+    <div class="fg"><label class="flbl">اسم المستخدم (اختياري)</label><input class="finput" id="ap-user"></div>
+    <div class="fg"><label class="flbl">كلمة المرور (اختياري)</label><input class="finput" type="password" id="ap-pass"></div>
+    <div class="fg"><label class="flbl">البلد (مثال: SA)</label><input class="finput" id="ap-country" placeholder="SA"></div>
+  `, async () => {
+    const label = document.getElementById('ap-label').value.trim();
+    const host  = document.getElementById('ap-host').value.trim();
+    const port  = parseInt(document.getElementById('ap-port').value);
+    if (!label || !host || !port) throw new Error('أدخل التسمية والخادم والمنفذ');
+    await api('/api/proxies','POST',{
+      label, scheme: document.getElementById('ap-scheme').value,
+      hostname: host, port,
+      username: document.getElementById('ap-user').value||null,
+      password: document.getElementById('ap-pass').value||null,
+      country: document.getElementById('ap-country').value||null,
+    });
+    toast('✅ تم إضافة البروكسي','success'); renderProxies();
+  });
+}
+
+// CREATE TEMPLATE MODAL
+function showCreateTemplate() {
+  showModal('صيغة إعلانية جديدة', `
+    <div class="fg"><label class="flbl">الاسم</label><input class="finput" id="ct-name" placeholder="صيغة الطالب الذكي"></div>
+    <div class="fg"><label class="flbl">النص الأساسي</label><textarea class="ftextarea" id="ct-content" style="min-height:100px" placeholder="اكتب نص الإعلان هنا..."></textarea></div>
+    <div class="fg"><label class="flbl">التشعبات (كل سطر = نسخة مختلفة)</label><textarea class="ftextarea" id="ct-vars" style="min-height:80px" placeholder="نسخة بديلة 1&#10;نسخة بديلة 2"></textarea></div>
+  `, async () => {
+    const name = document.getElementById('ct-name').value.trim();
+    const content = document.getElementById('ct-content').value.trim();
+    if (!name || !content) throw new Error('أدخل الاسم والنص');
+    const vars = document.getElementById('ct-vars').value.split('\n').map(v=>v.trim()).filter(Boolean);
+    await api('/api/templates','POST',{name,base_content:content,variations:vars});
+    toast('✅ تم إنشاء الصيغة','success'); renderTemplates();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+connectWS();
+renderDashboard();
 </script>
 </body>
 </html>
