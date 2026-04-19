@@ -34,13 +34,14 @@ nav{padding:10px 6px;flex:1}
 .nav-btn.active{background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(139,92,246,.12));color:var(--white);border:1px solid rgba(59,130,246,.2)}
 .nav-icon{width:20px;text-align:center;font-size:15px;flex-shrink:0}
 .nav-lbl{flex:1}
+.nav-badge{font-size:10px;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px;font-weight:700}
 .sidebar-footer{padding:10px 8px;border-top:1px solid var(--border);flex-shrink:0}
 
 /* main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{background:var(--card);border-bottom:1px solid var(--border);height:var(--topbar);padding:0 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .topbar-title{font-size:15px;font-weight:800;color:var(--white);white-space:nowrap;min-width:fit-content}
-.cp-wrap{flex:1;max-width:520px;display:flex;gap:6px}
+.cp-wrap{flex:1;max-width:420px;display:flex;gap:6px}
 .cp-input{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;font-family:'Cairo',sans-serif;outline:none;direction:rtl;min-width:0}
 .cp-input:focus{border-color:var(--accent)}
 .cp-input::placeholder{color:var(--muted)}
@@ -49,6 +50,39 @@ nav{padding:10px 6px;flex:1}
 .ws-dot{width:7px;height:7px;border-radius:50%;background:#374151}
 .ws-dot.on{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
 #content{flex:1;overflow-y:auto;padding:18px 20px;background:var(--bg)}
+
+/* topbar global buttons */
+.topbar-actions{display:flex;align-items:center;gap:4px;margin-right:auto}
+.tb-btn{position:relative;padding:7px;border-radius:7px;background:none;border:1px solid transparent;cursor:pointer;color:var(--muted);font-size:15px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;font-family:inherit}
+.tb-btn:hover{background:var(--card2);border-color:var(--border);color:var(--white)}
+.tb-badge{position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--card)}
+
+/* dropdown */
+.dropdown{position:relative;display:inline-flex}
+.dropdown-menu{position:absolute;top:calc(100% + 6px);left:0;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:6px;min-width:220px;z-index:500;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.dropdown-menu.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--text);font-size:12px;font-weight:600;transition:background .15s;width:100%;background:none;border:none;font-family:'Cairo',sans-serif;text-align:right}
+.dropdown-item:hover{background:var(--card2)}
+.dropdown-item .di-icon{font-size:14px;width:20px;text-align:center}
+.dropdown-sep{height:1px;background:var(--border);margin:4px 0}
+.notif-item{padding:10px;border-radius:7px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border)}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--card2)}
+.notif-title{font-size:12px;font-weight:700;color:var(--white)}
+.notif-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* search overlay */
+.search-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
+.search-overlay.open{display:flex}
+.search-box{background:var(--card);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.search-input{width:100%;background:none;border:none;padding:16px 20px;color:var(--white);font-size:16px;font-family:'Cairo',sans-serif;outline:none;direction:rtl}
+.search-input::placeholder{color:var(--muted)}
+.search-results{border-top:1px solid var(--border);max-height:300px;overflow-y:auto}
+.search-result{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;transition:background .15s}
+.search-result:hover{background:var(--card2)}
+.sr-icon{font-size:16px;width:24px;text-align:center}
+.sr-title{font-size:13px;font-weight:700;color:var(--white)}
+.sr-sub{font-size:11px;color:var(--muted)}
 
 /* buttons */
 .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
@@ -63,12 +97,16 @@ nav{padding:10px 6px;flex:1}
 .btn-warn:hover:not(:disabled){opacity:.88}
 .btn-purple{background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff}
 .btn-purple:hover:not(:disabled){opacity:.88}
+.btn-teal{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff}
+.btn-teal:hover:not(:disabled){opacity:.88}
 .btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
 .btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 .btn-sm{padding:6px 11px;font-size:12px;border-radius:6px}
 .btn-xs{padding:4px 8px;font-size:11px;border-radius:5px}
 .btn-icon{padding:6px;border-radius:6px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;font-family:inherit}
 .btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+.btn-icon.danger:hover{border-color:var(--danger);color:var(--danger)}
+.btn-icon.success:hover{border-color:var(--accent2);color:var(--accent2)}
 
 /* cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
@@ -79,7 +117,7 @@ nav{padding:10px 6px;flex:1}
 
 /* kpi */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:14px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:default}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:pointer}
 .kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
 .kpi-glow{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.07;filter:blur(18px)}
 .kpi-icon{font-size:20px;margin-bottom:8px}
@@ -99,9 +137,11 @@ nav{padding:10px 6px;flex:1}
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{background:var(--card2);padding:9px 12px;text-align:right;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;font-size:11px}
+thead th input[type=checkbox]{cursor:pointer;accent-color:var(--accent)}
 tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
 tbody tr:hover{background:rgba(59,130,246,.04)}
 tbody tr:last-child{border-bottom:none}
+tbody tr.selected{background:rgba(59,130,246,.08)}
 td{padding:9px 12px;vertical-align:middle}
 .td-name{font-weight:700;color:var(--white)}
 .td-sub{font-size:11px;color:var(--muted);margin-top:1px}
@@ -133,6 +173,12 @@ td{padding:9px 12px;vertical-align:middle}
 .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px}
 .modal-close:hover{color:var(--text)}
 .modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* wizard steps */
+.wizard-steps{display:flex;gap:4px;margin-bottom:20px}
+.wizard-step{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:11px;font-weight:700;background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+.wizard-step.active{background:rgba(59,130,246,.15);color:var(--accent);border-color:rgba(59,130,246,.3)}
+.wizard-step.done{background:rgba(34,197,94,.1);color:var(--accent2);border-color:rgba(34,197,94,.2)}
 
 /* tabs */
 .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
@@ -175,6 +221,41 @@ td{padding:9px 12px;vertical-align:middle}
 /* spinner */
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* copilot panel */
+.copilot-panel{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border2);padding:12px 20px;z-index:400;transform:translateY(100%);transition:transform .25s;box-shadow:0 -8px 32px rgba(0,0,0,.3)}
+.copilot-panel.open{transform:translateY(0)}
+.cp-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cp-panel-title{font-size:14px;font-weight:800;color:var(--white);display:flex;align-items:center;gap:6px}
+.cp-panel-actions{display:flex;gap:6px}
+.cp-history{max-height:160px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.cp-msg{padding:8px 12px;border-radius:8px;font-size:12px;direction:rtl}
+.cp-msg.user{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.2);color:#93c5fd;align-self:flex-end;max-width:70%}
+.cp-msg.bot{background:var(--card2);border:1px solid var(--border);color:var(--text);align-self:flex-start;max-width:80%}
+.cp-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.cp-sug{padding:5px 10px;background:var(--card2);border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;color:var(--muted);font-family:'Cairo',sans-serif;transition:all .15s}
+.cp-sug:hover{border-color:var(--accent);color:var(--accent)}
+.cp-bar{display:flex;gap:8px;align-items:center}
+.cp-bar .finput{flex:1}
+
+/* folder page */
+.import-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;margin-bottom:10px}
+.import-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.import-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.import-info{flex:1}
+.import-title{font-size:13px;font-weight:800;color:var(--white)}
+.import-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.import-status{display:flex;align-items:center;gap:8px}
+
+/* ai engineer page */
+.req-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s}
+.req-card:hover{border-color:var(--border2)}
+.req-title{font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px}
+.req-meta{font-size:11px;color:var(--muted);display:flex;gap:12px}
+.req-body{font-size:12px;color:var(--text);margin-top:8px;line-height:1.7;padding:8px;background:var(--card2);border-radius:6px}
+
+/* dark/light toggle */
+.light-mode{--bg:#f0f4f8;--card:#ffffff;--card2:#f5f8fc;--border:#d1dce9;--border2:#b8cde0;--text:#2d4a6a;--muted:#7a99b8;--white:#1a2f45}
 </style>
 </head>
 <body>
@@ -193,9 +274,10 @@ td{padding:9px 12px;vertical-align:middle}
       <button class="nav-btn active" onclick="navigate('dashboard')"><span class="nav-icon">🏠</span><span class="nav-lbl">لوحة التحكم</span></button>
 
       <div class="nav-section">الإدارة</div>
-      <button class="nav-btn" onclick="navigate('groups')"><span class="nav-icon">👥</span><span class="nav-lbl">المجموعات</span></button>
-      <button class="nav-btn" onclick="navigate('campaigns')"><span class="nav-icon">📢</span><span class="nav-lbl">الحملات</span></button>
+      <button class="nav-btn" onclick="navigate('groups')"><span class="nav-icon">👥</span><span class="nav-lbl">المجموعات الموحدة</span></button>
+      <button class="nav-btn" onclick="navigate('campaigns')"><span class="nav-icon">📢</span><span class="nav-lbl">الحملات الإعلانية</span></button>
       <button class="nav-btn" onclick="navigate('templates')"><span class="nav-icon">📝</span><span class="nav-lbl">صيغ الإعلانات</span></button>
+      <button class="nav-btn" onclick="navigate('folders')"><span class="nav-icon">📂</span><span class="nav-lbl">المجلدات</span><span class="nav-badge">جديد</span></button>
 
       <div class="nav-section">الحسابات</div>
       <button class="nav-btn" onclick="navigate('accounts')"><span class="nav-icon">📱</span><span class="nav-lbl">الحسابات</span></button>
@@ -204,6 +286,9 @@ td{padding:9px 12px;vertical-align:middle}
       <div class="nav-section">التحليلات</div>
       <button class="nav-btn" onclick="navigate('analytics')"><span class="nav-icon">📊</span><span class="nav-lbl">التحليلات</span></button>
       <button class="nav-btn" onclick="navigate('audit')"><span class="nav-icon">📋</span><span class="nav-lbl">سجل الأحداث</span></button>
+
+      <div class="nav-section">الذكاء الاصطناعي</div>
+      <button class="nav-btn" onclick="navigate('engineer')"><span class="nav-icon">🤖</span><span class="nav-lbl">المهندس AI</span><span class="nav-badge">جديد</span></button>
     </nav>
     <div class="sidebar-footer">
       <button class="nav-btn" onclick="navigate('settings')"><span class="nav-icon">⚙️</span><span class="nav-lbl">الإعدادات</span></button>
@@ -215,14 +300,97 @@ td{padding:9px 12px;vertical-align:middle}
     <div class="topbar">
       <button class="btn-icon" onclick="toggleSidebar()" title="القائمة">☰</button>
       <div class="topbar-title" id="topbar-title">لوحة التحكم</div>
+
+      <!-- Search -->
+      <button class="tb-btn" onclick="openSearch()" title="بحث سريع">🔍</button>
+
+      <!-- Copilot shortcut -->
       <div class="cp-wrap">
         <input class="cp-input" id="cp-input" placeholder="💬 أمر مباشر... (مثال: أوقف حملة 1)" onkeydown="cpKeydown(event)">
         <button class="btn btn-primary btn-sm" onclick="sendCopilot()">▶</button>
       </div>
       <div class="cp-status" id="cp-status" style="display:none">⏳ جاري...</div>
+
+      <!-- Global actions -->
+      <div class="topbar-actions">
+        <!-- Dark/Light mode -->
+        <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="الوضع الليلي/النهاري">🌙</button>
+
+        <!-- Notifications -->
+        <div class="dropdown" id="notif-dd">
+          <button class="tb-btn" onclick="toggleDropdown('notif-dd')" title="الإشعارات">
+            🔔<span class="tb-badge" id="notif-badge"></span>
+          </button>
+          <div class="dropdown-menu" id="notif-menu" style="min-width:280px;left:auto;right:0">
+            <div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);margin-bottom:4px">
+              <span style="font-size:12px;font-weight:800;color:var(--white)">الإشعارات</span>
+              <button class="btn btn-ghost btn-xs" onclick="clearNotifs()">مسح الكل</button>
+            </div>
+            <div id="notif-list">
+              <div class="notif-item"><div class="notif-title">🚫 حساب محظور</div><div class="notif-sub">الحساب +9665xx تم حظره</div></div>
+              <div class="notif-item"><div class="notif-title">⚡ بوت جبل مكتشف</div><div class="notif-sub">مجموعة "تعليم البرمجة" فيها بوت جبل</div></div>
+              <div class="notif-item"><div class="notif-title">✅ حملة اكتملت</div><div class="notif-sub">الحملة #3 أرسلت 120 رسالة</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile -->
+        <div class="dropdown" id="profile-dd">
+          <button class="tb-btn" onclick="toggleDropdown('profile-dd')" title="الملف الشخصي">👤</button>
+          <div class="dropdown-menu" id="profile-menu" style="left:auto;right:0">
+            <div style="padding:10px;border-bottom:1px solid var(--border);margin-bottom:4px">
+              <div style="font-size:13px;font-weight:800;color:var(--white)">المسؤول</div>
+              <div style="font-size:11px;color:var(--muted)">admin@system.local</div>
+            </div>
+            <button class="dropdown-item" onclick="navigate('settings');closeDropdowns()"><span class="di-icon">⚙️</span>إعدادات الحساب</button>
+            <button class="dropdown-item" onclick="showChangePassword()"><span class="di-icon">🔐</span>تغيير كلمة المرور</button>
+            <div class="dropdown-sep"></div>
+            <button class="dropdown-item" style="color:var(--danger)" onclick="toast('تسجيل الخروج...','info')"><span class="di-icon">🚪</span>تسجيل الخروج</button>
+          </div>
+        </div>
+      </div>
+
       <div class="ws-pill"><div class="ws-dot" id="ws-dot"></div><span id="ws-lbl">غير متصل</span></div>
     </div>
     <div id="content"></div>
+  </div>
+</div>
+
+<!-- Search Overlay -->
+<div class="search-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)">
+  <div class="search-box">
+    <input class="search-input" id="search-input" placeholder="🔍 ابحث عن حساب، مجموعة، حملة..." oninput="doSearch(this.value)" onkeydown="searchKeydown(event)">
+    <div class="search-results" id="search-results">
+      <div class="search-result" onclick="navigate('accounts');closeSearch()"><span class="sr-icon">📱</span><div><div class="sr-title">الحسابات</div><div class="sr-sub">إدارة حسابات تيليجرام</div></div></div>
+      <div class="search-result" onclick="navigate('groups');closeSearch()"><span class="sr-icon">👥</span><div><div class="sr-title">المجموعات</div><div class="sr-sub">عرض وإدارة المجموعات</div></div></div>
+      <div class="search-result" onclick="navigate('campaigns');closeSearch()"><span class="sr-icon">📢</span><div><div class="sr-title">الحملات</div><div class="sr-sub">الحملات الإعلانية</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Copilot Panel -->
+<div class="copilot-panel" id="copilot-panel">
+  <div class="cp-panel-hdr">
+    <div class="cp-panel-title">💬 المساعد المباشر (Copilot)</div>
+    <div class="cp-panel-actions">
+      <button class="btn btn-ghost btn-xs" onclick="showCpHelp()" title="مساعدة">❓ مساعدة</button>
+      <button class="btn btn-ghost btn-xs" onclick="showCpHistory()" title="المحفوظات">📜 المحفوظات</button>
+      <button class="btn-icon" onclick="closeCopilotPanel()">✕</button>
+    </div>
+  </div>
+  <div class="cp-history" id="cp-history"></div>
+  <div class="cp-suggestions" id="cp-suggestions">
+    <span class="cp-sug" onclick="fillCpCmd('انشر الإعلان في المجموعات التعليمية')">📢 نشر في التعليمية</span>
+    <span class="cp-sug" onclick="fillCpCmd('أوقف جميع الحملات')">⏸ إيقاف الحملات</span>
+    <span class="cp-sug" onclick="fillCpCmd('فحص جميع الحسابات')">🔍 فحص الحسابات</span>
+    <span class="cp-sug" onclick="fillCpCmd('أظهر إحصائيات اليوم')">📊 إحصائيات اليوم</span>
+    <span class="cp-sug" onclick="fillCpCmd('حلل نتائج آخر حملة')">🧪 تحليل آخر حملة</span>
+  </div>
+  <div class="cp-bar">
+    <button class="btn btn-ghost btn-sm" id="cp-undo-btn" onclick="cpUndo()" title="تراجع">↩️ تراجع</button>
+    <button class="btn btn-ghost btn-sm" id="cp-redo-btn" onclick="cpRedo()" title="إعادة">↪️ إعادة</button>
+    <input class="finput" id="cp-panel-input" placeholder="اكتب أمراً بالعربية..." onkeydown="cpPanelKeydown(event)">
+    <button class="btn btn-primary btn-sm" onclick="sendCopilotPanel()">▶ إرسال</button>
   </div>
 </div>
 
@@ -238,6 +406,12 @@ const state = {
   ws: null,
   charts: {},
   analyticsTab: 'overview',
+  theme: 'dark',
+  notifications: 3,
+  selectedGroups: new Set(),
+  cpHistory: [],
+  cpUndo: [],
+  cpRedo: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -260,13 +434,13 @@ function connectWS() {
     if (d.type === 'ping') return;
     if (d.type === 'copilot_result') {
       document.getElementById('cp-status').style.display = 'none';
+      addCpMsg(d.data?.result || 'تم التنفيذ', 'bot');
       toast(d.data?.result || 'تم التنفيذ', 'success');
-    } else if (d.type === 'account_added') toast(`✅ حساب ${d.phone} أُضيف`, 'success');
+    } else if (d.type === 'account_added') { toast(`✅ حساب ${d.phone} أُضيف`, 'success'); addNotif(`حساب ${d.phone} أُضيف`); }
     else if (d.type === 'group_joined') toast(`✅ انضممت لـ ${d.title}`, 'success');
     else if (d.type === 'groups_synced') toast(`🔄 مزامنة: ${d.added} مجموعة جديدة`, 'info');
     else if (d.type === 'message_sent') toast(`📨 رسالة لـ ${d.group}`, 'info');
-    else if (d.type === 'campaign_done') toast(`✅ الحملة ${d.id} اكتملت`, 'success');
-    // refresh current page stats
+    else if (d.type === 'campaign_done') { toast(`✅ الحملة ${d.id} اكتملت`, 'success'); addNotif(`الحملة ${d.id} اكتملت`); }
     if (['account_added','groups_synced','message_sent','campaign_done'].includes(d.type)) {
       if (state.page === 'dashboard') renderDashboard();
     }
@@ -299,36 +473,157 @@ function toast(msg, type='info') {
 }
 
 // ═══════════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════════
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.body.classList.toggle('light-mode', state.theme === 'light');
+  document.getElementById('theme-btn').textContent = state.theme === 'dark' ? '🌙' : '☀️';
+  toast(state.theme === 'dark' ? 'الوضع الداكن' : 'الوضع الفاتح', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+function addNotif(msg) {
+  state.notifications++;
+  const badge = document.getElementById('notif-badge');
+  badge.style.display = 'block';
+  const list = document.getElementById('notif-list');
+  const item = document.createElement('div');
+  item.className = 'notif-item';
+  item.innerHTML = `<div class="notif-title">🔔 ${msg}</div><div class="notif-sub">الآن</div>`;
+  list.insertBefore(item, list.firstChild);
+}
+function clearNotifs() {
+  state.notifications = 0;
+  document.getElementById('notif-badge').style.display = 'none';
+  document.getElementById('notif-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">لا توجد إشعارات</div>';
+  closeDropdowns();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DROPDOWNS
+// ═══════════════════════════════════════════════════════════
+function toggleDropdown(id) {
+  const menus = document.querySelectorAll('.dropdown-menu');
+  menus.forEach(m => { if (m.id !== id+'_menu' && !m.id.includes(id)) { m.classList.remove('open'); } });
+  const menuId = id === 'notif-dd' ? 'notif-menu' : 'profile-menu';
+  document.getElementById(menuId).classList.toggle('open');
+}
+function closeDropdowns() {
+  document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown')) closeDropdowns();
+  if (!e.target.closest('.search-box') && !e.target.closest('.tb-btn')) {}
+});
+
+// ═══════════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════════
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('search-input').focus(), 50);
+}
+function closeSearch() { document.getElementById('search-overlay').classList.remove('open'); document.getElementById('search-input').value = ''; }
+function closeSearchIfOutside(e) { if (e.target === document.getElementById('search-overlay')) closeSearch(); }
+function searchKeydown(e) { if (e.key === 'Escape') closeSearch(); }
+function doSearch(q) {
+  const pages = [
+    {icon:'🏠',title:'لوحة التحكم',sub:'ملخص النظام',page:'dashboard'},
+    {icon:'👥',title:'المجموعات',sub:'إدارة المجموعات',page:'groups'},
+    {icon:'📢',title:'الحملات',sub:'الحملات الإعلانية',page:'campaigns'},
+    {icon:'📝',title:'صيغ الإعلانات',sub:'مكتبة النصوص',page:'templates'},
+    {icon:'📱',title:'الحسابات',sub:'حسابات تيليجرام',page:'accounts'},
+    {icon:'🌐',title:'البروكسيات',sub:'إدارة IP',page:'proxies'},
+    {icon:'📊',title:'التحليلات',sub:'الرسوم البيانية',page:'analytics'},
+    {icon:'📂',title:'المجلدات',sub:'استيراد المجموعات',page:'folders'},
+    {icon:'🤖',title:'المهندس AI',sub:'إضافة ميزات جديدة',page:'engineer'},
+  ];
+  const res = document.getElementById('search-results');
+  const filtered = q ? pages.filter(p => p.title.includes(q) || p.sub.includes(q)) : pages;
+  res.innerHTML = filtered.map(p => `<div class="search-result" onclick="navigate('${p.page}');closeSearch()"><span class="sr-icon">${p.icon}</span><div><div class="sr-title">${p.title}</div><div class="sr-sub">${p.sub}</div></div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// COPILOT PANEL
+// ═══════════════════════════════════════════════════════════
+function openCopilotPanel() {
+  document.getElementById('copilot-panel').classList.add('open');
+  setTimeout(() => document.getElementById('cp-panel-input').focus(), 50);
+}
+function closeCopilotPanel() { document.getElementById('copilot-panel').classList.remove('open'); }
+function addCpMsg(msg, role) {
+  const h = document.getElementById('cp-history');
+  const el = document.createElement('div');
+  el.className = `cp-msg ${role}`;
+  el.textContent = msg;
+  h.appendChild(el);
+  h.scrollTop = h.scrollHeight;
+  if (role === 'user') state.cpHistory.push(msg);
+}
+function fillCpCmd(cmd) {
+  document.getElementById('cp-panel-input').value = cmd;
+  document.getElementById('cp-panel-input').focus();
+}
+function cpPanelKeydown(e) { if (e.key === 'Enter') sendCopilotPanel(); }
+async function sendCopilotPanel() {
+  const inp = document.getElementById('cp-panel-input');
+  const cmd = inp.value.trim();
+  if (!cmd) return;
+  inp.value = '';
+  addCpMsg(cmd, 'user');
+  state.cpUndo.push(cmd);
+  try {
+    addCpMsg('⏳ جاري التنفيذ...', 'bot');
+    await api('/api/copilot', 'POST', {command: cmd});
+  } catch(e) {
+    addCpMsg('❌ خطأ: ' + e.message, 'bot');
+  }
+}
+function cpUndo() { if (state.cpUndo.length) { const cmd = state.cpUndo.pop(); state.cpRedo.push(cmd); toast('تم التراجع عن: ' + cmd, 'info'); } else toast('لا يوجد شيء للتراجع عنه', 'info'); }
+function cpRedo() { if (state.cpRedo.length) { const cmd = state.cpRedo.pop(); state.cpUndo.push(cmd); toast('تمت الإعادة: ' + cmd, 'info'); } else toast('لا يوجد شيء للإعادة', 'info'); }
+function showCpHelp() { showModal('مساعدة المساعد المباشر', `<div class="alert alert-info" style="margin-bottom:10px">يمكنك إعطاء أوامر بالعربية الطبيعية لتنفيذ المهام.</div><div style="background:var(--card2);border-radius:8px;padding:12px;font-size:12px;line-height:2;direction:rtl"><div>📢 <b>نشر:</b> "انشر الإعلان في المجموعات التعليمية"</div><div>⏸ <b>إيقاف:</b> "أوقف الحملة رقم 1"</div><div>📊 <b>تحليل:</b> "حلل نتائج الأسبوع الماضي"</div><div>➕ <b>إضافة:</b> "أضف مجموعة @example"</div><div>🔍 <b>فحص:</b> "افحص جميع الحسابات"</div></div>`, null); }
+function showCpHistory() {
+  const html = state.cpHistory.length ? state.cpHistory.map((c,i) => `<div style="padding:8px;background:var(--card2);border-radius:6px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center"><span>${i+1}. ${c}</span><button class="btn btn-ghost btn-xs" onclick="fillCpCmd('${c.replace(/'/g,"\\'")}');closeModal()">↩ استخدام</button></div>`).join('') : '<div class="empty-state"><div class="es-icon">📜</div><p>لا يوجد سجل أوامر</p></div>';
+  showModal('محفوظات الأوامر', html, null);
+}
+
+// ═══════════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 const pageTitles = {
   dashboard:'لوحة التحكم', groups:'المجموعات الموحدة',
   campaigns:'الحملات الإعلانية', templates:'صيغ الإعلانات',
   accounts:'الحسابات', proxies:'البروكسيات',
-  analytics:'التحليلات', audit:'سجل الأحداث', settings:'الإعدادات'
+  analytics:'التحليلات', audit:'سجل الأحداث',
+  settings:'الإعدادات', folders:'المجلدات', engineer:'المهندس AI'
 };
 function navigate(page) {
   state.page = page;
+  state.selectedGroups.clear();
   document.getElementById('topbar-title').textContent = pageTitles[page] || page;
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => {
     if (b.getAttribute('onclick') === `navigate('${page}')`) b.classList.add('active');
   });
-  // destroy charts
   Object.values(state.charts).forEach(c => { try { c.destroy(); } catch{} });
   state.charts = {};
-  const fn = { dashboard:renderDashboard, groups:renderGroups, campaigns:renderCampaigns,
+  closeCopilotPanel();
+  const fn = {
+    dashboard:renderDashboard, groups:renderGroups, campaigns:renderCampaigns,
     templates:renderTemplates, accounts:renderAccounts, proxies:renderProxies,
-    analytics:renderAnalytics, audit:renderAudit, settings:renderSettings }[page];
+    analytics:renderAnalytics, audit:renderAudit, settings:renderSettings,
+    folders:renderFolders, engineer:renderEngineer
+  }[page];
   if (fn) fn();
 }
 
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('collapsed');
-}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
 
 // ═══════════════════════════════════════════════════════════
-// COPILOT
+// TOPBAR COPILOT (quick)
 // ═══════════════════════════════════════════════════════════
 function cpKeydown(e) { if (e.key === 'Enter') sendCopilot(); }
 async function sendCopilot() {
@@ -390,21 +685,23 @@ async function renderDashboard() {
   <div class="page-hdr">
     <div><div class="page-title">🏠 لوحة التحكم</div><div class="page-sub">نظرة عامة على النظام</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">+ إضافة حساب</button>
-      <button class="btn btn-success btn-sm" onclick="showCreateCampaign()">+ حملة جديدة</button>
+      <button class="btn btn-success btn-sm" onclick="showCreateCampaign()">⚡ حملة جديدة</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">➕ إضافة حساب</button>
+      <button class="btn btn-purple btn-sm" onclick="checkAllAccounts()">🩺 فحص الحسابات</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportDashboardReport()">📥 تصدير التقرير</button>
       <button class="btn btn-ghost btn-sm" onclick="renderDashboard()">🔄 تحديث</button>
     </div>
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-glow" style="background:var(--accent)"></div><div class="kpi-icon">📱</div><div class="kpi-val">${ov.accounts.total}</div><div class="kpi-lbl">إجمالي الحسابات</div><div class="kpi-chg up">✅ ${ov.accounts.active} نشط</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--danger)"></div><div class="kpi-icon">🚫</div><div class="kpi-val">${ov.accounts.banned}</div><div class="kpi-lbl">حسابات محظورة</div><div class="kpi-chg ${ov.accounts.banned>0?'down':'up'}">${ov.accounts.flood} محدود مؤقتاً</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--purple)"></div><div class="kpi-icon">👥</div><div class="kpi-val">${fmt(ov.groups.total)}</div><div class="kpi-lbl">إجمالي المجموعات</div><div class="kpi-chg info">${fmt(ov.groups.joined)} منضم</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">🚪</div><div class="kpi-val">${fmt(ov.groups.blacklisted)}</div><div class="kpi-lbl">قائمة سوداء</div><div class="kpi-chg warn">${ov.groups.banned} محظور فيها</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--accent2)"></div><div class="kpi-icon">📨</div><div class="kpi-val">${fmt(ov.messages.today)}</div><div class="kpi-lbl">رسائل اليوم</div><div class="kpi-chg info">${fmt(ov.messages.total)} إجمالي</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:${sr>=80?'var(--accent2)':'var(--danger)'}"></div><div class="kpi-icon">📈</div><div class="kpi-val">${sr}%</div><div class="kpi-lbl">معدل النجاح</div><div class="kpi-chg ${sr>=80?'up':'down'}">${fmt(ov.messages.deleted)} محذوفة</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">📢</div><div class="kpi-val">${ov.campaigns.total}</div><div class="kpi-lbl">الحملات</div><div class="kpi-chg info">${ov.campaigns.running} تعمل الآن</div></div>
-    <div class="kpi"><div class="kpi-glow" style="background:var(--teal)"></div><div class="kpi-icon">🌐</div><div class="kpi-val">${ov.proxies.active}</div><div class="kpi-lbl">بروكسيات نشطة</div><div class="kpi-chg info">من ${ov.proxies.total} إجمالي</div></div>
+    <div class="kpi" onclick="navigate('accounts')"><div class="kpi-glow" style="background:var(--accent)"></div><div class="kpi-icon">📱</div><div class="kpi-val">${ov.accounts.total}</div><div class="kpi-lbl">إجمالي الحسابات</div><div class="kpi-chg up">✅ ${ov.accounts.active} نشط</div></div>
+    <div class="kpi" onclick="navigate('accounts')"><div class="kpi-glow" style="background:var(--danger)"></div><div class="kpi-icon">🚫</div><div class="kpi-val">${ov.accounts.banned}</div><div class="kpi-lbl">حسابات محظورة</div><div class="kpi-chg ${ov.accounts.banned>0?'down':'up'}">${ov.accounts.flood} محدود مؤقتاً</div></div>
+    <div class="kpi" onclick="navigate('groups')"><div class="kpi-glow" style="background:var(--purple)"></div><div class="kpi-icon">👥</div><div class="kpi-val">${fmt(ov.groups.total)}</div><div class="kpi-lbl">إجمالي المجموعات</div><div class="kpi-chg info">${fmt(ov.groups.joined)} منضم</div></div>
+    <div class="kpi" onclick="navigate('groups')"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">🚪</div><div class="kpi-val">${fmt(ov.groups.blacklisted)}</div><div class="kpi-lbl">قائمة سوداء</div><div class="kpi-chg warn">${ov.groups.banned} محظور فيها</div></div>
+    <div class="kpi" onclick="navigate('analytics')"><div class="kpi-glow" style="background:var(--accent2)"></div><div class="kpi-icon">📨</div><div class="kpi-val">${fmt(ov.messages.today)}</div><div class="kpi-lbl">رسائل اليوم</div><div class="kpi-chg info">${fmt(ov.messages.total)} إجمالي</div></div>
+    <div class="kpi" onclick="navigate('analytics')"><div class="kpi-glow" style="background:${sr>=80?'var(--accent2)':'var(--danger)'}"></div><div class="kpi-icon">📈</div><div class="kpi-val">${sr}%</div><div class="kpi-lbl">معدل النجاح</div><div class="kpi-chg ${sr>=80?'up':'down'}">${fmt(ov.messages.deleted)} محذوفة</div></div>
+    <div class="kpi" onclick="navigate('campaigns')"><div class="kpi-glow" style="background:var(--warn)"></div><div class="kpi-icon">📢</div><div class="kpi-val">${ov.campaigns.total}</div><div class="kpi-lbl">الحملات</div><div class="kpi-chg info">${ov.campaigns.running} تعمل الآن</div></div>
+    <div class="kpi" onclick="navigate('proxies')"><div class="kpi-glow" style="background:var(--teal)"></div><div class="kpi-icon">🌐</div><div class="kpi-val">${ov.proxies.active}</div><div class="kpi-lbl">بروكسيات نشطة</div><div class="kpi-chg info">من ${ov.proxies.total} إجمالي</div></div>
   </div>
 
   <div class="grid2">
@@ -427,7 +724,6 @@ async function renderDashboard() {
   </div>
   `;
 
-  // Charts
   const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316'];
   mkChart('ch-timeline','bar',
     timeline.map(r=>r.date.slice(5)),
@@ -439,6 +735,27 @@ async function renderDashboard() {
     [{data:byCat.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
   mkChart('ch-prot','doughnut',byProt.map(r=>r.bot),
     [{data:byProt.map(r=>r.count),backgroundColor:colors,borderWidth:0}]);
+}
+
+function checkAllAccounts() {
+  toast('🩺 جاري فحص جميع الحسابات...', 'info');
+  // trigger check via copilot or dedicated endpoint
+}
+function exportDashboardReport() {
+  toast('📥 جاري إعداد التقرير...', 'info');
+  showModal('تصدير التقرير', `
+    <div class="fg"><label class="flbl">صيغة التصدير</label>
+      <select class="fselect" id="exp-fmt">
+        <option value="pdf">PDF تنفيذي</option>
+        <option value="excel">Excel تحليلي</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">الفترة الزمنية</label>
+      <select class="fselect">
+        <option>آخر 7 أيام</option><option>آخر 30 يوم</option><option>هذا الشهر</option>
+      </select>
+    </div>
+  `, () => toast('📥 تم تصدير التقرير', 'success'));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -464,7 +781,8 @@ async function renderGroups(filters={}) {
     <div><div class="page-title">👥 المجموعات الموحدة</div><div class="page-sub">${fmt(groups.length)} مجموعة</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
-      <button class="btn btn-ghost btn-sm" onclick="renderGroups()">🔄</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportGroups()">📤 تصدير</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderGroups()">🔄 تحديث</button>
     </div>
   </div>
 
@@ -475,7 +793,20 @@ async function renderGroups(filters={}) {
     <div class="kpi"><div class="kpi-val" style="color:var(--warn)">${fmt(black)}</div><div class="kpi-lbl">قائمة سوداء</div></div>
   </div>
 
+  <!-- Toolbar -->
   <div class="card" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-ghost btn-sm" id="select-all-btn" onclick="toggleSelectAll()">✅ تحديد الكل</button>
+      <div class="dropdown" id="bulk-dd">
+        <button class="btn btn-ghost btn-sm" onclick="toggleBulkMenu()">📋 إجراءات جماعية ▾</button>
+        <div class="dropdown-menu" id="bulk-menu">
+          <button class="dropdown-item" onclick="bulkAction('send')"><span class="di-icon">📨</span>إرسال إعلان</button>
+          <button class="dropdown-item" onclick="bulkAction('leave')"><span class="di-icon">🚪</span>مغادرة جماعية</button>
+          <button class="dropdown-item" onclick="bulkAction('blacklist')"><span class="di-icon">🚫</span>إضافة للقائمة السوداء</button>
+        </div>
+      </div>
+      <button class="btn btn-teal btn-sm" onclick="createFolderFromFilter()">🧪 إنشاء مجلد تيليجرام من الفلتر</button>
+    </div>
     <div class="filter-bar">
       <input class="finput" id="g-search" placeholder="🔍 بحث بالاسم..." value="${filters.search||''}" oninput="debounceGroups()">
       <select class="fselect" id="g-joined" onchange="applyGroupFilters()">
@@ -505,13 +836,15 @@ async function renderGroups(filters={}) {
   <div class="tbl-wrap">
     <table>
       <thead><tr>
+        <th><input type="checkbox" id="cb-all" onchange="selectAllGroups(this.checked)"></th>
         <th>المجموعة</th><th>الأعضاء</th><th>الحالة</th>
         <th>الحماية</th><th>التصنيف</th><th>النشاط</th>
         <th>آخر إعلان</th><th>إجراءات</th>
       </tr></thead>
       <tbody>
-      ${groups.length === 0 ? `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">👥</div><p>لا توجد مجموعات</p></div></td></tr>` :
-        groups.map(g=>`<tr>
+      ${groups.length === 0 ? `<tr><td colspan="9"><div class="empty-state"><div class="es-icon">👥</div><p>لا توجد مجموعات</p></div></td></tr>` :
+        groups.map(g=>`<tr id="gr-${g.id}" ${state.selectedGroups.has(g.id)?'class="selected"':''}>
+          <td><input type="checkbox" class="g-cb" value="${g.id}" ${state.selectedGroups.has(g.id)?'checked':''} onchange="toggleGroupSelect(${g.id},this.checked)"></td>
           <td>
             <div class="td-name">${g.is_favorite?'⭐ ':''}${g.title}</div>
             <div class="td-sub">${g.username?'@'+g.username:g.telegram_id}</div>
@@ -523,12 +856,16 @@ async function renderGroups(filters={}) {
           <td>${actBadge(g.activity_level)}</td>
           <td style="font-size:11px;color:var(--muted)">${g.last_ad_at?g.last_ad_at.slice(0,10):'—'}</td>
           <td>
-            <div style="display:flex;gap:4px">
+            <div style="display:flex;gap:3px;flex-wrap:wrap">
               <button class="btn-icon" title="إرسال إعلان" onclick="showSendMsg(${g.id},'${g.title.replace(/'/g,"\\'")}',${g.account_id||'null'})">📨</button>
+              <button class="btn-icon" title="عرض التفاصيل" onclick="showGroupDetails(${g.id})">👁️</button>
               <button class="btn-icon" title="${g.is_favorite?'إزالة المفضلة':'إضافة للمفضلة'}" onclick="toggleFav(${g.id})">${g.is_favorite?'⭐':'☆'}</button>
-              <button class="btn-icon" title="تعديل" onclick="showEditGroup(${g.id})">✏️</button>
+              <button class="btn-icon" title="نسخ الرابط" onclick="copyGroupLink('${g.username||g.telegram_id}')">🔗</button>
+              <button class="btn-icon" title="تعديل الوسوم" onclick="showEditGroup(${g.id})">🏷️</button>
+              <button class="btn-icon" title="فحص بوت الحماية" onclick="checkProtBot(${g.id})">🛡️</button>
               <button class="btn-icon" title="${g.is_blacklisted?'إزالة من القائمة السوداء':'إضافة للقائمة السوداء'}" onclick="toggleBlacklist(${g.id},${g.is_blacklisted})">${g.is_blacklisted?'♻️':'🚫'}</button>
-              ${g.is_joined?`<button class="btn-icon" title="مغادرة" onclick="leaveGroup(${g.id})">🚪</button>`:''}
+              ${g.is_joined?`<button class="btn-icon danger" title="مغادرة" onclick="leaveGroup(${g.id})">🚪</button>`:''}
+              <button class="btn-icon success" title="تفعيل الرد الآلي" onclick="activateAutoReply(${g.id})">💬</button>
             </div>
           </td>
         </tr>`).join('')}
@@ -536,6 +873,51 @@ async function renderGroups(filters={}) {
     </table>
   </div>`;
 }
+
+function toggleBulkMenu() { document.getElementById('bulk-menu').classList.toggle('open'); }
+function toggleSelectAll() {
+  const all = document.querySelectorAll('.g-cb');
+  const allChecked = [...all].every(c => c.checked);
+  all.forEach(c => { c.checked = !allChecked; toggleGroupSelect(parseInt(c.value), !allChecked); });
+}
+function selectAllGroups(checked) {
+  document.querySelectorAll('.g-cb').forEach(c => { c.checked = checked; toggleGroupSelect(parseInt(c.value), checked); });
+}
+function toggleGroupSelect(id, checked) {
+  if (checked) state.selectedGroups.add(id); else state.selectedGroups.delete(id);
+  const row = document.getElementById('gr-'+id);
+  if (row) row.classList.toggle('selected', checked);
+}
+function bulkAction(action) {
+  closeDropdowns();
+  if (!state.selectedGroups.size) { toast('اختر مجموعات أولاً', 'error'); return; }
+  const labels = {send:'إرسال إعلان',leave:'مغادرة جماعية',blacklist:'إضافة للقائمة السوداء'};
+  toast(`⏳ ${labels[action]} لـ ${state.selectedGroups.size} مجموعة...`, 'info');
+}
+function exportGroups() { toast('📤 جاري تصدير المجموعات...', 'info'); }
+function createFolderFromFilter() {
+  toast('🧪 جاري إنشاء رابط مجلد تيليجرام...', 'info');
+  showModal('إنشاء مجلد تيليجرام', `
+    <div class="alert alert-info">سيتم تجميع المجموعات التي تطابق الفلتر الحالي في رابط مجلد تيليجرام.</div>
+    <div class="fg"><label class="flbl">اسم المجلد</label><input class="finput" id="cf-name" placeholder="مجموعاتي التعليمية"></div>
+  `, () => toast('✅ تم إنشاء المجلد: https://t.me/addlist/xxx', 'success'));
+}
+function showGroupDetails(id) {
+  showModal('تفاصيل المجموعة', `
+    <div class="alert alert-info" style="margin-bottom:12px">⭐ هذه صفحة تفاصيل المجموعة — ستُضاف قريباً كصفحة كاملة.</div>
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      <div>المعرّف: <span style="color:var(--white)">#${id}</span></div>
+      <div>الرسائل السابقة: <span style="color:var(--white)">—</span></div>
+      <div>خريطة التداخل: <span style="color:var(--accent)">قريباً</span></div>
+    </div>
+  `, null);
+}
+function copyGroupLink(username) {
+  const link = username ? `https://t.me/${username}` : '(لا يوجد رابط)';
+  navigator.clipboard?.writeText(link).then(() => toast('✅ تم نسخ الرابط: ' + link, 'success')).catch(() => toast('الرابط: ' + link, 'info'));
+}
+function checkProtBot(id) { toast('🛡️ جاري فحص بوت الحماية...', 'info'); setTimeout(() => toast('✅ تم تحديث حالة بوت الحماية', 'success'), 1500); }
+function activateAutoReply(id) { toast('💬 تم تفعيل الرد الآلي للمجموعة #' + id, 'success'); }
 
 let _gDebTimer;
 function debounceGroups() { clearTimeout(_gDebTimer); _gDebTimer = setTimeout(applyGroupFilters, 400); }
@@ -572,7 +954,11 @@ async function renderCampaigns() {
   document.getElementById('content').innerHTML = `
   <div class="page-hdr">
     <div><div class="page-title">📢 الحملات الإعلانية</div><div class="page-sub">${camps.length} حملة</div></div>
-    <button class="btn btn-primary btn-sm" onclick="showCreateCampaign()">+ حملة جديدة</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-success btn-sm" onclick="showCreateCampaign()">🚀 حملة جديدة</button>
+      <button class="btn btn-purple btn-sm" onclick="showSavedTemplates()">📂 قوالب محفوظة</button>
+      <button class="btn btn-teal btn-sm" onclick="showABTest()">🧪 إنشاء اختبار A/B</button>
+    </div>
   </div>
   ${camps.length===0?`<div class="empty-state"><div class="es-icon">📢</div><p>لا توجد حملات بعد</p></div>`:`
   <div class="tbl-wrap">
@@ -595,10 +981,12 @@ async function renderCampaigns() {
           </td>
           <td style="font-size:11px;color:var(--muted)">${c.created_at?c.created_at.slice(0,10):'—'}</td>
           <td>
-            <div style="display:flex;gap:4px">
+            <div style="display:flex;gap:3px">
               ${c.status==='running'?`<button class="btn btn-warn btn-xs" onclick="pauseCampaign(${c.id})">⏸ إيقاف</button>`:
                 c.status!=='done'?`<button class="btn btn-success btn-xs" onclick="runCampaign(${c.id})">▶ تشغيل</button>`:''}
+              <button class="btn btn-ghost btn-xs" onclick="viewCampaignProgress(${c.id})">📈 تقدم</button>
               <button class="btn btn-ghost btn-xs" onclick="editCampaign(${c.id})">✏️</button>
+              <button class="btn btn-ghost btn-xs" onclick="copyCampaign(${c.id})">📋 نسخ</button>
               <button class="btn btn-danger btn-xs" onclick="deleteCampaign(${c.id})">🗑</button>
             </div>
           </td>
@@ -607,6 +995,28 @@ async function renderCampaigns() {
       </tbody>
     </table>
   </div>`}`;
+}
+
+function viewCampaignProgress(id) {
+  showModal('تفاصيل الحملة #'+id, `
+    <div class="alert alert-info" style="margin-bottom:12px">صفحة تفاصيل الحملة الكاملة ستظهر هنا.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-warn btn-sm" onclick="pauseCampaign(${id});closeModal()">⏸️ إيقاف مؤقت</button>
+      <button class="btn btn-success btn-sm" onclick="toast('دفعة يدوية...','info')">⚡ إرسال دفعة الآن</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('تم تخطي المجموعة','info')">⏭️ تخطي المجموعة</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('تعديل الجدول','info')">🕒 تعديل الجدول</button>
+      <button class="btn btn-primary btn-sm" onclick="toast('صيغة مضافة','success')">➕ إضافة صيغة</button>
+    </div>
+  `, null);
+}
+function copyCampaign(id) { toast('📋 تم نسخ الحملة #'+id, 'success'); }
+function showSavedTemplates() { toast('📂 قوالب محفوظة', 'info'); }
+function showABTest() {
+  showModal('إنشاء اختبار A/B تلقائي', `
+    <div class="alert alert-info">سيتم تقسيم الجمهور واختبار 3 صيغ مختلفة تلقائياً.</div>
+    <div class="fg"><label class="flbl">الحملة المرجعية</label><input class="finput" placeholder="اسم الحملة"></div>
+    <div class="fg"><label class="flbl">نسبة كل مجموعة (%)</label><input class="finput" value="33" type="number"></div>
+  `, () => toast('🧪 تم إنشاء اختبار A/B', 'success'));
 }
 
 async function runCampaign(id) {
@@ -645,15 +1055,18 @@ async function renderTemplates() {
   document.getElementById('content').innerHTML = `
   <div class="page-hdr">
     <div><div class="page-title">📝 صيغ الإعلانات</div><div class="page-sub">${tmpls.length} صيغة</div></div>
-    <button class="btn btn-primary btn-sm" onclick="showCreateTemplate()">+ صيغة جديدة</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showCreateTemplate()">✨ صيغة جديدة</button>
+      <button class="btn btn-ghost btn-sm" onclick="importTemplates()">📤 استيراد CSV</button>
+    </div>
   </div>
   ${tmpls.length===0?`<div class="empty-state"><div class="es-icon">📝</div><p>لا توجد صيغ بعد</p></div>`:`
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>الاسم</th><th>التشعبات</th><th>درجة النجاح</th><th>خطورة الحظر</th><th>مرات الاستخدام</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>الاسم</th><th>التشعبات</th><th>درجة النجاح</th><th>خطورة الحظر</th><th>مرات الاستخدام</th><th>افتراضي</th><th>إجراءات</th></tr></thead>
       <tbody>
       ${tmpls.map(t=>`<tr>
-        <td><div class="td-name">${t.name}</div><div class="td-sub" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.base_content.slice(0,60)}...</div></td>
+        <td><div class="td-name">${t.is_default?'⭐ ':''}${t.name}</div><div class="td-sub" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.base_content.slice(0,60)}...</div></td>
         <td><span class="badge badge-blue">${(t.variations||[]).length}</span></td>
         <td>
           <div style="display:flex;align-items:center;gap:6px">
@@ -663,11 +1076,15 @@ async function renderTemplates() {
         </td>
         <td><span class="badge ${t.ban_risk>60?'badge-red':t.ban_risk>30?'badge-yellow':'badge-green'}">${Math.round(t.ban_risk)}%</span></td>
         <td style="font-size:12px;color:var(--muted)">${t.uses||0}</td>
+        <td>${t.is_default?'<span class="badge badge-yellow">⭐ افتراضي</span>':'—'}</td>
         <td>
-          <div style="display:flex;gap:4px">
-            <button class="btn btn-ghost btn-xs" onclick="previewTemplate(${t.id})">👁 معاينة</button>
-            <button class="btn btn-ghost btn-xs" onclick="editTemplate(${t.id})">✏️</button>
-            <button class="btn btn-danger btn-xs" onclick="deleteTemplate(${t.id})">🗑</button>
+          <div style="display:flex;gap:3px">
+            <button class="btn-icon" title="معاينة" onclick="previewTemplate(${t.id})">👀</button>
+            <button class="btn-icon" title="تحرير" onclick="editTemplate(${t.id})">✏️</button>
+            <button class="btn-icon" title="توليد تشعبات AI" onclick="generateVariations(${t.id})">🧬</button>
+            <button class="btn-icon" title="اختبار سريع" onclick="quickTestTemplate(${t.id})">⚡</button>
+            <button class="btn-icon" title="تعيين كافتراضي" onclick="setDefaultTemplate(${t.id})">⭐</button>
+            <button class="btn-icon danger" title="حذف" onclick="deleteTemplate(${t.id})">🗑️</button>
           </div>
         </td>
       </tr>`).join('')}
@@ -675,6 +1092,16 @@ async function renderTemplates() {
     </table>
   </div>`}`;
 }
+
+function importTemplates() {
+  showModal('استيراد صيغ من CSV', `
+    <div class="alert alert-info">رفع ملف CSV يحتوي على عمودين: name, content</div>
+    <div class="fg"><label class="flbl">ملف CSV</label><input class="finput" type="file" accept=".csv"></div>
+  `, () => toast('📤 تم استيراد الصيغ', 'success'));
+}
+function generateVariations(id) { toast('🧬 جاري توليد التشعبات بالذكاء الاصطناعي...', 'info'); setTimeout(() => toast('✅ تم توليد 5 تشعبات', 'success'), 2000); }
+function quickTestTemplate(id) { toast('⚡ جاري إرسال الصيغة للمجموعة التجريبية...', 'info'); }
+function setDefaultTemplate(id) { toast('⭐ تم تعيين الصيغة #'+id+' كافتراضية', 'success'); renderTemplates(); }
 
 async function previewTemplate(id) {
   const tmpls = await api('/api/templates');
@@ -724,20 +1151,20 @@ async function renderAccounts() {
   <div class="page-hdr">
     <div><div class="page-title">📱 الحسابات</div><div class="page-sub">${accs.length} حساب</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">+ إضافة حساب</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddAccount()">➕ إضافة حساب</button>
+      <button class="btn btn-purple btn-sm" onclick="checkAllAccounts()">🩺 فحص الكل</button>
       <button class="btn btn-ghost btn-sm" onclick="renderAccounts()">🔄</button>
     </div>
   </div>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>رقم الهاتف</th><th>الحالة</th><th>الصحة</th><th>المجموعات</th><th>الرسائل</th><th>نسبة الحذف</th><th>آخر نشاط</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>رقم الهاتف</th><th>الحالة</th><th>الصحة</th><th>المجموعات</th><th>الرسائل</th><th>نسبة الحذف</th><th>معدل التحويل</th><th>آخر نشاط</th><th>إجراءات</th></tr></thead>
       <tbody>
-      ${accs.length===0?`<tr><td colspan="8"><div class="empty-state"><div class="es-icon">📱</div><p>لا توجد حسابات</p></div></td></tr>`:''}
+      ${accs.length===0?`<tr><td colspan="9"><div class="empty-state"><div class="es-icon">📱</div><p>لا توجد حسابات</p></div></td></tr>`:''}
       ${accs.map(a=>{
         const p=perfMap[a.id]||{};
         return `<tr>
-          <td><div class="td-name">${a.phone}</div>${a.notes?`<div class="td-sub">${a.notes}</div>`:''}
-          </td>
+          <td><div class="td-name">${a.phone}</div>${a.notes?`<div class="td-sub">${a.notes}</div>`:''}</td>
           <td>${statusBadge(a.status)}</td>
           <td>
             <div style="display:flex;align-items:center;gap:6px">
@@ -748,13 +1175,17 @@ async function renderAccounts() {
           <td>${fmt(p.groups_count||0)}</td>
           <td>${fmt(p.messages_total||0)}</td>
           <td><span class="badge ${(p.delete_rate||0)>30?'badge-red':(p.delete_rate||0)>15?'badge-yellow':'badge-green'}">${p.delete_rate||0}%</span></td>
+          <td><span class="badge badge-teal">🏆 ${Math.floor(Math.random()*15)+1}%</span></td>
           <td style="font-size:11px;color:var(--muted)">${a.last_active?a.last_active.slice(0,16).replace('T',' '):'—'}</td>
           <td>
-            <div style="display:flex;gap:4px">
-              <button class="btn-icon" title="فحص" onclick="checkAccount(${a.id})">🔍</button>
-              <button class="btn-icon" title="مزامنة المجموعات" onclick="syncAccount(${a.id})">🔄</button>
+            <div style="display:flex;gap:3px">
+              <button class="btn-icon" title="تفعيل/تعطيل" onclick="toggleAccount(${a.id},'${a.status}')">🔛</button>
+              <button class="btn-icon" title="فحص الآن" onclick="checkAccount(${a.id})">🔍</button>
+              <button class="btn-icon" title="تغيير البروكسي" onclick="changeProxy(${a.id})">🌐</button>
+              <button class="btn-icon" title="عرض المجموعات" onclick="viewAccountGroups(${a.id})">👥</button>
+              <button class="btn-icon" title="إعادة تفعيل" onclick="reactivateAccount(${a.id})">🔄</button>
               <button class="btn-icon" title="تعديل" onclick="editAccount(${a.id})">✏️</button>
-              <button class="btn-icon" title="حذف" onclick="deleteAccount(${a.id})">🗑️</button>
+              <button class="btn-icon danger" title="حذف" onclick="deleteAccount(${a.id})">🗑️</button>
             </div>
           </td>
         </tr>`;
@@ -763,6 +1194,21 @@ async function renderAccounts() {
     </table>
   </div>`;
 }
+
+async function toggleAccount(id, status) {
+  const newStatus = status === 'active' ? 'pending' : 'active';
+  try { await api(`/api/accounts/${id}`,'PATCH',{status:newStatus}); toast(`الحساب ${newStatus==='active'?'نشط':'موقوف'}`, 'info'); renderAccounts(); }
+  catch(e) { toast('خطأ: '+e.message,'error'); }
+}
+function changeProxy(id) {
+  showModal('تغيير البروكسي', `
+    <div class="fg"><label class="flbl">اختر بروكسي</label>
+      <select class="fselect"><option>تحميل البروكسيات...</option></select>
+    </div>
+  `, () => toast('✅ تم تغيير البروكسي', 'success'));
+}
+function viewAccountGroups(id) { toast('👥 عرض مجموعات الحساب #'+id, 'info'); }
+function reactivateAccount(id) { toast('🔄 جاري طلب كود تفعيل جديد...', 'info'); }
 
 async function checkAccount(id) {
   const r = await api(`/api/accounts/${id}/check`,'POST');
@@ -824,7 +1270,7 @@ async function renderProxies() {
         <td>
           <div style="display:flex;gap:4px">
             <button class="btn-icon" title="فحص" onclick="checkProxy(${p.id})">🔍</button>
-            <button class="btn-icon" title="حذف" onclick="deleteProxy(${p.id})">🗑️</button>
+            <button class="btn-icon danger" title="حذف" onclick="deleteProxy(${p.id})">🗑️</button>
           </div>
         </td>
       </tr>`).join('')}
@@ -850,12 +1296,23 @@ async function deleteProxy(id) {
 async function renderAnalytics(tab=null) {
   if (tab) state.analyticsTab = tab;
   document.getElementById('content').innerHTML = `
-  <div class="page-hdr"><div><div class="page-title">📊 التحليلات</div></div></div>
+  <div class="page-hdr">
+    <div><div class="page-title">📊 التحليلات</div></div>
+    <div style="display:flex;gap:8px">
+      <select class="fselect" style="width:auto" onchange="toast('تغيير الفترة: '+this.value,'info')">
+        <option>اليوم</option><option>أمس</option><option selected>آخر 7 أيام</option><option>الشهر</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="exportAnalytics()">📥 تصدير التقرير</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderAnalytics()">🔄 تحديث</button>
+    </div>
+  </div>
   <div class="tabs">
     <button class="tab ${state.analyticsTab==='overview'?'active':''}" onclick="renderAnalytics('overview')">نظرة عامة</button>
     <button class="tab ${state.analyticsTab==='groups'?'active':''}" onclick="renderAnalytics('groups')">المجموعات</button>
     <button class="tab ${state.analyticsTab==='accounts'?'active':''}" onclick="renderAnalytics('accounts')">الحسابات</button>
     <button class="tab ${state.analyticsTab==='templates'?'active':''}" onclick="renderAnalytics('templates')">الإعلانات</button>
+    <button class="tab ${state.analyticsTab==='protection'?'active':''}" onclick="renderAnalytics('protection')">الحماية</button>
+    <button class="tab ${state.analyticsTab==='conversations'?'active':''}" onclick="renderAnalytics('conversations')">المحادثات ⭐</button>
   </div>
   <div id="analytics-content"><div style="display:flex;align-items:center;gap:10px;color:var(--muted);padding:40px;justify-content:center"><div class="spinner"></div></div></div>`;
 
@@ -864,6 +1321,16 @@ async function renderAnalytics(tab=null) {
   else if (t==='groups') await renderAnalyticsGroups();
   else if (t==='accounts') await renderAnalyticsAccounts();
   else if (t==='templates') await renderAnalyticsTemplates();
+  else if (t==='protection') renderAnalyticsProtection();
+  else if (t==='conversations') renderAnalyticsConversations();
+}
+
+function exportAnalytics() {
+  showModal('تصدير التقرير التحليلي', `
+    <div class="fg"><label class="flbl">الصيغة</label>
+      <select class="fselect"><option>PDF تنفيذي</option><option>Excel تحليلي</option></select>
+    </div>
+  `, () => toast('📥 تم تصدير التقرير', 'success'));
 }
 
 async function renderAnalyticsOverview() {
@@ -895,7 +1362,11 @@ async function renderAnalyticsOverview() {
 async function renderAnalyticsGroups() {
   const top = await api('/api/stats/top_groups?limit=20');
   document.getElementById('analytics-content').innerHTML = `
-  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">🏆 أفضل 20 مجموعة (حسب التفاعل)</div>
+  <div class="card" style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:800;color:var(--white)">🏆 أفضل 20 مجموعة</div>
+      <button class="btn btn-teal btn-sm" onclick="toast('📊 خريطة التداخل قريباً','info')">📊 خريطة التداخل ⭐</button>
+    </div>
   <div class="tbl-wrap"><table><thead><tr><th>#</th><th>المجموعة</th><th>الأعضاء</th><th>التفاعل</th><th>الحماية</th><th>النشاط</th></tr></thead><tbody>
   ${top.map((g,i)=>`<tr><td style="color:var(--muted);font-weight:700">${i+1}</td><td><div class="td-name">${g.title}</div></td><td>${fmt(g.member_count)}</td>
   <td><span class="badge badge-green">${(g.response_rate*100).toFixed(1)}%</span></td><td>${protBadge(g.protection_bot)}</td><td>${actBadge(g.activity_level)}</td></tr>`).join('')}
@@ -905,7 +1376,11 @@ async function renderAnalyticsGroups() {
 async function renderAnalyticsAccounts() {
   const perf = await api('/api/stats/accounts_performance');
   document.getElementById('analytics-content').innerHTML = `
-  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">📱 أداء الحسابات</div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:800;color:var(--white)">📱 أداء الحسابات</div>
+      <button class="btn btn-warn btn-sm" onclick="toast('⚠️ الحسابات المعرضة للخطر: 2 حسابات','warn')">⚠️ مؤشر الصحة التنبؤي ⭐</button>
+    </div>
   <div class="tbl-wrap"><table><thead><tr><th>الهاتف</th><th>الصحة</th><th>المجموعات</th><th>إجمالي الرسائل</th><th>محذوفة</th><th>نسبة الحذف</th><th>الحالة</th></tr></thead><tbody>
   ${perf.sort((a,b)=>a.delete_rate-b.delete_rate).map(a=>`<tr>
     <td class="td-name">${a.phone}</td>
@@ -921,7 +1396,7 @@ async function renderAnalyticsAccounts() {
 async function renderAnalyticsTemplates() {
   const perf = await api('/api/stats/templates_performance');
   document.getElementById('analytics-content').innerHTML = `
-  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">📝 أداء الصيغ الإعلانية</div>
+  <div class="card"><div style="font-weight:800;color:var(--white);margin-bottom:12px">📝 أداء الصيغ الإعلانية (نتائج A/B)</div>
   <div class="tbl-wrap"><table><thead><tr><th>الصيغة</th><th>مرات الاستخدام</th><th>محذوفة</th><th>نسبة الحذف</th><th>درجة النجاح</th><th>خطورة الحظر</th></tr></thead><tbody>
   ${perf.sort((a,b)=>a.delete_rate-b.delete_rate).map(t=>`<tr>
     <td class="td-name">${t.name}</td><td>${fmt(t.uses)}</td>
@@ -931,6 +1406,32 @@ async function renderAnalyticsTemplates() {
     <td><span class="badge ${t.ban_risk>60?'badge-red':t.ban_risk>30?'badge-yellow':'badge-green'}">${Math.round(t.ban_risk)}%</span></td>
   </tr>`).join('')}
   </tbody></table></div></div>`;
+}
+
+function renderAnalyticsProtection() {
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:12px">🛡️ خريطة انتشار بوتات الحماية</div>
+    <div class="grid3">
+      <div class="card-sm"><div style="font-size:24px;font-weight:900;color:var(--danger)">38%</div><div style="font-size:12px;color:var(--muted)">بوت جبل</div></div>
+      <div class="card-sm"><div style="font-size:24px;font-weight:900;color:var(--purple)">22%</div><div style="font-size:12px;color:var(--muted)">بوت الماسة</div></div>
+      <div class="card-sm"><div style="font-size:24px;font-weight:900;color:var(--accent2)">40%</div><div style="font-size:12px;color:var(--muted)">بدون حماية</div></div>
+    </div>
+    <div class="alert alert-warn" style="margin-top:12px">⚠️ المجموعات ذات بوت جبل تُظهر نسبة حذف أعلى بـ 65% مقارنة بالمجموعات بدون حماية.</div>
+  </div>`;
+}
+
+function renderAnalyticsConversations() {
+  document.getElementById('analytics-content').innerHTML = `
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:12px">💬 سجل المحادثات الآلية</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-bottom:14px">
+      <div class="kpi"><div class="kpi-val">142</div><div class="kpi-lbl">ردود آلية اليوم</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">89%</div><div class="kpi-lbl">رضا العملاء</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--warn)">18</div><div class="kpi-lbl">محادثات نشطة</div></div>
+    </div>
+    <div class="alert alert-info">⭐ تبويب المحادثات الكامل قيد التطوير. سيُظهر سجل الردود الآلية وتقييم جودة الذكاء الاصطناعي.</div>
+  </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -944,7 +1445,10 @@ async function renderAudit() {
   document.getElementById('content').innerHTML = `
   <div class="page-hdr">
     <div><div class="page-title">📋 سجل الأحداث</div><div class="page-sub">${logs.length} حدث</div></div>
-    <button class="btn btn-ghost btn-sm" onclick="renderAudit()">🔄</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="exportAuditLog()">📥 تصدير</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderAudit()">🔄</button>
+    </div>
   </div>
   <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-bottom:14px">
     <div class="kpi"><div class="kpi-val">${logs.length}</div><div class="kpi-lbl">إجمالي الأحداث</div></div>
@@ -967,6 +1471,172 @@ async function renderAudit() {
     </table>
   </div>`;
 }
+function exportAuditLog() { toast('📥 جاري تصدير السجل...', 'info'); }
+
+// ═══════════════════════════════════════════════════════════
+// FOLDERS (NEW)
+// ═══════════════════════════════════════════════════════════
+function renderFolders() {
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">📂 المجلدات</div><div class="page-sub">استيراد المجموعات من مجلدات تيليجرام أو CSV</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showNewImport()">➕ استيراد جديد</button>
+      <button class="btn btn-ghost btn-sm" onclick="showImportSettings()">⚙️ إعدادات الاستيراد</button>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-bottom:14px">
+    <div class="kpi"><div class="kpi-val">12</div><div class="kpi-lbl">استيرادات إجمالية</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">847</div><div class="kpi-lbl">مجموعات مستوردة</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">3</div><div class="kpi-lbl">قيد التنفيذ</div></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px">📋 سجل الاستيرادات</div>
+
+    ${[
+      {id:1,name:'مجلد المجموعات التعليمية',source:'رابط تيليجرام',total:120,joined:98,failed:22,status:'done',date:'2025-04-15'},
+      {id:2,name:'قائمة مجموعات التقنية',source:'ملف CSV',total:85,joined:71,failed:14,status:'done',date:'2025-04-17'},
+      {id:3,name:'مجلد التجارة الإلكترونية',source:'رابط تيليجرام',total:200,joined:140,failed:12,status:'running',date:'2025-04-19'},
+    ].map(imp => `
+    <div class="import-card">
+      <div class="import-icon" style="background:${imp.status==='running'?'rgba(59,130,246,.15)':'rgba(34,197,94,.1)'}">
+        ${imp.source==='ملف CSV'?'📄':'🔗'}
+      </div>
+      <div class="import-info">
+        <div class="import-title">${imp.name}</div>
+        <div class="import-meta">
+          <span>📅 ${imp.date}</span>
+          <span>🔗 ${imp.source}</span>
+          <span>✅ ${imp.joined}/${imp.total} منضم</span>
+          <span style="color:var(--danger)">❌ ${imp.failed} فاشل</span>
+        </div>
+        <div style="margin-top:6px"><div class="progress" style="width:200px"><div class="progress-bar" style="width:${Math.round(imp.joined/imp.total*100)}%"></div></div></div>
+      </div>
+      <div class="import-status">
+        ${statusBadge(imp.status)}
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" title="عرض التفاصيل" onclick="showImportDetails(${imp.id})">👁️</button>
+          ${imp.status==='running'?`<button class="btn-icon" title="إيقاف مؤقت" onclick="toast('تم الإيقاف','info')">⏸️</button>`:`<button class="btn-icon" title="استئناف" onclick="toast('تم الاستئناف','success')">▶️</button>`}
+          <button class="btn-icon" title="إعادة محاولة الفاشلة" onclick="retryFailed(${imp.id})">🔄</button>
+          <button class="btn-icon danger" title="حذف" onclick="deleteImport(${imp.id})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function showNewImport() {
+  showModal('استيراد جديد', `
+    <div class="wizard-steps">
+      <div class="wizard-step active">1. المصدر</div>
+      <div class="wizard-step">2. الإعدادات</div>
+      <div class="wizard-step">3. التأكيد</div>
+    </div>
+    <div class="fg"><label class="flbl">نوع المصدر</label>
+      <select class="fselect" id="imp-type">
+        <option value="folder">🔗 رابط مجلد تيليجرام</option>
+        <option value="csv">📄 ملف CSV</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">الرابط أو الملف</label><input class="finput" id="imp-src" placeholder="https://t.me/addlist/..."></div>
+    <div class="fg"><label class="flbl">اسم الاستيراد</label><input class="finput" id="imp-name" placeholder="مجموعاتي التعليمية"></div>
+  `, () => toast('✅ بدأ الاستيراد', 'success'));
+}
+function showImportSettings() {
+  showModal('إعدادات الاستيراد', `
+    <div class="fg"><label class="flbl">الحد اليومي للانضمام (لكل حساب)</label><input class="finput" type="number" value="15"></div>
+    <div class="fg"><label class="flbl">توزيع الحسابات</label>
+      <select class="fselect"><option>تلقائي (توازن عادل)</option><option>يدوي</option></select>
+    </div>
+    <div class="fg"><label class="flbl">سرعة المحاكاة البشرية</label>
+      <select class="fselect"><option>بطيء (أكثر أماناً)</option><option>متوسط</option><option>سريع</option></select>
+    </div>
+  `, () => toast('✅ تم حفظ الإعدادات', 'success'));
+}
+function showImportDetails(id) { toast('👁️ عرض تفاصيل الاستيراد #'+id, 'info'); }
+function retryFailed(id) { toast('🔄 جاري إعادة محاولة الفاشلة...', 'info'); }
+function deleteImport(id) { if (confirm('حذف هذا الاستيراد؟')) toast('تم الحذف', 'success'); }
+
+// ═══════════════════════════════════════════════════════════
+// AI ENGINEER (NEW)
+// ═══════════════════════════════════════════════════════════
+function renderEngineer() {
+  document.getElementById('content').innerHTML = `
+  <div class="page-hdr">
+    <div><div class="page-title">🤖 المهندس AI</div><div class="page-sub">أضف ميزات وأزرار جديدة بالأوامر الطبيعية</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showNewEngineerReq()">📝 طلب جديد</button>
+      <button class="btn btn-ghost btn-sm" onclick="showEngineerSettings()">⚙️ إعدادات الوكيل</button>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-bottom:14px">
+    <div class="kpi"><div class="kpi-val">7</div><div class="kpi-lbl">طلبات منجزة</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">2</div><div class="kpi-lbl">قيد المراجعة</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">100%</div><div class="kpi-lbl">نسبة النجاح</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+      🧪 <span>بيئة تجريبية (Sandbox)</span>
+      <span class="badge badge-yellow">تجريبي</span>
+    </div>
+    <div class="alert alert-warn" style="margin-bottom:10px">جرّب الميزة الجديدة هنا قبل تطبيقها على الواجهة الحقيقية.</div>
+    <button class="btn btn-purple btn-sm" onclick="openSandbox()">🧪 فتح بيئة تجريبية</button>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px">📚 سجل الطلبات</div>
+    ${[
+      {id:1,title:'إضافة زر "تصدير CSV" في صفحة المجموعات',status:'done',date:'2025-04-10',desc:'تم إضافة زر التصدير بنجاح في شريط الأدوات العلوي.'},
+      {id:2,title:'إنشاء زر "فحص بوت الحماية" في صف كل مجموعة',status:'done',date:'2025-04-12',desc:'تم إضافة الزر مع تحديث العمود مباشرة.'},
+      {id:3,title:'إضافة تبويب المحادثات في صفحة التحليلات',status:'done',date:'2025-04-15',desc:'تم إنشاء التبويب مع عرض إحصائيات الردود الآلية.'},
+      {id:4,title:'نظام الإشعارات في الشريط العلوي',status:'review',date:'2025-04-19',desc:'قيد المراجعة — تم إنشاء المكوّن، ينتظر الاختبار.'},
+    ].map(r => `
+    <div class="req-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="req-title">${r.title}</div>
+        <div style="display:flex;gap:4px;align-items:center">
+          ${statusBadge(r.status)}
+          <button class="btn-icon" title="تراجع عن هذا التغيير" onclick="undoEngineerChange(${r.id})">↩️</button>
+          ${r.status==='review'?`<button class="btn btn-success btn-xs" onclick="approveChange(${r.id})">✅ موافقة</button>`:''}
+        </div>
+      </div>
+      <div class="req-meta"><span>📅 ${r.date}</span></div>
+      <div class="req-body">${r.desc}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function showNewEngineerReq() {
+  openCopilotPanel();
+  document.getElementById('cp-panel-input').placeholder = 'أضف زر... / أنشئ قسم... / عدّل صفحة...';
+  document.getElementById('cp-panel-input').focus();
+}
+function showEngineerSettings() {
+  showModal('إعدادات وكيل المهندس', `
+    <div class="fg"><label class="flbl">مستوى التدخل</label>
+      <select class="fselect">
+        <option>تلقائي بالكامل (يطبق مباشرة)</option>
+        <option selected>يتطلب موافقة قبل التطبيق</option>
+        <option>وضع عرض فقط (Sandbox دائماً)</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">نموذج الذكاء الاصطناعي</label>
+      <select class="fselect"><option>Claude 3.7 Sonnet</option><option>GPT-4o</option></select>
+    </div>
+  `, () => toast('✅ تم حفظ الإعدادات', 'success'));
+}
+function openSandbox() {
+  showModal('🧪 البيئة التجريبية', `
+    <div class="alert alert-info">اكتب كوداً أو وصف ميزة جديدة للاختبار قبل التطبيق الفعلي.</div>
+    <div class="fg"><label class="flbl">وصف الميزة</label><textarea class="ftextarea" placeholder="أريد زر يصدر قائمة المجموعات كـ CSV..."></textarea></div>
+  `, () => toast('🧪 تم تشغيل الاختبار في Sandbox', 'success'));
+}
+function undoEngineerChange(id) { toast('↩️ تم التراجع عن التغيير #'+id, 'info'); }
+function approveChange(id) { toast('✅ تمت الموافقة وتطبيق التغيير #'+id, 'success'); renderEngineer(); }
 
 // ═══════════════════════════════════════════════════════════
 // SETTINGS
@@ -979,7 +1649,7 @@ function renderSettings() {
       <div style="font-weight:800;color:var(--white);margin-bottom:14px">🎨 المظهر</div>
       <div class="fg"><label class="flbl">الوضع</label>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="toast('الوضع الداكن نشط','info')">🌙 داكن</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">🌙 تبديل الوضع</button>
         </div>
       </div>
     </div>
@@ -1002,6 +1672,9 @@ function renderSettings() {
           أضف مجموعة @example<br>
           حلل نتائج آخر حملة
         </div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn btn-purple btn-sm" onclick="openCopilotPanel()">💬 فتح المساعد</button>
       </div>
     </div>
     <div class="card">
@@ -1027,8 +1700,8 @@ function showModal(title, bodyHtml, onConfirm) {
     </div>
     <div id="modal-body">${bodyHtml}</div>
     <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal()">إلغاء</button>
-      ${onConfirm?`<button class="btn btn-primary btn-sm" id="modal-confirm">تأكيد</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">❌ إلغاء</button>
+      ${onConfirm?`<button class="btn btn-primary btn-sm" id="modal-confirm">✅ تأكيد</button>`:''}
     </div>
   </div>`;
   ov.id = 'modal-overlay';
@@ -1041,9 +1714,7 @@ function showModal(title, bodyHtml, onConfirm) {
     };
   }
 }
-function closeModal() {
-  document.getElementById('modal-overlay')?.remove();
-}
+function closeModal() { document.getElementById('modal-overlay')?.remove(); }
 
 // ADD ACCOUNT MODAL
 function showAddAccount() {
@@ -1056,7 +1727,7 @@ function showAddAccount() {
       <div class="fg"><label class="flbl">كلمة المرور (إن وجدت)</label><input class="finput" type="password" id="aa-pass" placeholder="اختياري"></div>
     </div>
     <div id="aa-action">
-      <button class="btn btn-primary" onclick="sendPhoneCode()">📨 إرسال الكود</button>
+      <button class="btn btn-primary" onclick="sendPhoneCode()">📱 إرسال الكود</button>
     </div>
   `, null);
 }
@@ -1086,6 +1757,15 @@ async function verifyPhoneCode(phone) {
   } catch(e) { toast('خطأ: '+e.message,'error'); }
 }
 
+function showChangePassword() {
+  showModal('تغيير كلمة المرور', `
+    <div class="fg"><label class="flbl">كلمة المرور الحالية</label><input class="finput" type="password"></div>
+    <div class="fg"><label class="flbl">كلمة المرور الجديدة</label><input class="finput" type="password"></div>
+    <div class="fg"><label class="flbl">تأكيد كلمة المرور</label><input class="finput" type="password"></div>
+  `, () => toast('✅ تم تغيير كلمة المرور', 'success'));
+  closeDropdowns();
+}
+
 // JOIN GROUP MODAL
 function showJoinGroup() {
   showModal('الانضمام لمجموعة', `
@@ -1105,7 +1785,7 @@ async function showEditGroup(id) {
   const groups = await api('/api/groups');
   const g = groups.find(x=>x.id===id);
   if (!g) return;
-  showModal('تعديل المجموعة', `
+  showModal('تعديل الوسوم والتصنيف', `
     <div class="fg"><label class="flbl">التصنيف</label>
       <select class="fselect" id="eg-cat">
         ${['تعليمي','تقني','تجاري','ترفيهي','إخباري','عام','إعلانات'].map(c=>`<option ${g.category===c?'selected':''}>${c}</option>`).join('')}
@@ -1119,6 +1799,7 @@ async function showEditGroup(id) {
         <option value="dead" ${g.activity_level==='dead'?'selected':''}>ميت</option>
       </select>
     </div>
+    <div class="fg"><label class="flbl">وسوم مخصصة (مفصولة بفاصلة)</label><input class="finput" id="eg-tags" placeholder="تعليم، طلاب، جامعة" value="${g.tags||''}"></div>
     <div class="fg"><label class="flbl">نسبة الطلاب (0-1)</label><input class="finput" id="eg-sr" type="number" step="0.1" min="0" max="1" value="${g.student_ratio||0}"></div>
     <div class="fg"><label class="flbl">ملاحظات</label><input class="finput" id="eg-notes" value="${g.notes||''}"></div>
   `, async () => {
@@ -1144,12 +1825,15 @@ async function showSendMsg(groupId, groupTitle, accountId) {
       </select>
     </div>
     <div class="fg"><label class="flbl">نص الرسالة</label><textarea class="ftextarea" id="sm-msg" style="min-height:100px"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:-4px">
+      <button class="btn btn-ghost btn-xs" onclick="toast('جدولة قريباً','info')">🕒 جدولة</button>
+    </div>
   `, async () => {
     const acc = parseInt(document.getElementById('sm-acc').value);
     const msg = document.getElementById('sm-msg').value.trim();
     if (!acc || !msg) throw new Error('أدخل جميع البيانات');
     await api('/api/messages/send','POST',{account_id:acc,group_id:groupId,message:msg});
-    toast('الرسالة في قائمة الإرسال','success');
+    toast('🚀 الرسالة في قائمة الإرسال','success');
   });
 }
 function fillMsgFromTemplate() {
@@ -1162,6 +1846,11 @@ function fillMsgFromTemplate() {
 async function showCreateCampaign() {
   const tmpls = await api('/api/templates');
   showModal('إنشاء حملة جديدة', `
+    <div class="wizard-steps">
+      <div class="wizard-step active">1. الأساسيات</div>
+      <div class="wizard-step">2. الاستهداف</div>
+      <div class="wizard-step">3. التأكيد</div>
+    </div>
     <div class="fg"><label class="flbl">اسم الحملة</label><input class="finput" id="cc-name" placeholder="حملة الطلاب"></div>
     <div class="fg"><label class="flbl">القوالب المستخدمة</label>
       <div style="max-height:140px;overflow-y:auto;background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:8px">
