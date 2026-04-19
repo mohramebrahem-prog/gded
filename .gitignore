@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+system.db
+chroma_db/
+sessions/
+*.session
+*.session-journal
