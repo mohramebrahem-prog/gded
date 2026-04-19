@@ -248,6 +248,34 @@ td{padding:9px 12px;vertical-align:middle}
 .import-status{display:flex;align-items:center;gap:8px}
 
 /* ai engineer page */
+
+/* ai monitor page */
+.ai-model-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}
+.ai-model-card:hover{border-color:var(--accent)}
+.ai-model-card.active-model{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(34,197,94,.2)}
+.ai-model-card.inactive-model{opacity:.6}
+.model-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.model-avatar{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.model-name{font-size:15px;font-weight:800;color:var(--white)}
+.model-provider{font-size:11px;color:var(--muted);margin-top:2px}
+.model-role-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;margin-top:4px;display:inline-block}
+.token-bar-wrap{margin:10px 0 6px}
+.token-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.token-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.token-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.model-stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.model-stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--muted)}
+.model-stat span{color:var(--white);font-weight:700;display:block;font-size:13px}
+.model-actions{display:flex;gap:6px;margin-top:12px}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
+.agent-chip{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px}
+.agent-chip-icon{font-size:18px}
+.agent-chip-info{flex:1}
+.agent-chip-name{font-size:12px;font-weight:700;color:var(--white)}
+.agent-chip-role{font-size:10px;color:var(--muted)}
+.total-token-ring{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid var(--accent);background:var(--card2);flex-shrink:0}
+.add-model-card{background:var(--card2);border:2px dashed var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:border-color .2s;min-height:180px}
+.add-model-card:hover{border-color:var(--accent)}
 .req-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s}
 .req-card:hover{border-color:var(--border2)}
 .req-title{font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px}
@@ -288,7 +316,8 @@ td{padding:9px 12px;vertical-align:middle}
       <button class="nav-btn" onclick="navigate('audit')"><span class="nav-icon">📋</span><span class="nav-lbl">سجل الأحداث</span></button>
 
       <div class="nav-section">الذكاء الاصطناعي</div>
-      <button class="nav-btn" onclick="navigate('engineer')"><span class="nav-icon">🤖</span><span class="nav-lbl">المهندس AI</span><span class="nav-badge">جديد</span></button>
+      <button class="nav-btn" onclick="navigate('ai_monitor')"><span class="nav-icon">🧠</span><span class="nav-lbl">مراقبة AI</span><span class="nav-badge">جديد</span></button>
+      <button class="nav-btn" onclick="navigate('engineer')"><span class="nav-icon">🤖</span><span class="nav-lbl">المهندس AI</span></button>
     </nav>
     <div class="sidebar-footer">
       <button class="nav-btn" onclick="navigate('settings')"><span class="nav-icon">⚙️</span><span class="nav-lbl">الإعدادات</span></button>
@@ -539,6 +568,7 @@ function doSearch(q) {
     {icon:'🌐',title:'البروكسيات',sub:'إدارة IP',page:'proxies'},
     {icon:'📊',title:'التحليلات',sub:'الرسوم البيانية',page:'analytics'},
     {icon:'📂',title:'المجلدات',sub:'استيراد المجموعات',page:'folders'},
+    {icon:'🧠',title:'مراقبة AI',sub:'إحصائيات ومراقبة نماذج الذكاء الاصطناعي',page:'ai_monitor'},
     {icon:'🤖',title:'المهندس AI',sub:'إضافة ميزات جديدة',page:'engineer'},
   ];
   const res = document.getElementById('search-results');
@@ -598,7 +628,7 @@ const pageTitles = {
   campaigns:'الحملات الإعلانية', templates:'صيغ الإعلانات',
   accounts:'الحسابات', proxies:'البروكسيات',
   analytics:'التحليلات', audit:'سجل الأحداث',
-  settings:'الإعدادات', folders:'المجلدات', engineer:'المهندس AI'
+  settings:'الإعدادات', folders:'المجلدات', engineer:'المهندس AI', ai_monitor:'مراقبة الذكاء الاصطناعي'
 };
 function navigate(page) {
   state.page = page;
@@ -615,7 +645,7 @@ function navigate(page) {
     dashboard:renderDashboard, groups:renderGroups, campaigns:renderCampaigns,
     templates:renderTemplates, accounts:renderAccounts, proxies:renderProxies,
     analytics:renderAnalytics, audit:renderAudit, settings:renderSettings,
-    folders:renderFolders, engineer:renderEngineer
+    folders:renderFolders, engineer:renderEngineer, ai_monitor:renderAiMonitor
   }[page];
   if (fn) fn();
 }
@@ -1476,7 +1506,21 @@ function exportAuditLog() { toast('📥 جاري تصدير السجل...', 'inf
 // ═══════════════════════════════════════════════════════════
 // FOLDERS (NEW)
 // ═══════════════════════════════════════════════════════════
-function renderFolders() {
+// ── state للمجلدات (يُخزَّن في الذاكرة) ───────────────────────────────
+let _importJobs = [];  // {id,name,source,type,link,groups:[],joined,failed,status,date}
+let _importIdSeq = 1;
+
+async function renderFolders() {
+  // جلب إحصائيات المجموعات الحقيقية من API
+  let grpData = {total:0, joined:0};
+  try {
+    const stats = await api('/api/stats/overview');
+    grpData.total  = stats.groups?.total  || 0;
+    grpData.joined = stats.groups?.joined || 0;
+  } catch(e) {}
+
+  const running = _importJobs.filter(j => j.status === 'running').length;
+
   document.getElementById('content').innerHTML = `
   <div class="page-hdr">
     <div><div class="page-title">📂 المجلدات</div><div class="page-sub">استيراد المجموعات من مجلدات تيليجرام أو CSV</div></div>
@@ -1487,85 +1531,241 @@ function renderFolders() {
   </div>
 
   <div class="grid3" style="margin-bottom:14px">
-    <div class="kpi"><div class="kpi-val">12</div><div class="kpi-lbl">استيرادات إجمالية</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">847</div><div class="kpi-lbl">مجموعات مستوردة</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">3</div><div class="kpi-lbl">قيد التنفيذ</div></div>
+    <div class="kpi"><div class="kpi-val">${_importJobs.length}</div><div class="kpi-lbl">استيرادات إجمالية</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${grpData.joined}</div><div class="kpi-lbl">مجموعات منضمة</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">${running}</div><div class="kpi-lbl">قيد التنفيذ</div></div>
   </div>
 
   <div class="card">
     <div style="font-weight:800;color:var(--white);margin-bottom:14px">📋 سجل الاستيرادات</div>
-
-    ${[
-      {id:1,name:'مجلد المجموعات التعليمية',source:'رابط تيليجرام',total:120,joined:98,failed:22,status:'done',date:'2025-04-15'},
-      {id:2,name:'قائمة مجموعات التقنية',source:'ملف CSV',total:85,joined:71,failed:14,status:'done',date:'2025-04-17'},
-      {id:3,name:'مجلد التجارة الإلكترونية',source:'رابط تيليجرام',total:200,joined:140,failed:12,status:'running',date:'2025-04-19'},
-    ].map(imp => `
-    <div class="import-card">
-      <div class="import-icon" style="background:${imp.status==='running'?'rgba(59,130,246,.15)':'rgba(34,197,94,.1)'}">
-        ${imp.source==='ملف CSV'?'📄':'🔗'}
-      </div>
-      <div class="import-info">
-        <div class="import-title">${imp.name}</div>
-        <div class="import-meta">
-          <span>📅 ${imp.date}</span>
-          <span>🔗 ${imp.source}</span>
-          <span>✅ ${imp.joined}/${imp.total} منضم</span>
-          <span style="color:var(--danger)">❌ ${imp.failed} فاشل</span>
+    ${_importJobs.length === 0 ? `
+      <div style="text-align:center;padding:32px;color:var(--muted)">
+        <div style="font-size:36px;margin-bottom:8px">📂</div>
+        <div>لا توجد استيرادات بعد</div>
+        <div style="font-size:12px;margin-top:4px">اضغط "استيراد جديد" لبدء استيراد مجموعاتك</div>
+      </div>` :
+    _importJobs.map(imp => {
+      const pct = imp.total > 0 ? Math.round(imp.joined/imp.total*100) : 0;
+      return `
+      <div class="import-card">
+        <div class="import-icon" style="background:${imp.status==='running'?'rgba(59,130,246,.15)':'rgba(34,197,94,.1)'}">
+          ${imp.type==='csv'?'📄':'🔗'}
         </div>
-        <div style="margin-top:6px"><div class="progress" style="width:200px"><div class="progress-bar" style="width:${Math.round(imp.joined/imp.total*100)}%"></div></div></div>
-      </div>
-      <div class="import-status">
-        ${statusBadge(imp.status)}
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" title="عرض التفاصيل" onclick="showImportDetails(${imp.id})">👁️</button>
-          ${imp.status==='running'?`<button class="btn-icon" title="إيقاف مؤقت" onclick="toast('تم الإيقاف','info')">⏸️</button>`:`<button class="btn-icon" title="استئناف" onclick="toast('تم الاستئناف','success')">▶️</button>`}
-          <button class="btn-icon" title="إعادة محاولة الفاشلة" onclick="retryFailed(${imp.id})">🔄</button>
-          <button class="btn-icon danger" title="حذف" onclick="deleteImport(${imp.id})">🗑️</button>
+        <div class="import-info">
+          <div class="import-title">${imp.name}</div>
+          <div class="import-meta">
+            <span>📅 ${imp.date}</span>
+            <span>${imp.type==='csv'?'📄 ملف CSV':'🔗 رابط تيليجرام'}</span>
+            <span>✅ ${imp.joined}/${imp.total} منضم</span>
+            ${imp.failed > 0 ? `<span style="color:var(--danger)">❌ ${imp.failed} فاشل</span>` : ''}
+          </div>
+          <div style="margin-top:6px"><div class="progress" style="width:200px"><div class="progress-bar" style="width:${pct}%"></div></div></div>
         </div>
-      </div>
-    </div>`).join('')}
+        <div class="import-status">
+          ${statusBadge(imp.status)}
+          <div style="display:flex;gap:4px">
+            <button class="btn-icon" title="عرض المجموعات المستوردة" onclick="showImportDetails(${imp.id})">👁️</button>
+            ${imp.status==='running'
+              ? `<button class="btn-icon" title="إيقاف" onclick="pauseImport(${imp.id})">⏸️</button>`
+              : imp.failed > 0
+                ? `<button class="btn-icon" title="إعادة محاولة الفاشلة" onclick="retryFailed(${imp.id})">🔄</button>`
+                : ''}
+            <button class="btn-icon danger" title="حذف" onclick="deleteImport(${imp.id})">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
   </div>`;
 }
 
 function showNewImport() {
   showModal('استيراد جديد', `
-    <div class="wizard-steps">
-      <div class="wizard-step active">1. المصدر</div>
-      <div class="wizard-step">2. الإعدادات</div>
-      <div class="wizard-step">3. التأكيد</div>
-    </div>
     <div class="fg"><label class="flbl">نوع المصدر</label>
-      <select class="fselect" id="imp-type">
-        <option value="folder">🔗 رابط مجلد تيليجرام</option>
-        <option value="csv">📄 ملف CSV</option>
+      <select class="fselect" id="imp-type" onchange="document.getElementById('imp-src').placeholder=this.value==='csv'?'أدخل روابط المجموعات (سطر لكل رابط)':'https://t.me/+xxx أو @username'">
+        <option value="folder">🔗 رابط مجموعة / قناة تيليجرام</option>
+        <option value="csv">📄 قائمة روابط (سطر لكل رابط)</option>
       </select>
     </div>
-    <div class="fg"><label class="flbl">الرابط أو الملف</label><input class="finput" id="imp-src" placeholder="https://t.me/addlist/..."></div>
-    <div class="fg"><label class="flbl">اسم الاستيراد</label><input class="finput" id="imp-name" placeholder="مجموعاتي التعليمية"></div>
-  `, () => toast('✅ بدأ الاستيراد', 'success'));
+    <div class="fg"><label class="flbl">الرابط أو القائمة</label>
+      <textarea class="ftextarea" id="imp-src" rows="4" placeholder="https://t.me/+xxx أو @username"></textarea>
+    </div>
+    <div class="fg"><label class="flbl">الحساب المستخدم للانضمام</label>
+      <select class="fselect" id="imp-acc"><option value="">جارٍ التحميل...</option></select>
+    </div>
+    <div class="fg"><label class="flbl">اسم الاستيراد</label>
+      <input class="finput" id="imp-name" placeholder="مجموعاتي التعليمية">
+    </div>
+  `, submitNewImport);
+  // تحميل الحسابات المتاحة
+  api('/api/accounts').then(accs => {
+    const sel = document.getElementById('imp-acc');
+    if (!sel) return;
+    const active = accs.filter(a => a.status === 'active');
+    sel.innerHTML = active.length
+      ? active.map(a => `<option value="${a.id}">${a.phone}</option>`).join('')
+      : '<option value="">لا يوجد حساب نشط</option>';
+  }).catch(()=>{});
 }
+
+async function submitNewImport() {
+  const type    = document.getElementById('imp-type')?.value || 'folder';
+  const src     = (document.getElementById('imp-src')?.value || '').trim();
+  const accId   = parseInt(document.getElementById('imp-acc')?.value || '0');
+  const name    = (document.getElementById('imp-name')?.value || '').trim() || 'استيراد ' + _importIdSeq;
+
+  if (!src)    { toast('أدخل الرابط أو القائمة', 'error'); return; }
+  if (!accId)  { toast('اختر حساباً نشطاً', 'error'); return; }
+
+  // تقسيم المدخل إلى روابط منفصلة
+  const links = src.split(/[
+,]+/).map(l => l.trim()).filter(l => l.length > 3);
+  if (links.length === 0) { toast('لا توجد روابط صالحة', 'error'); return; }
+
+  const job = {
+    id: _importIdSeq++,
+    name, type,
+    accountId: accId,
+    links,
+    total: links.length,
+    joined: 0,
+    failed: 0,
+    failedLinks: [],
+    groups: [],
+    status: 'running',
+    date: new Date().toISOString().split('T')[0]
+  };
+  _importJobs.unshift(job);
+  toast(`🚀 بدأ استيراد ${links.length} رابط...`, 'info');
+  renderFolders();
+
+  // تنفيذ الانضمام لكل رابط بشكل تسلسلي
+  for (const link of links) {
+    if (job.status === 'paused') break;
+    try {
+      const res = await api('/api/groups/action', 'POST', {
+        action: 'join',
+        account_id: accId,
+        group_link: link
+      });
+      if (res.status === 'ok') {
+        job.joined++;
+        job.groups.push({link, title: res.title || link, chat_id: res.chat_id});
+      } else {
+        job.failed++;
+        job.failedLinks.push(link);
+      }
+    } catch(e) {
+      job.failed++;
+      job.failedLinks.push(link);
+    }
+    // تحديث الواجهة بعد كل رابط
+    if (state.page === 'folders') renderFolders();
+    // تأخير بشري بسيط
+    await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
+  }
+
+  job.status = job.failed === job.total ? 'failed' : 'done';
+  if (state.page === 'folders') renderFolders();
+  toast(
+    job.status === 'done'
+      ? `✅ اكتمل الاستيراد: ${job.joined} منضم`
+      : `⚠️ اكتمل مع ${job.failed} فاشل من ${job.total}`,
+    job.status === 'done' ? 'success' : 'warning'
+  );
+}
+
+function pauseImport(id) {
+  const job = _importJobs.find(j => j.id === id);
+  if (job) { job.status = 'paused'; renderFolders(); toast('⏸️ تم إيقاف الاستيراد', 'info'); }
+}
+
+async function retryFailed(id) {
+  const job = _importJobs.find(j => j.id === id);
+  if (!job || job.failedLinks.length === 0) { toast('لا توجد روابط فاشلة', 'info'); return; }
+  toast(`🔄 إعادة محاولة ${job.failedLinks.length} رابط...`, 'info');
+  job.status = 'running';
+  const toRetry = [...job.failedLinks];
+  job.failedLinks = [];
+  job.failed = 0;
+  renderFolders();
+  for (const link of toRetry) {
+    if (job.status === 'paused') break;
+    try {
+      const res = await api('/api/groups/action', 'POST', {
+        action: 'join', account_id: job.accountId, group_link: link
+      });
+      if (res.status === 'ok') { job.joined++; }
+      else { job.failed++; job.failedLinks.push(link); }
+    } catch(e) { job.failed++; job.failedLinks.push(link); }
+    if (state.page === 'folders') renderFolders();
+    await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
+  }
+  job.status = 'done';
+  if (state.page === 'folders') renderFolders();
+  toast(`✅ إعادة المحاولة اكتملت: ${job.joined} منضم`, 'success');
+}
+
+function showImportDetails(id) {
+  const job = _importJobs.find(j => j.id === id);
+  if (!job) return;
+  const rows = job.groups.length > 0
+    ? job.groups.map(g => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="color:var(--accent2)">✅</span> ${g.title || g.link}
+      </div>`).join('')
+    : '<div style="color:var(--muted);text-align:center;padding:16px">لم تنضم أي مجموعة بعد</div>';
+  const failRows = job.failedLinks.length > 0
+    ? job.failedLinks.map(l => `<div style="padding:4px 0;font-size:11px;color:var(--danger)">❌ ${l}</div>`).join('')
+    : '';
+  showModal(`📋 تفاصيل: ${job.name}`, `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+      الحالة: ${statusBadge(job.status)} &nbsp;|&nbsp; ${job.joined}/${job.total} منضم &nbsp;|&nbsp; ${job.failed} فاشل
+    </div>
+    <div style="max-height:200px;overflow-y:auto">${rows}</div>
+    ${failRows ? `<div style="margin-top:10px;font-weight:700;color:var(--danger)">روابط فاشلة:</div><div style="max-height:100px;overflow-y:auto">${failRows}</div>` : ''}
+  `, null);
+}
+
+function deleteImport(id) {
+  if (!confirm('حذف هذا الاستيراد من السجل؟')) return;
+  _importJobs = _importJobs.filter(j => j.id !== id);
+  renderFolders();
+  toast('تم الحذف', 'success');
+}
+
 function showImportSettings() {
   showModal('إعدادات الاستيراد', `
-    <div class="fg"><label class="flbl">الحد اليومي للانضمام (لكل حساب)</label><input class="finput" type="number" value="15"></div>
-    <div class="fg"><label class="flbl">توزيع الحسابات</label>
-      <select class="fselect"><option>تلقائي (توازن عادل)</option><option>يدوي</option></select>
+    <div class="fg"><label class="flbl">التأخير بين الانضمامات (ثانية)</label>
+      <input class="finput" type="number" id="imp-delay" value="3" min="1" max="30">
     </div>
-    <div class="fg"><label class="flbl">سرعة المحاكاة البشرية</label>
-      <select class="fselect"><option>بطيء (أكثر أماناً)</option><option>متوسط</option><option>سريع</option></select>
+    <div class="fg"><label class="flbl">الحد اليومي للانضمام</label>
+      <input class="finput" type="number" id="imp-daily" value="20" min="1" max="50">
     </div>
   `, () => toast('✅ تم حفظ الإعدادات', 'success'));
 }
-function showImportDetails(id) { toast('👁️ عرض تفاصيل الاستيراد #'+id, 'info'); }
-function retryFailed(id) { toast('🔄 جاري إعادة محاولة الفاشلة...', 'info'); }
-function deleteImport(id) { if (confirm('حذف هذا الاستيراد؟')) toast('تم الحذف', 'success'); }
 
 // ═══════════════════════════════════════════════════════════
-// AI ENGINEER (NEW)
+// AI ENGINEER — مربوط مع /api/audit-log و /api/copilot
 // ═══════════════════════════════════════════════════════════
-function renderEngineer() {
+async function renderEngineer() {
+  // جلب سجل الوكلاء من audit-log الحقيقي
+  let logs = [];
+  try {
+    const all = await api('/api/audit-log?limit=100');
+    // فلترة أحداث copilot فقط
+    logs = all.filter(l => ['copilot_command','copilot_done','copilot_error'].includes(l.action));
+  } catch(e) {}
+
+  const done   = logs.filter(l => l.action === 'copilot_done').length;
+  const errors = logs.filter(l => l.action === 'copilot_error').length;
+  const total  = logs.filter(l => l.action === 'copilot_command').length;
+  const rate   = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  // بناء قائمة الطلبات: كل copilot_command مع نتيجته
+  const commands = logs.filter(l => l.action === 'copilot_command');
+
   document.getElementById('content').innerHTML = `
   <div class="page-hdr">
-    <div><div class="page-title">🤖 المهندس AI</div><div class="page-sub">أضف ميزات وأزرار جديدة بالأوامر الطبيعية</div></div>
+    <div><div class="page-title">🤖 المهندس AI</div><div class="page-sub">إرسال أوامر للوكلاء وعرض سجل التنفيذ الحقيقي</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary btn-sm" onclick="showNewEngineerReq()">📝 طلب جديد</button>
       <button class="btn btn-ghost btn-sm" onclick="showEngineerSettings()">⚙️ إعدادات الوكيل</button>
@@ -1573,70 +1773,582 @@ function renderEngineer() {
   </div>
 
   <div class="grid3" style="margin-bottom:14px">
-    <div class="kpi"><div class="kpi-val">7</div><div class="kpi-lbl">طلبات منجزة</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">2</div><div class="kpi-lbl">قيد المراجعة</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">100%</div><div class="kpi-lbl">نسبة النجاح</div></div>
+    <div class="kpi"><div class="kpi-val">${done}</div><div class="kpi-lbl">طلبات منجزة</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--danger)">${errors}</div><div class="kpi-lbl">أخطاء</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--accent2)">${rate}%</div><div class="kpi-lbl">نسبة النجاح</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+      💬 <span>إرسال أمر مباشر للوكلاء</span>
+    </div>
+    <div class="alert alert-info" style="margin-bottom:10px;font-size:12px">
+      اكتب أمراً بالعربية مثل: "أرسل رسالة للمجموعات التعليمية" أو "حلّل نتائج الحملة الأخيرة"
+    </div>
+    <div style="display:flex;gap:8px">
+      <input class="finput" id="eng-cmd" placeholder="اكتب أمرك هنا..." style="flex:1" onkeydown="if(event.key==='Enter')sendEngineerCmd()">
+      <button class="btn btn-primary btn-sm" onclick="sendEngineerCmd()" id="eng-send-btn">▶ إرسال</button>
+    </div>
+    <div id="eng-status" style="margin-top:8px;font-size:12px;color:var(--muted);display:none"></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
     <div style="font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:8px">
       🧪 <span>بيئة تجريبية (Sandbox)</span>
-      <span class="badge badge-yellow">تجريبي</span>
+      <span class="badge badge-yellow">اختبار قبل التطبيق</span>
     </div>
-    <div class="alert alert-warn" style="margin-bottom:10px">جرّب الميزة الجديدة هنا قبل تطبيقها على الواجهة الحقيقية.</div>
+    <div class="alert alert-warn" style="margin-bottom:10px;font-size:12px">
+      جرّب الأمر هنا وشاهد النتيجة قبل تطبيقها الفعلي.
+    </div>
     <button class="btn btn-purple btn-sm" onclick="openSandbox()">🧪 فتح بيئة تجريبية</button>
   </div>
 
   <div class="card">
-    <div style="font-weight:800;color:var(--white);margin-bottom:14px">📚 سجل الطلبات</div>
-    ${[
-      {id:1,title:'إضافة زر "تصدير CSV" في صفحة المجموعات',status:'done',date:'2025-04-10',desc:'تم إضافة زر التصدير بنجاح في شريط الأدوات العلوي.'},
-      {id:2,title:'إنشاء زر "فحص بوت الحماية" في صف كل مجموعة',status:'done',date:'2025-04-12',desc:'تم إضافة الزر مع تحديث العمود مباشرة.'},
-      {id:3,title:'إضافة تبويب المحادثات في صفحة التحليلات',status:'done',date:'2025-04-15',desc:'تم إنشاء التبويب مع عرض إحصائيات الردود الآلية.'},
-      {id:4,title:'نظام الإشعارات في الشريط العلوي',status:'review',date:'2025-04-19',desc:'قيد المراجعة — تم إنشاء المكوّن، ينتظر الاختبار.'},
-    ].map(r => `
-    <div class="req-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div class="req-title">${r.title}</div>
-        <div style="display:flex;gap:4px;align-items:center">
-          ${statusBadge(r.status)}
-          <button class="btn-icon" title="تراجع عن هذا التغيير" onclick="undoEngineerChange(${r.id})">↩️</button>
-          ${r.status==='review'?`<button class="btn btn-success btn-xs" onclick="approveChange(${r.id})">✅ موافقة</button>`:''}
-        </div>
-      </div>
-      <div class="req-meta"><span>📅 ${r.date}</span></div>
-      <div class="req-body">${r.desc}</div>
-    </div>`).join('')}
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span>📚 سجل الطلبات الحقيقي</span>
+      <button class="btn btn-ghost btn-sm" onclick="renderEngineer()">🔄 تحديث</button>
+    </div>
+    ${commands.length === 0
+      ? `<div style="text-align:center;padding:32px;color:var(--muted)">
+           <div style="font-size:32px;margin-bottom:8px">🤖</div>
+           <div>لم يتم إرسال أي أمر بعد</div>
+           <div style="font-size:12px;margin-top:4px">استخدم حقل الأمر أعلاه لبدء التفاعل مع الوكلاء</div>
+         </div>`
+      : commands.slice(0, 20).map(r => {
+          const cmd = r.details?.command || '—';
+          const ts  = r.created_at ? r.created_at.replace('T',' ').slice(0,16) : '';
+          // البحث عن نتيجة copilot_done المقابلة
+          const result = logs.find(l => l.action === 'copilot_done' && l.created_at > r.created_at);
+          const isErr  = logs.find(l => l.action === 'copilot_error' && l.created_at > r.created_at);
+          const status = result ? 'done' : isErr ? 'failed' : 'running';
+          return `
+          <div class="req-card" style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div class="req-title" style="flex:1;margin-left:8px">${cmd}</div>
+              <div>${statusBadge(status)}</div>
+            </div>
+            <div class="req-meta"><span>📅 ${ts}</span></div>
+            ${result ? `<div class="req-body" style="color:var(--accent2);font-size:11px">✅ ${(result.details?.result || '').slice(0,120)}${(result.details?.result||'').length > 120 ? '...' : ''}</div>` : ''}
+            ${isErr  ? `<div class="req-body" style="color:var(--danger);font-size:11px">❌ ${(isErr.details?.error || '').slice(0,120)}</div>` : ''}
+          </div>`;
+        }).join('')
+    }
   </div>`;
 }
 
-function showNewEngineerReq() {
-  openCopilotPanel();
-  document.getElementById('cp-panel-input').placeholder = 'أضف زر... / أنشئ قسم... / عدّل صفحة...';
-  document.getElementById('cp-panel-input').focus();
+async function sendEngineerCmd() {
+  const input = document.getElementById('eng-cmd');
+  const btn   = document.getElementById('eng-send-btn');
+  const status = document.getElementById('eng-status');
+  if (!input) return;
+  const cmd = input.value.trim();
+  if (!cmd) { toast('اكتب أمراً أولاً', 'error'); return; }
+
+  input.disabled = true;
+  btn.disabled   = true;
+  btn.textContent = '⏳ جارٍ...';
+  status.style.display = 'block';
+  status.textContent   = '⏳ الوكلاء يعملون على طلبك...';
+
+  try {
+    await api('/api/copilot', 'POST', { command: cmd });
+    input.value = '';
+    status.style.color = 'var(--accent2)';
+    status.textContent = '✅ تم إرسال الأمر — انتظر النتيجة عبر الإشعارات';
+    toast('✅ أمر الوكيل أُرسل بنجاح', 'success');
+    // تحديث السجل بعد 3 ثواني
+    setTimeout(() => renderEngineer(), 3000);
+  } catch(e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = '❌ فشل إرسال الأمر: ' + (e.message || e);
+    toast('فشل إرسال الأمر', 'error');
+  } finally {
+    input.disabled = false;
+    btn.disabled   = false;
+    btn.textContent = '▶ إرسال';
+  }
 }
+
+function showNewEngineerReq() {
+  // يفتح لوحة Copilot المدمجة ويركز على حقل الإدخال
+  openCopilotPanel();
+  const inp = document.getElementById('cp-panel-input');
+  if (inp) {
+    inp.placeholder = 'مثال: أضف زر تصدير CSV في صفحة المجموعات...';
+    inp.focus();
+  }
+}
+
 function showEngineerSettings() {
   showModal('إعدادات وكيل المهندس', `
-    <div class="fg"><label class="flbl">مستوى التدخل</label>
-      <select class="fselect">
-        <option>تلقائي بالكامل (يطبق مباشرة)</option>
-        <option selected>يتطلب موافقة قبل التطبيق</option>
-        <option>وضع عرض فقط (Sandbox دائماً)</option>
+    <div class="fg"><label class="flbl">النموذج المفضل</label>
+      <select class="fselect" id="eng-model">
+        <option value="gemini/gemini-1.5-flash">Gemini 1.5 Flash (افتراضي)</option>
+        <option value="gpt-4o">GPT-4o</option>
+        <option value="claude-sonnet-4-5">Claude Sonnet</option>
       </select>
     </div>
-    <div class="fg"><label class="flbl">نموذج الذكاء الاصطناعي</label>
-      <select class="fselect"><option>Claude 3.7 Sonnet</option><option>GPT-4o</option></select>
+    <div class="fg"><label class="flbl">عدد الوكلاء المتوازيين</label>
+      <select class="fselect">
+        <option>5 وكلاء (الكامل)</option>
+        <option>3 وكلاء (موفر)</option>
+        <option>1 وكيل (بطيء)</option>
+      </select>
     </div>
   `, () => toast('✅ تم حفظ الإعدادات', 'success'));
 }
-function openSandbox() {
+
+async function openSandbox() {
   showModal('🧪 البيئة التجريبية', `
-    <div class="alert alert-info">اكتب كوداً أو وصف ميزة جديدة للاختبار قبل التطبيق الفعلي.</div>
-    <div class="fg"><label class="flbl">وصف الميزة</label><textarea class="ftextarea" placeholder="أريد زر يصدر قائمة المجموعات كـ CSV..."></textarea></div>
-  `, () => toast('🧪 تم تشغيل الاختبار في Sandbox', 'success'));
+    <div class="alert alert-info" style="margin-bottom:10px;font-size:12px">
+      أدخل أمراً لاختباره — سيُرسل للوكلاء وتظهر النتيجة هنا مباشرة.
+    </div>
+    <div class="fg"><label class="flbl">الأمر التجريبي</label>
+      <textarea class="ftextarea" id="sandbox-cmd" rows="3" placeholder="مثال: اعرض إحصائيات المجموعات التعليمية"></textarea>
+    </div>
+    <div id="sandbox-result" style="margin-top:10px;font-size:12px;display:none;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);max-height:150px;overflow-y:auto"></div>
+  `, async () => {
+    const cmd = document.getElementById('sandbox-cmd')?.value?.trim();
+    if (!cmd) { toast('أدخل أمراً', 'error'); return; }
+    const res_div = document.getElementById('sandbox-result');
+    if (res_div) { res_div.style.display = 'block'; res_div.textContent = '⏳ جارٍ التنفيذ...'; }
+    try {
+      await api('/api/copilot', 'POST', { command: '[SANDBOX] ' + cmd });
+      if (res_div) res_div.textContent = '✅ تم إرسال الأمر للوكلاء — النتيجة ستصل عبر WebSocket';
+      toast('🧪 الأمر التجريبي أُرسل', 'success');
+    } catch(e) {
+      if (res_div) { res_div.style.color = 'var(--danger)'; res_div.textContent = '❌ ' + (e.message || e); }
+    }
+  });
 }
-function undoEngineerChange(id) { toast('↩️ تم التراجع عن التغيير #'+id, 'info'); }
-function approveChange(id) { toast('✅ تمت الموافقة وتطبيق التغيير #'+id, 'success'); renderEngineer(); }
+
+// ═══════════════════════════════════════════════════════════
+// AI MONITOR — مراقبة الذكاء الاصطناعي
+// ═══════════════════════════════════════════════════════════
+
+// حالة نماذج الـ AI في النظام (مخزنة في الذاكرة)
+let _aiModels = [
+  {
+    id: 'gemini-flash',
+    name: 'Gemini 1.5 Flash',
+    provider: 'Google',
+    avatar: '✨',
+    avatarBg: 'linear-gradient(135deg,#1a73e8,#0f9d58)',
+    role: 'النموذج الرئيسي',
+    roleColor: 'var(--accent2)',
+    tasks: ['قائد الفريق (Orchestrator)', 'المخطط الاستراتيجي', 'المنفذ الميداني', 'المراقب الذكي', 'المحلل والمحسّن'],
+    contextWindow: 1000000,
+    tokensUsed: 0,
+    callsTotal: 0,
+    callsToday: 0,
+    avgTokensPerCall: 2400,
+    status: 'active',
+    envKey: 'GOOGLE_API_KEY',
+    modelString: 'gemini/gemini-1.5-flash',
+    isDefault: true,
+  },
+  {
+    id: 'chromadb',
+    name: 'ChromaDB (Vector)',
+    provider: 'Chroma',
+    avatar: '🗄️',
+    avatarBg: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+    role: 'ذاكرة متجهية',
+    roleColor: 'var(--purple)',
+    tasks: ['store_memory — حفظ نتائج الحملات', 'recall_memory — استرجاع السياق التاريخي'],
+    contextWindow: null,
+    tokensUsed: 0,
+    callsTotal: 0,
+    callsToday: 0,
+    avgTokensPerCall: 0,
+    status: 'active',
+    envKey: 'CHROMA_PERSIST_DIR',
+    modelString: 'chromadb-local',
+    isDefault: false,
+  },
+];
+
+// نماذج يمكن إضافتها
+const _availableModels = [
+  { id:'gpt-4o',       name:'GPT-4o',          provider:'OpenAI',     avatar:'🟢', avatarBg:'linear-gradient(135deg,#10a37f,#1a7f64)', envKey:'OPENAI_API_KEY',     modelString:'openai/gpt-4o',          contextWindow:128000  },
+  { id:'gpt-4o-mini',  name:'GPT-4o Mini',      provider:'OpenAI',     avatar:'⚡', avatarBg:'linear-gradient(135deg,#10a37f,#0d6e57)', envKey:'OPENAI_API_KEY',     modelString:'openai/gpt-4o-mini',     contextWindow:128000  },
+  { id:'claude-sonnet',name:'Claude 3.5 Sonnet', provider:'Anthropic', avatar:'🔷', avatarBg:'linear-gradient(135deg,#c9472a,#8b2a15)', envKey:'ANTHROPIC_API_KEY',  modelString:'anthropic/claude-3-5-sonnet-20241022', contextWindow:200000 },
+  { id:'deepseek-v3',  name:'DeepSeek V3',       provider:'DeepSeek',  avatar:'🐋', avatarBg:'linear-gradient(135deg,#0ea5e9,#0369a1)', envKey:'DEEPSEEK_API_KEY',   modelString:'deepseek/deepseek-chat', contextWindow:64000   },
+  { id:'llama-groq',   name:'Llama 3.3 70B',     provider:'Groq',      avatar:'🦙', avatarBg:'linear-gradient(135deg,#f97316,#c2410c)', envKey:'GROQ_API_KEY',       modelString:'groq/llama-3.3-70b-versatile', contextWindow:128000 },
+  { id:'gemini-pro',   name:'Gemini 1.5 Pro',    provider:'Google',    avatar:'💎', avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)', envKey:'GOOGLE_API_KEY',     modelString:'gemini/gemini-1.5-pro',  contextWindow:2000000 },
+];
+
+// أدوار يمكن تعيينها
+const _agentRoles = [
+  { id:'orchestrator', label:'قائد الفريق', icon:'👑', desc:'يوزع المهام على الوكلاء' },
+  { id:'planner',      label:'المخطط',      icon:'📋', desc:'يختار المجموعات ويحدد الجدول' },
+  { id:'executor',     label:'المنفذ',       icon:'⚡', desc:'يرسل الرسائل الفعلية' },
+  { id:'monitor',      label:'المراقب',      icon:'👁️', desc:'يتابع حذف الرسائل' },
+  { id:'analyzer',     label:'المحلل',       icon:'📊', desc:'يحلل النتائج ويوصي' },
+  { id:'memory',       label:'الذاكرة',      icon:'🧠', desc:'يخزن ويسترجع السياق' },
+  { id:'backup',       label:'احتياطي',      icon:'🔄', desc:'يعمل عند تعطل النموذج الرئيسي' },
+];
+
+async function renderAiMonitor() {
+  // جلب إحصائيات حقيقية من audit-log لحساب عدد الاستدعاءات
+  try {
+    const logs = await api('/api/audit-log?limit=200');
+    const copilotCalls = logs.filter(l => l.action === 'copilot_command');
+    const today = new Date().toISOString().split('T')[0];
+    // توزيع المكالمات على النموذج الافتراضي
+    const defaultModel = _aiModels.find(m => m.isDefault);
+    if (defaultModel) {
+      defaultModel.callsTotal = copilotCalls.length;
+      defaultModel.callsToday = copilotCalls.filter(l => (l.created_at||'').startsWith(today)).length;
+      defaultModel.tokensUsed = copilotCalls.length * defaultModel.avgTokensPerCall;
+    }
+  } catch(e) {}
+
+  // حساب إجماليات
+  const totalTokens = _aiModels.reduce((s,m) => s + (m.tokensUsed||0), 0);
+  const totalCalls  = _aiModels.reduce((s,m) => s + (m.callsTotal||0), 0);
+  const activeCount = _aiModels.filter(m => m.status === 'active').length;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">🧠 مراقبة الذكاء الاصطناعي</div>
+      <div class="page-sub">إدارة نماذج AI ومراقبة استهلاك التوكن</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-success btn-sm" onclick="showAddModelModal()">➕ إضافة نموذج</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderAiMonitor()">🔄 تحديث</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid4" style="margin-bottom:16px">
+    <div class="kpi">
+      <div class="kpi-glow" style="background:var(--accent)"></div>
+      <div class="kpi-icon">🧠</div>
+      <div class="kpi-val">${_aiModels.length}</div>
+      <div class="kpi-lbl">نماذج مسجلة</div>
+      <div class="kpi-chg info">${activeCount} نشط</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-glow" style="background:var(--purple)"></div>
+      <div class="kpi-icon">🔢</div>
+      <div class="kpi-val">${totalTokens >= 1000000 ? (totalTokens/1000000).toFixed(1)+'M' : totalTokens >= 1000 ? (totalTokens/1000).toFixed(1)+'K' : totalTokens}</div>
+      <div class="kpi-lbl">توكن مستهلك</div>
+      <div class="kpi-chg warn">إجمالي كل النماذج</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-glow" style="background:var(--accent2)"></div>
+      <div class="kpi-icon">📞</div>
+      <div class="kpi-val">${totalCalls}</div>
+      <div class="kpi-lbl">إجمالي الاستدعاءات</div>
+      <div class="kpi-chg success">منذ بدء التشغيل</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-glow" style="background:var(--warn)"></div>
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-val">${_aiModels.find(m=>m.isDefault)?.callsToday || 0}</div>
+      <div class="kpi-lbl">استدعاءات اليوم</div>
+      <div class="kpi-chg info">النموذج الافتراضي</div>
+    </div>
+  </div>
+
+  <!-- ملخص توكن مرئي -->
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;font-size:14px">
+      📊 توزيع استهلاك التوكن
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div class="total-token-ring">
+        <div style="font-size:18px;font-weight:900;color:var(--white)">${totalTokens >= 1000 ? (totalTokens/1000).toFixed(0)+'K' : totalTokens}</div>
+        <div style="font-size:10px;color:var(--muted);text-align:center">توكن<br>إجمالي</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        ${_aiModels.filter(m=>m.tokensUsed>0 || m.isDefault).map(m => {
+          const pct = totalTokens > 0 ? Math.round((m.tokensUsed/totalTokens)*100) : 0;
+          const colors = {'active':'var(--accent)','inactive':'var(--muted)'};
+          return `
+          <div style="margin-bottom:10px">
+            <div class="token-bar-label">
+              <span>${m.avatar} ${m.name}</span>
+              <span style="color:var(--white);font-weight:700">${m.tokensUsed >= 1000 ? (m.tokensUsed/1000).toFixed(1)+'K' : m.tokensUsed} <span style="color:var(--muted);font-weight:400">(${pct}%)</span></span>
+            </div>
+            <div class="token-bar">
+              <div class="token-bar-fill" style="width:${Math.max(pct,2)}%;background:${m.status==='active'?'var(--accent)':'var(--muted)'}"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- بطاقات النماذج -->
+  <div style="font-weight:800;color:var(--white);margin-bottom:10px;font-size:14px">🤖 النماذج المسجلة</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:16px">
+
+    ${_aiModels.map((m,idx) => `
+    <div class="ai-model-card ${m.status==='active'?'active-model':'inactive-model'}">
+      <div class="model-header">
+        <div class="model-avatar" style="background:${m.avatarBg}">${m.avatar}</div>
+        <div style="flex:1">
+          <div class="model-name">${m.name}</div>
+          <div class="model-provider">${m.provider} · <code style="font-size:10px;color:var(--muted)">${m.modelString}</code></div>
+          <div class="model-role-badge" style="background:rgba(59,130,246,.15);color:${m.roleColor}">${m.role}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${statusBadge(m.status)}
+          ${m.isDefault ? `<span style="font-size:10px;background:rgba(34,197,94,.15);color:var(--accent2);padding:2px 6px;border-radius:10px;font-weight:700">افتراضي</span>` : ''}
+        </div>
+      </div>
+
+      <!-- الأدوار/المهام -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px">📋 المهام في النظام:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${m.tasks.map(t => `<span style="font-size:10px;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:var(--text)">${t}</span>`).join('')}
+        </div>
+      </div>
+
+      <!-- نافذة السياق -->
+      ${m.contextWindow ? `
+      <div class="token-bar-wrap">
+        <div class="token-bar-label">
+          <span>استهلاك التوكن</span>
+          <span style="color:var(--white)">${(m.tokensUsed/1000).toFixed(1)}K / ${m.contextWindow>=1000000?(m.contextWindow/1000000).toFixed(1)+'M':(m.contextWindow/1000).toFixed(0)+'K'}</span>
+        </div>
+        <div class="token-bar">
+          <div class="token-bar-fill" style="width:${Math.min(m.contextWindow>0?Math.round(m.tokensUsed/m.contextWindow*100):0,100)}%;background:var(--accent)"></div>
+        </div>
+      </div>` : ''}
+
+      <!-- إحصائيات -->
+      <div class="model-stats-row">
+        <div class="model-stat">استدعاءات<span>${m.callsTotal}</span></div>
+        <div class="model-stat">اليوم<span>${m.callsToday}</span></div>
+        ${m.avgTokensPerCall>0?`<div class="model-stat">متوسط/استدعاء<span>${m.avgTokensPerCall}</span></div>`:''}
+        ${m.contextWindow?`<div class="model-stat">نافذة السياق<span>${m.contextWindow>=1000000?(m.contextWindow/1000000).toFixed(0)+'M':(m.contextWindow/1000).toFixed(0)+'K'}</span></div>`:''}
+      </div>
+
+      <!-- أزرار الإجراءات -->
+      <div class="model-actions">
+        ${!m.isDefault && m.status==='active' ? `<button class="btn btn-success btn-xs" onclick="setDefaultModel('${m.id}')">⭐ تعيين افتراضي</button>` : ''}
+        ${m.status==='active' ? `<button class="btn btn-ghost btn-xs" onclick="toggleModelStatus('${m.id}','inactive')">⏸ تعطيل</button>` : `<button class="btn btn-primary btn-xs" onclick="toggleModelStatus('${m.id}','active')">▶ تفعيل</button>`}
+        <button class="btn btn-ghost btn-xs" onclick="editModelRoles('${m.id}')">✏️ تعديل الأدوار</button>
+        ${!m.isDefault ? `<button class="btn-icon danger" onclick="removeModel('${m.id}')">🗑️</button>` : ''}
+      </div>
+    </div>`).join('')}
+
+    <!-- بطاقة إضافة نموذج -->
+    <div class="add-model-card" onclick="showAddModelModal()">
+      <div style="font-size:32px">➕</div>
+      <div style="font-size:13px;font-weight:700;color:var(--white)">إضافة نموذج AI</div>
+      <div style="font-size:11px;color:var(--muted);text-align:center">GPT-4o · Claude · Llama · DeepSeek</div>
+    </div>
+  </div>
+
+  <!-- الوكلاء وربطهم بالنماذج -->
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;font-size:14px">👥 الوكلاء ونماذجهم الحالية</div>
+    <div class="agents-grid">
+      ${[
+        {icon:'👑', name:'قائد الفريق',        role:'orchestrator', desc:'يحلل الأمر ويوزع المهام'},
+        {icon:'📋', name:'المخطط الاستراتيجي', role:'planner',      desc:'يختار المجموعات والجدول'},
+        {icon:'⚡', name:'المنفذ الميداني',     role:'executor',     desc:'يرسل الرسائل الفعلية'},
+        {icon:'👁️', name:'المراقب الذكي',       role:'monitor',      desc:'يكشف حذف الرسائل'},
+        {icon:'📊', name:'المحلل والمحسّن',     role:'analyzer',     desc:'يحلل النتائج'},
+      ].map(agent => {
+        const m = _aiModels.find(m => m.status==='active' && m.isDefault) || _aiModels[0];
+        return `
+        <div class="agent-chip">
+          <div class="agent-chip-icon">${agent.icon}</div>
+          <div class="agent-chip-info">
+            <div class="agent-chip-name">${agent.name}</div>
+            <div class="agent-chip-role">${m ? m.avatar+' '+m.name : '—'}</div>
+          </div>
+          <button class="btn-icon" title="تغيير النموذج" onclick="changeAgentModel('${agent.role}','${agent.name}')">🔄</button>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ─── إضافة نموذج جديد ──────────────────────────────────────
+function showAddModelModal() {
+  const existing = _aiModels.map(m => m.id);
+  const available = _availableModels.filter(m => !existing.includes(m.id));
+
+  showModal('➕ إضافة نموذج AI', `
+    <div class="fg">
+      <label class="flbl">اختر نموذجاً جاهزاً</label>
+      <select class="fselect" id="add-model-preset" onchange="fillModelPreset(this.value)">
+        <option value="">— اختر من القائمة —</option>
+        ${available.map(m => `<option value="${m.id}">${m.avatar} ${m.name} (${m.provider})</option>`).join('')}
+        <option value="custom">✏️ نموذج مخصص</option>
+      </select>
+    </div>
+    <div id="custom-model-fields">
+      <div class="fg"><label class="flbl">اسم العرض</label><input class="finput" id="am-name" placeholder="مثال: GPT-4o"></div>
+      <div class="fg"><label class="flbl">المزود</label><input class="finput" id="am-provider" placeholder="OpenAI / Anthropic / Google ..."></div>
+      <div class="fg"><label class="flbl">معرف النموذج (Model String)</label><input class="finput" id="am-string" placeholder="openai/gpt-4o"></div>
+      <div class="fg"><label class="flbl">نافذة السياق (توكن)</label><input class="finput" type="number" id="am-ctx" placeholder="128000"></div>
+      <div class="fg"><label class="flbl">مفتاح البيئة المطلوب</label><input class="finput" id="am-envkey" placeholder="OPENAI_API_KEY"></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">الأدوار في النظام (اختر أكثر من دور)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="am-roles">
+        ${_agentRoles.map(r => `
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px">
+          <input type="checkbox" value="${r.id}" style="accent-color:var(--accent)"> ${r.icon} ${r.label}
+        </label>`).join('')}
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flbl">تعيين هذا النموذج كـ افتراضي للوكلاء؟</label>
+      <select class="fselect" id="am-default">
+        <option value="no">لا — الاحتفاظ بالحالي</option>
+        <option value="yes">نعم — تعيين افتراضياً</option>
+      </select>
+    </div>
+  `, submitAddModel);
+}
+
+function fillModelPreset(id) {
+  const preset = _availableModels.find(m => m.id === id);
+  if (!preset) return;
+  const set = (elId, val) => { const e = document.getElementById(elId); if(e) e.value = val; };
+  set('am-name',     preset.name);
+  set('am-provider', preset.provider);
+  set('am-string',   preset.modelString);
+  set('am-ctx',      preset.contextWindow || '');
+  set('am-envkey',   preset.envKey || '');
+}
+
+function submitAddModel() {
+  const name     = document.getElementById('am-name')?.value?.trim();
+  const provider = document.getElementById('am-provider')?.value?.trim();
+  const mstring  = document.getElementById('am-string')?.value?.trim();
+  const ctx      = parseInt(document.getElementById('am-ctx')?.value || '0');
+  const envKey   = document.getElementById('am-envkey')?.value?.trim() || '';
+  const isDefault= document.getElementById('am-default')?.value === 'yes';
+
+  if (!name || !mstring) { toast('اسم النموذج ومعرفه مطلوبان', 'error'); return; }
+
+  // جمع الأدوار المختارة
+  const checkedRoles = [...document.querySelectorAll('#am-roles input:checked')].map(c => c.value);
+  const roleDefs = _agentRoles.filter(r => checkedRoles.includes(r.id));
+  const tasks = roleDefs.length > 0
+    ? roleDefs.map(r => `${r.icon} ${r.label} — ${r.desc}`)
+    : ['دور عام (غير محدد)'];
+
+  // إنشاء البطاقة
+  const colors = ['linear-gradient(135deg,#10a37f,#1a7f64)','linear-gradient(135deg,#1a73e8,#0f9d58)','linear-gradient(135deg,#c9472a,#8b2a15)','linear-gradient(135deg,#f97316,#c2410c)'];
+  const avatarBg = colors[_aiModels.length % colors.length];
+  const avatarIcons = ['🟢','🔵','🟠','🔴','🟣','⚪'];
+  const avatar = avatarIcons[_aiModels.length % avatarIcons.length];
+
+  if (isDefault) _aiModels.forEach(m => m.isDefault = false);
+
+  const presetRole = _agentRoles.find(r => checkedRoles.includes(r.id));
+  _aiModels.push({
+    id: mstring.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '-' + Date.now(),
+    name, provider, avatar, avatarBg,
+    role: presetRole ? `${presetRole.icon} ${presetRole.label}` : 'دور مخصص',
+    roleColor: 'var(--warn)',
+    tasks, contextWindow: ctx || null,
+    tokensUsed: 0, callsTotal: 0, callsToday: 0, avgTokensPerCall: 1000,
+    status: 'active', envKey, modelString: mstring, isDefault,
+  });
+
+  toast(`✅ تم إضافة ${name}`, 'success');
+
+  // إرسال أمر للوكلاء لتحديث النموذج المفضل إذا كان افتراضياً
+  if (isDefault) {
+    api('/api/copilot', 'POST', { command: `تم تغيير النموذج الافتراضي إلى ${name} (${mstring})` }).catch(()=>{});
+  }
+  renderAiMonitor();
+}
+
+function setDefaultModel(id) {
+  const m = _aiModels.find(m => m.id === id);
+  if (!m) return;
+  _aiModels.forEach(mm => mm.isDefault = false);
+  m.isDefault = true;
+  // إبلاغ الوكلاء
+  api('/api/copilot', 'POST', { command: `تم تعيين ${m.name} كنموذج افتراضي للوكلاء` }).catch(()=>{});
+  toast(`⭐ ${m.name} أصبح النموذج الافتراضي`, 'success');
+  renderAiMonitor();
+}
+
+function toggleModelStatus(id, newStatus) {
+  const m = _aiModels.find(m => m.id === id);
+  if (!m) return;
+  if (m.isDefault && newStatus === 'inactive') { toast('لا يمكن تعطيل النموذج الافتراضي', 'error'); return; }
+  m.status = newStatus;
+  toast(newStatus === 'active' ? `✅ ${m.name} مفعّل` : `⏸ ${m.name} معطّل`, 'info');
+  renderAiMonitor();
+}
+
+function removeModel(id) {
+  const m = _aiModels.find(m => m.id === id);
+  if (!m) return;
+  if (!confirm(`حذف نموذج "${m.name}"؟`)) return;
+  _aiModels = _aiModels.filter(mm => mm.id !== id);
+  toast(`تم حذف ${m.name}`, 'success');
+  renderAiMonitor();
+}
+
+function editModelRoles(id) {
+  const m = _aiModels.find(mm => mm.id === id);
+  if (!m) return;
+  showModal(`✏️ تعديل أدوار: ${m.name}`, `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">حدد المهام التي يؤديها هذا النموذج في النظام:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px" id="edit-roles">
+      ${_agentRoles.map(r => `
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px">
+        <input type="checkbox" value="${r.label}" style="accent-color:var(--accent)" ${m.tasks.some(t=>t.includes(r.label))?'checked':''}> ${r.icon} ${r.label}
+      </label>`).join('')}
+    </div>
+    <div class="fg" style="margin-top:12px">
+      <label class="flbl">متوسط التوكن لكل استدعاء</label>
+      <input class="finput" type="number" id="edit-avg-tokens" value="${m.avgTokensPerCall}">
+    </div>
+  `, () => {
+    const checked = [...document.querySelectorAll('#edit-roles input:checked')].map(c => c.value);
+    const newAvg  = parseInt(document.getElementById('edit-avg-tokens')?.value || m.avgTokensPerCall);
+    m.tasks = checked.length > 0 ? checked : ['دور عام'];
+    m.avgTokensPerCall = newAvg;
+    toast('✅ تم تحديث الأدوار', 'success');
+    renderAiMonitor();
+  });
+}
+
+function changeAgentModel(agentRole, agentName) {
+  const active = _aiModels.filter(m => m.status === 'active');
+  showModal(`🔄 تغيير نموذج: ${agentName}`, `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">اختر النموذج الذي سيؤدي دور "${agentName}":</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${active.map(m => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <input type="radio" name="agent-model" value="${m.id}" ${m.isDefault?'checked':''} style="accent-color:var(--accent)">
+        <div style="width:32px;height:32px;border-radius:8px;background:${m.avatarBg};display:flex;align-items:center;justify-content:center">${m.avatar}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--white)">${m.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${m.provider} · نافذة ${m.contextWindow?((m.contextWindow/1000).toFixed(0)+'K'):'—'}</div>
+        </div>
+        ${m.isDefault?`<span style="font-size:10px;color:var(--accent2);margin-right:auto">افتراضي</span>`:''}
+      </label>`).join('')}
+    </div>
+  `, () => {
+    const sel = document.querySelector('input[name="agent-model"]:checked');
+    const chosen = sel ? _aiModels.find(m=>m.id===sel.value) : null;
+    if (chosen) {
+      toast(`✅ ${agentName} سيستخدم ${chosen.name}`, 'success');
+      api('/api/copilot','POST',{command:`تغيير نموذج وكيل "${agentName}" إلى ${chosen.name}`}).catch(()=>{});
+    }
+    renderAiMonitor();
+  });
+}
 
 // ═══════════════════════════════════════════════════════════
 // SETTINGS
