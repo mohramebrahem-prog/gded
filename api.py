@@ -1,0 +1,694 @@
+"""
+api.py – FastAPI REST API + WebSocket + Static Files
+"""
+import asyncio, json, logging
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
+
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, and_, desc, or_
+
+from database import get_db, init_db
+from models import Account, Group, Message, Campaign, Template, AuditLog, Proxy
+import userbot_manager as um
+
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="TG AI System", version="2.0.0", docs_url="/docs")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+# ─── WebSocket Manager ────────────────────────────────────────────────────────
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept(); self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        if ws in self.active: self.active.remove(ws)
+
+    async def broadcast(self, data: dict):
+        dead = []
+        for ws in self.active:
+            try: await ws.send_json(data)
+            except: dead.append(ws)
+        for ws in dead: self.disconnect(ws)
+
+ws_manager = ConnectionManager()
+
+
+# ─── Schemas ──────────────────────────────────────────────────────────────────
+class AddAccountReq(BaseModel):
+    phone: str
+    proxy_id: Optional[int] = None
+    proxy: Optional[dict] = None
+
+class VerifyCodeReq(BaseModel):
+    phone: str
+    code: str
+    password: Optional[str] = None
+
+class GroupActionReq(BaseModel):
+    action: str
+    group_id: Optional[int] = None
+    group_link: Optional[str] = None
+    account_id: Optional[int] = None
+    data: Optional[dict] = None
+
+class CampaignCreate(BaseModel):
+    name: str
+    target_criteria: dict = {}
+    schedule: dict = {}
+    template_ids: list[int] = []
+
+class TemplateCreate(BaseModel):
+    name: str
+    base_content: str
+    variations: list[str] = []
+
+class CopilotReq(BaseModel):
+    command: str
+
+class SendMessageReq(BaseModel):
+    account_id: int
+    group_id: int
+    message: str
+
+class ProxyCreate(BaseModel):
+    label: str
+    scheme: str = "socks5"
+    hostname: str
+    port: int
+    username: Optional[str] = None
+    password: Optional[str] = None
+    country: Optional[str] = None
+
+
+# ─── Startup / Shutdown ───────────────────────────────────────────────────────
+async def _safe_start_clients():
+    """تشغيل العملاء بأمان — لا يوقف السيرفر إن فشل."""
+    try:
+        await um.start_clients()
+    except Exception as e:
+        logger.warning(f"⚠️ start_clients فشل (غير مؤثر على السيرفر): {e}")
+
+@app.on_event("startup")
+async def startup():
+    await init_db()
+    asyncio.create_task(_safe_start_clients())
+    logger.info("🚀 النظام بدأ")
+
+@app.on_event("shutdown")
+async def shutdown():
+    try:
+        await um.stop_clients()
+    except Exception as e:
+        logger.warning(f"⚠️ stop_clients فشل: {e}")
+
+
+# ─── WebSocket ────────────────────────────────────────────────────────────────
+@app.websocket("/ws")
+async def websocket_endpoint(ws: WebSocket):
+    await ws_manager.connect(ws)
+    try:
+        while True:
+            await asyncio.sleep(25)
+            await ws.send_json({"type": "ping"})
+    except WebSocketDisconnect:
+        ws_manager.disconnect(ws)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ACCOUNTS
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/accounts")
+async def list_accounts(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Account).order_by(desc(Account.created_at)))
+    return [a.to_dict() for a in result.scalars().all()]
+
+@app.post("/api/accounts/add")
+async def add_account(req: AddAccountReq, db: AsyncSession = Depends(get_db)):
+    proxy = req.proxy
+    if req.proxy_id and not proxy:
+        res = await db.execute(select(Proxy).where(Proxy.id == req.proxy_id))
+        p = res.scalar_one_or_none()
+        if p:
+            proxy = {"scheme": p.scheme, "hostname": p.hostname, "port": p.port,
+                     "username": p.username, "password": p.password}
+    return await um.add_account(req.phone, proxy)
+
+@app.post("/api/accounts/verify")
+async def verify_code(req: VerifyCodeReq):
+    result = await um.verify_code(req.phone, req.code, req.password)
+    if result.get("status") == "ok":
+        await ws_manager.broadcast({"type": "account_added", "phone": req.phone})
+    return result
+
+@app.patch("/api/accounts/{account_id}")
+async def update_account(account_id: int, data: dict, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Account).where(Account.id == account_id))
+    acc = res.scalar_one_or_none()
+    if not acc: raise HTTPException(404)
+    for k, v in data.items():
+        if hasattr(acc, k): setattr(acc, k, v)
+    await db.commit()
+    return acc.to_dict()
+
+@app.delete("/api/accounts/{account_id}")
+async def delete_account(account_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Account).where(Account.id == account_id))
+    acc = res.scalar_one_or_none()
+    if not acc: raise HTTPException(404)
+    await db.delete(acc)
+    await db.commit()
+    return {"status": "deleted"}
+
+@app.post("/api/accounts/{account_id}/check")
+async def check_account(account_id: int):
+    client = await um.get_client(account_id)
+    if client:
+        return {"status": "ok", "connected": True}
+    return {"status": "error", "connected": False}
+
+@app.post("/api/accounts/{account_id}/sync")
+async def sync_account_groups(account_id: int, db: AsyncSession = Depends(get_db)):
+    client = await um.get_client(account_id)
+    if not client: raise HTTPException(400, "العميل غير متاح")
+    dialogs = await um.get_dialogs(client)
+    added = 0
+    for d in dialogs:
+        res2 = await db.execute(select(Group).where(Group.telegram_id == d["id"]))
+        if not res2.scalar_one_or_none():
+            grp = Group(
+                telegram_id=d["id"], title=d["title"],
+                username=d.get("username"), account_id=account_id,
+                member_count=d.get("members", 0),
+                is_joined=True, joined_at=datetime.utcnow(),
+            )
+            db.add(grp)
+            added += 1
+    await db.commit()
+    await ws_manager.broadcast({"type": "groups_synced", "account_id": account_id, "added": added})
+    return {"status": "ok", "synced": len(dialogs), "added": added}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PROXIES
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/proxies")
+async def list_proxies(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Proxy).order_by(Proxy.id))
+    return [p.to_dict() for p in result.scalars().all()]
+
+@app.post("/api/proxies")
+async def create_proxy(req: ProxyCreate, db: AsyncSession = Depends(get_db)):
+    p = Proxy(**req.dict())
+    db.add(p)
+    await db.flush(); await db.refresh(p)
+    await db.commit()
+    return p.to_dict()
+
+@app.patch("/api/proxies/{proxy_id}")
+async def update_proxy(proxy_id: int, data: dict, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Proxy).where(Proxy.id == proxy_id))
+    p = res.scalar_one_or_none()
+    if not p: raise HTTPException(404)
+    for k, v in data.items():
+        if hasattr(p, k): setattr(p, k, v)
+    await db.commit()
+    return p.to_dict()
+
+@app.delete("/api/proxies/{proxy_id}")
+async def delete_proxy(proxy_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Proxy).where(Proxy.id == proxy_id))
+    p = res.scalar_one_or_none()
+    if not p: raise HTTPException(404)
+    await db.delete(p)
+    await db.commit()
+    return {"status": "deleted"}
+
+@app.post("/api/proxies/{proxy_id}/check")
+async def check_proxy(proxy_id: int, db: AsyncSession = Depends(get_db)):
+    import time, httpx
+    res = await db.execute(select(Proxy).where(Proxy.id == proxy_id))
+    p = res.scalar_one_or_none()
+    if not p: raise HTTPException(404)
+    try:
+        proxy_url = f"{p.scheme}://"
+        if p.username: proxy_url += f"{p.username}:{p.password}@"
+        proxy_url += f"{p.hostname}:{p.port}"
+        t0 = time.time()
+        async with httpx.AsyncClient(proxy=proxy_url, timeout=8) as c:
+            await c.get("https://api.telegram.org")
+        ms = int((time.time() - t0) * 1000)
+        p.latency_ms = ms; p.last_check = datetime.utcnow(); p.is_active = True
+        await db.commit()
+        return {"status": "ok", "latency_ms": ms}
+    except Exception as e:
+        p.is_active = False; p.last_check = datetime.utcnow()
+        await db.commit()
+        return {"status": "error", "detail": str(e)}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# GROUPS
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/groups")
+async def list_groups(
+    category: Optional[str] = None,
+    is_joined: Optional[bool] = None,
+    is_blacklisted: Optional[bool] = None,
+    min_members: Optional[int] = None,
+    protection_bot: Optional[str] = None,
+    activity_level: Optional[str] = None,
+    account_id: Optional[int] = None,
+    search: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    q = select(Group)
+    conds = []
+    if category:        conds.append(Group.category == category)
+    if is_joined is not None: conds.append(Group.is_joined == is_joined)
+    if is_blacklisted is not None: conds.append(Group.is_blacklisted == is_blacklisted)
+    if min_members:     conds.append(Group.member_count >= min_members)
+    if account_id:      conds.append(Group.account_id == account_id)
+    if activity_level:  conds.append(Group.activity_level == activity_level)
+    if protection_bot == "none":
+        conds.append(Group.protection_bot == None)
+    elif protection_bot:
+        conds.append(Group.protection_bot == protection_bot)
+    if search:          conds.append(Group.title.ilike(f"%{search}%"))
+    if conds: q = q.where(and_(*conds))
+    result = await db.execute(q.order_by(desc(Group.member_count)).limit(500))
+    return [g.to_dict() for g in result.scalars().all()]
+
+@app.post("/api/groups/action")
+async def group_action(req: GroupActionReq, db: AsyncSession = Depends(get_db)):
+    if req.action == "join":
+        client = await um.get_client(req.account_id)
+        if not client: raise HTTPException(400, "العميل غير متاح")
+        result = await um.join_group(client, req.group_link)
+        if result["status"] == "ok":
+            res2 = await db.execute(select(Group).where(Group.telegram_id == str(result["chat_id"])))
+            if not res2.scalar_one_or_none():
+                grp = Group(
+                    telegram_id=str(result["chat_id"]), title=result["title"],
+                    account_id=req.account_id, is_joined=True, joined_at=datetime.utcnow(),
+                )
+                db.add(grp)
+                await db.commit()
+            await ws_manager.broadcast({"type": "group_joined", "title": result["title"]})
+        return result
+
+    if req.action == "leave":
+        res = await db.execute(select(Group).where(Group.id == req.group_id))
+        grp = res.scalar_one_or_none()
+        if not grp: raise HTTPException(404)
+        client = await um.get_client(grp.account_id)
+        if client:
+            try: await client.leave_chat(int(grp.telegram_id))
+            except: pass
+        grp.is_joined = False; grp.left_at = datetime.utcnow()
+        await db.commit()
+        return {"status": "ok"}
+
+    if req.action == "blacklist":
+        res = await db.execute(select(Group).where(Group.id == req.group_id))
+        grp = res.scalar_one_or_none()
+        if not grp: raise HTTPException(404)
+        grp.is_blacklisted = True
+        await db.commit()
+        return {"status": "ok"}
+
+    if req.action == "unblacklist":
+        res = await db.execute(select(Group).where(Group.id == req.group_id))
+        grp = res.scalar_one_or_none()
+        if not grp: raise HTTPException(404)
+        grp.is_blacklisted = False
+        await db.commit()
+        return {"status": "ok"}
+
+    if req.action == "favorite":
+        res = await db.execute(select(Group).where(Group.id == req.group_id))
+        grp = res.scalar_one_or_none()
+        if not grp: raise HTTPException(404)
+        grp.is_favorite = not grp.is_favorite
+        await db.commit()
+        return {"status": "ok", "is_favorite": grp.is_favorite}
+
+    if req.action == "update":
+        res = await db.execute(select(Group).where(Group.id == req.group_id))
+        grp = res.scalar_one_or_none()
+        if not grp: raise HTTPException(404)
+        for k, v in (req.data or {}).items():
+            if hasattr(grp, k): setattr(grp, k, v)
+        await db.commit()
+        return grp.to_dict()
+
+    raise HTTPException(400, f"إجراء غير معروف: {req.action}")
+
+@app.post("/api/groups/import")
+async def import_groups(groups: list[dict], db: AsyncSession = Depends(get_db)):
+    added = 0
+    for g in groups:
+        res = await db.execute(select(Group).where(Group.telegram_id == str(g.get("telegram_id", ""))))
+        if not res.scalar_one_or_none():
+            grp = Group(**{k: v for k, v in g.items() if hasattr(Group, k) and k != "id"})
+            db.add(grp); added += 1
+    await db.commit()
+    return {"status": "ok", "added": added}
+
+@app.delete("/api/groups/{group_id}")
+async def delete_group(group_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Group).where(Group.id == group_id))
+    grp = res.scalar_one_or_none()
+    if not grp: raise HTTPException(404)
+    await db.delete(grp)
+    await db.commit()
+    return {"status": "deleted"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEMPLATES
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/templates")
+async def list_templates(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Template).order_by(desc(Template.created_at)))
+    return [t.to_dict() for t in result.scalars().all()]
+
+@app.post("/api/templates")
+async def create_template(req: TemplateCreate, db: AsyncSession = Depends(get_db)):
+    tmpl = Template(name=req.name, base_content=req.base_content, variations=req.variations)
+    db.add(tmpl); await db.flush(); await db.refresh(tmpl); await db.commit()
+    return tmpl.to_dict()
+
+@app.patch("/api/templates/{template_id}")
+async def update_template(template_id: int, data: dict, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Template).where(Template.id == template_id))
+    tmpl = res.scalar_one_or_none()
+    if not tmpl: raise HTTPException(404)
+    for k, v in data.items():
+        if hasattr(tmpl, k): setattr(tmpl, k, v)
+    await db.commit()
+    return tmpl.to_dict()
+
+@app.delete("/api/templates/{template_id}")
+async def delete_template(template_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Template).where(Template.id == template_id))
+    tmpl = res.scalar_one_or_none()
+    if not tmpl: raise HTTPException(404)
+    await db.delete(tmpl); await db.commit()
+    return {"status": "deleted"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CAMPAIGNS
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/campaigns")
+async def list_campaigns(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Campaign).order_by(desc(Campaign.created_at)))
+    return [c.to_dict() for c in result.scalars().all()]
+
+@app.post("/api/campaigns")
+async def create_campaign(req: CampaignCreate, db: AsyncSession = Depends(get_db)):
+    camp = Campaign(name=req.name, target_criteria=req.target_criteria,
+                    schedule=req.schedule, template_ids=req.template_ids)
+    db.add(camp); await db.flush(); await db.refresh(camp); await db.commit()
+    return camp.to_dict()
+
+@app.patch("/api/campaigns/{campaign_id}")
+async def update_campaign(campaign_id: int, data: dict, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = res.scalar_one_or_none()
+    if not camp: raise HTTPException(404)
+    for k, v in data.items():
+        if hasattr(camp, k): setattr(camp, k, v)
+    await db.commit()
+    return camp.to_dict()
+
+@app.delete("/api/campaigns/{campaign_id}")
+async def delete_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = res.scalar_one_or_none()
+    if not camp: raise HTTPException(404)
+    await db.delete(camp); await db.commit()
+    return {"status": "deleted"}
+
+@app.post("/api/campaigns/{campaign_id}/run")
+async def run_campaign(campaign_id: int, background: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = res.scalar_one_or_none()
+    if not camp: raise HTTPException(404)
+    camp.status = "running"; camp.started_at = datetime.utcnow()
+    await db.commit()
+
+    async def _run():
+        from agents import run_copilot
+        from database import get_session
+        criteria_str = json.dumps(camp.target_criteria or {}, ensure_ascii=False)
+        cmd = f"شغّل الحملة '{camp.name}' وأرسل القوالب {camp.template_ids} للمجموعات: {criteria_str}"
+        await run_copilot(cmd)
+        db2 = await get_session()
+        try:
+            r2 = await db2.execute(select(Campaign).where(Campaign.id == campaign_id))
+            c = r2.scalar_one_or_none()
+            if c: c.status = "done"; c.finished_at = datetime.utcnow(); await db2.commit()
+        finally: await db2.close()
+        await ws_manager.broadcast({"type": "campaign_done", "id": campaign_id})
+
+    background.add_task(_run)
+    return {"status": "started"}
+
+@app.post("/api/campaigns/{campaign_id}/pause")
+async def pause_campaign(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = res.scalar_one_or_none()
+    if not camp: raise HTTPException(404)
+    camp.status = "paused"; await db.commit()
+    return {"status": "paused"}
+
+@app.get("/api/campaigns/{campaign_id}/stats")
+async def campaign_stats(campaign_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    camp = res.scalar_one_or_none()
+    if not camp: raise HTTPException(404)
+    total = (await db.execute(
+        select(func.count(Message.id)).where(Message.campaign_id == campaign_id)
+    )).scalar() or 0
+    deleted = (await db.execute(
+        select(func.count(Message.id)).where(
+            Message.campaign_id == campaign_id, Message.status == "deleted")
+    )).scalar() or 0
+    return {
+        "campaign": camp.to_dict(),
+        "total": total, "deleted": deleted,
+        "success": total - deleted,
+        "success_rate": round((total - deleted) / total * 100, 1) if total else 0,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MESSAGES
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/messages")
+async def list_messages(limit: int = 100, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Message).order_by(desc(Message.sent_at)).limit(limit))
+    return [m.to_dict() for m in result.scalars().all()]
+
+@app.post("/api/messages/send")
+async def send_message_direct(req: SendMessageReq, background: BackgroundTasks):
+    client = await um.get_client(req.account_id)
+    if not client: raise HTTPException(400, "العميل غير متاح")
+
+    async def _send():
+        from database import get_session
+        db = await get_session()
+        try:
+            res = await db.execute(select(Group).where(Group.id == req.group_id))
+            grp = res.scalar_one_or_none()
+            if not grp: return
+            msg = await um.send_message(client, int(grp.telegram_id), req.message)
+            if msg:
+                db_msg = Message(account_id=req.account_id, group_id=req.group_id,
+                                 content=req.message, telegram_msg_id=msg.id)
+                db.add(db_msg); await db.commit(); await db.refresh(db_msg)
+                grp.last_ad_at = datetime.utcnow(); await db.commit()
+                asyncio.create_task(um.monitor_deletion(client, msg.id, int(grp.telegram_id), db_msg.id))
+                await ws_manager.broadcast({"type": "message_sent", "group": grp.title})
+        finally: await db.close()
+
+    background.add_task(_send)
+    return {"status": "queued"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STATS / ANALYTICS
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/stats/overview")
+async def stats_overview(db: AsyncSession = Depends(get_db)):
+    acc_total   = (await db.execute(select(func.count(Account.id)))).scalar() or 0
+    acc_active  = (await db.execute(select(func.count(Account.id)).where(Account.status == "active"))).scalar() or 0
+    acc_banned  = (await db.execute(select(func.count(Account.id)).where(Account.status == "banned"))).scalar() or 0
+    acc_flood   = (await db.execute(select(func.count(Account.id)).where(Account.status == "flood"))).scalar() or 0
+    grp_total   = (await db.execute(select(func.count(Group.id)))).scalar() or 0
+    grp_joined  = (await db.execute(select(func.count(Group.id)).where(Group.is_joined == True))).scalar() or 0
+    grp_banned  = (await db.execute(select(func.count(Group.id)).where(Group.is_banned == True))).scalar() or 0
+    grp_black   = (await db.execute(select(func.count(Group.id)).where(Group.is_blacklisted == True))).scalar() or 0
+    msg_total   = (await db.execute(select(func.count(Message.id)))).scalar() or 0
+    msg_deleted = (await db.execute(select(func.count(Message.id)).where(Message.status == "deleted"))).scalar() or 0
+    camp_total  = (await db.execute(select(func.count(Campaign.id)))).scalar() or 0
+    camp_run    = (await db.execute(select(func.count(Campaign.id)).where(Campaign.status == "running"))).scalar() or 0
+    tmpl_total  = (await db.execute(select(func.count(Template.id)))).scalar() or 0
+    proxy_total = (await db.execute(select(func.count(Proxy.id)))).scalar() or 0
+    proxy_ok    = (await db.execute(select(func.count(Proxy.id)).where(Proxy.is_active == True))).scalar() or 0
+
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    msg_today = (await db.execute(
+        select(func.count(Message.id)).where(Message.sent_at >= today)
+    )).scalar() or 0
+
+    return {
+        "accounts": {"total": acc_total, "active": acc_active, "banned": acc_banned, "flood": acc_flood},
+        "groups":   {"total": grp_total, "joined": grp_joined, "banned": grp_banned, "blacklisted": grp_black},
+        "messages": {
+            "total": msg_total, "deleted": msg_deleted, "today": msg_today,
+            "success_rate": round((msg_total - msg_deleted) / msg_total * 100, 1) if msg_total else 0,
+        },
+        "campaigns": {"total": camp_total, "running": camp_run},
+        "templates": {"total": tmpl_total},
+        "proxies":   {"total": proxy_total, "active": proxy_ok},
+    }
+
+@app.get("/api/stats/messages_timeline")
+async def messages_timeline(days: int = 14, db: AsyncSession = Depends(get_db)):
+    since = datetime.utcnow() - timedelta(days=days)
+    result = await db.execute(
+        select(func.date(Message.sent_at).label("date"), func.count(Message.id).label("total"),
+               func.sum(func.case((Message.status == "deleted", 1), else_=0)).label("deleted"))
+        .where(Message.sent_at >= since)
+        .group_by(func.date(Message.sent_at))
+        .order_by(func.date(Message.sent_at))
+    )
+    return [{"date": str(r.date), "total": r.total, "deleted": r.deleted or 0} for r in result.all()]
+
+@app.get("/api/stats/groups_by_category")
+async def groups_by_category(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Group.category, func.count(Group.id).label("count"))
+        .group_by(Group.category).order_by(desc("count"))
+    )
+    return [{"category": r.category or "غير مصنف", "count": r.count} for r in result.all()]
+
+@app.get("/api/stats/groups_by_activity")
+async def groups_by_activity(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Group.activity_level, func.count(Group.id).label("count"))
+        .group_by(Group.activity_level).order_by(desc("count"))
+    )
+    return [{"level": r.activity_level or "unknown", "count": r.count} for r in result.all()]
+
+@app.get("/api/stats/protection_bots")
+async def protection_bots(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Group.protection_bot, func.count(Group.id).label("count"))
+        .group_by(Group.protection_bot).order_by(desc("count"))
+    )
+    return [{"bot": r.protection_bot or "لا يوجد", "count": r.count} for r in result.all()]
+
+@app.get("/api/stats/top_groups")
+async def top_groups(limit: int = 20, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Group).where(Group.is_joined == True)
+        .order_by(desc(Group.response_rate)).limit(limit)
+    )
+    return [g.to_dict() for g in result.scalars().all()]
+
+@app.get("/api/stats/accounts_performance")
+async def accounts_performance(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Account))
+    accounts = result.scalars().all()
+    out = []
+    for acc in accounts:
+        total = (await db.execute(
+            select(func.count(Message.id)).where(Message.account_id == acc.id)
+        )).scalar() or 0
+        deleted = (await db.execute(
+            select(func.count(Message.id)).where(
+                Message.account_id == acc.id, Message.status == "deleted")
+        )).scalar() or 0
+        groups_count = (await db.execute(
+            select(func.count(Group.id)).where(Group.account_id == acc.id, Group.is_joined == True)
+        )).scalar() or 0
+        d = acc.to_dict()
+        d.update({"messages_total": total, "messages_deleted": deleted,
+                  "groups_count": groups_count,
+                  "delete_rate": round(deleted / total * 100, 1) if total else 0})
+        out.append(d)
+    return out
+
+@app.get("/api/stats/templates_performance")
+async def templates_performance(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Template))
+    templates = result.scalars().all()
+    out = []
+    for t in templates:
+        total = (await db.execute(
+            select(func.count(Message.id)).where(Message.template_id == t.id)
+        )).scalar() or 0
+        deleted = (await db.execute(
+            select(func.count(Message.id)).where(
+                Message.template_id == t.id, Message.status == "deleted")
+        )).scalar() or 0
+        d = t.to_dict()
+        d.update({"uses": total, "deleted": deleted,
+                  "delete_rate": round(deleted / total * 100, 1) if total else 0})
+        out.append(d)
+    return out
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AUDIT LOG
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/audit-log")
+async def get_audit_log(limit: int = 200, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AuditLog).order_by(desc(AuditLog.created_at)).limit(limit))
+    return [l.to_dict() for l in result.scalars().all()]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COPILOT
+# ══════════════════════════════════════════════════════════════════════════════
+@app.post("/api/copilot")
+async def copilot(req: CopilotReq, background: BackgroundTasks):
+    background.add_task(_copilot_task, req.command)
+    return {"status": "processing", "command": req.command}
+
+async def _copilot_task(command: str):
+    from agents import run_copilot
+    result = await run_copilot(command)
+    await ws_manager.broadcast({"type": "copilot_result", "data": result})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STATIC (SPA)
+# ══════════════════════════════════════════════════════════════════════════════
+STATIC_DIR = Path(__file__).parent / "static"
+
+if STATIC_DIR.exists():
+    @app.get("/")
+    async def serve_root():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        fp = STATIC_DIR / full_path
+        if fp.exists() and fp.is_file():
+            return FileResponse(fp)
+        return FileResponse(STATIC_DIR / "index.html")
