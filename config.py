@@ -31,7 +31,7 @@ DEEPSEEK_API_KEY  = os.getenv("DEEPSEEK_API_KEY",  "")
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY",      "")
 OPENAI_API_KEY    = os.getenv("OPENAI_API_KEY",    "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-PREFERRED_LLM     = os.getenv("PREFERRED_LLM",     "gemini/gemini-1.5-flash")
+PREFERRED_LLM     = os.getenv("PREFERRED_LLM",    "gemini/gemini-2.0-flash")
 
 # ─── Server ───────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
