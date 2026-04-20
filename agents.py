@@ -9,9 +9,9 @@ import logging
 from datetime import datetime
 from typing import Any, Optional
 
-from crewai.tools import tool
-from crewai import Agent, Task, Crew, Process, LLM
+logger = logging.getLogger(__name__)
 
+# ─── ChromaDB (اختياري) ───────────────────────────────────────────────────────
 try:
     import chromadb
     from chromadb.config import Settings
@@ -25,21 +25,27 @@ try:
 except Exception as _e:
     CHROMA_AVAILABLE = False
     _memory_col = None
-    logging.warning(f"ChromaDB غير متاح: {_e}")
+    logger.warning(f"ChromaDB غير متاح (غير مؤثر على التشغيل): {_e}")
 
-from config import PREFERRED_LLM, OPENAI_API_KEY
+# ─── CrewAI (اختياري) — لا يُستورد عند بدء التشغيل ───────────────────────────
+CREWAI_AVAILABLE = False
+try:
+    from crewai.tools import tool as crewai_tool
+    from crewai import Agent, Task, Crew, Process, LLM
+    CREWAI_AVAILABLE = True
+except Exception as _e:
+    logger.warning(f"CrewAI غير متاح (غير مؤثر على التشغيل): {_e}")
+    def crewai_tool(name):
+        def decorator(fn):
+            return fn
+        return decorator
+
+from config import PREFERRED_LLM, OPENAI_API_KEY, GOOGLE_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY
 from database import get_session
 from models import Account, Group, Message, Template, Campaign, AuditLog
 
-logger = logging.getLogger(__name__)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# أدوات LangChain المشتركة
-# ══════════════════════════════════════════════════════════════════════════════
 
 def _run_async(coro):
-    """تشغيل coroutine من كود متزامن."""
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -52,18 +58,14 @@ def _run_async(coro):
         return asyncio.run(coro)
 
 
-@tool("query_groups")
+@crewai_tool("query_groups")
 def query_groups(criteria: str) -> str:
-    """
-    يستعلم عن المجموعات من قاعدة البيانات بناءً على معايير JSON.
-    مثال: {"category": "تعليمي", "min_members": 500, "is_joined": true}
-    """
+    """يستعلم عن المجموعات من قاعدة البيانات بناءً على معايير JSON."""
     async def _query():
         try:
             params = json.loads(criteria) if isinstance(criteria, str) else criteria
         except Exception:
             params = {}
-
         db = await get_session()
         try:
             from sqlalchemy import select, and_
@@ -89,31 +91,24 @@ def query_groups(criteria: str) -> str:
             return json.dumps([g.to_dict() for g in groups], ensure_ascii=False)
         finally:
             await db.close()
-
     return _run_async(_query())
 
 
-@tool("send_to_group")
+@crewai_tool("send_to_group")
 def send_to_group(payload: str) -> str:
-    """
-    يرسل رسالة لمجموعة. payload: {"account_id":1,"group_id":1,"message":"نص"}
-    """
+    """يرسل رسالة لمجموعة. payload: {"account_id":1,"group_id":1,"message":"نص"}"""
     async def _send():
         import userbot_manager as um
         try:
             data = json.loads(payload)
         except Exception:
             return json.dumps({"status": "error", "detail": "payload غير صالح"})
-
         account_id = data.get("account_id")
         group_id   = data.get("group_id")
         text       = data.get("message", "")
-
         client = await um.get_client(account_id)
         if not client:
             return json.dumps({"status": "error", "detail": "العميل غير متاح"})
-
-        # جلب telegram_id المجموعة
         db = await get_session()
         try:
             from sqlalchemy import select
@@ -124,21 +119,15 @@ def send_to_group(payload: str) -> str:
             chat_id = int(grp.telegram_id)
         finally:
             await db.close()
-
         msg = await um.send_message(client, chat_id, text)
         if not msg:
             return json.dumps({"status": "error", "detail": "فشل الإرسال"})
-
-        # تسجيل الرسالة
         db = await get_session()
         try:
             db_msg = Message(
-                account_id=account_id,
-                group_id=group_id,
-                content=text,
-                telegram_msg_id=msg.id,
-                sent_at=datetime.utcnow(),
-                status="sent",
+                account_id=account_id, group_id=group_id,
+                content=text, telegram_msg_id=msg.id,
+                sent_at=datetime.utcnow(), status="sent",
             )
             db.add(db_msg)
             await db.commit()
@@ -146,19 +135,14 @@ def send_to_group(payload: str) -> str:
             msg_db_id = db_msg.id
         finally:
             await db.close()
-
-        # تشغيل مراقبة الحذف في الخلفية
-        asyncio.create_task(
-            um.monitor_deletion(client, msg.id, chat_id, msg_db_id)
-        )
+        asyncio.create_task(um.monitor_deletion(client, msg.id, chat_id, msg_db_id))
         return json.dumps({"status": "ok", "message_id": msg_db_id})
-
     return _run_async(_send())
 
 
-@tool("check_deletion_status")
+@crewai_tool("check_deletion_status")
 def check_deletion_status(message_id: str) -> str:
-    """يتحقق من حالة رسالة (مرسلة/محذوفة). message_id: معرف قاعدة البيانات."""
+    """يتحقق من حالة رسالة."""
     async def _check():
         db = await get_session()
         try:
@@ -173,43 +157,36 @@ def check_deletion_status(message_id: str) -> str:
     return _run_async(_check())
 
 
-@tool("store_memory")
+@crewai_tool("store_memory")
 def store_memory(payload: str) -> str:
-    """
-    يخزن ذاكرة في ChromaDB. payload: {"id":"unique_id","text":"نص","metadata":{}}
-    """
+    """يخزن ذاكرة في ChromaDB."""
     if not CHROMA_AVAILABLE:
         return "ChromaDB غير متاح"
     try:
         data = json.loads(payload)
-        _memory_col.upsert(
-            ids=[data["id"]],
-            documents=[data["text"]],
-            metadatas=[data.get("metadata", {})],
-        )
+        _memory_col.upsert(ids=[data["id"]], documents=[data["text"]], metadatas=[data.get("metadata", {})])
         return "تم حفظ الذاكرة"
     except Exception as e:
         return f"خطأ: {e}"
 
 
-@tool("recall_memory")
+@crewai_tool("recall_memory")
 def recall_memory(query: str) -> str:
-    """يسترجع ذاكرة ذات صلة من ChromaDB بناءً على النص."""
+    """يسترجع ذاكرة من ChromaDB."""
     if not CHROMA_AVAILABLE:
         return "ChromaDB غير متاح"
     try:
         results = _memory_col.query(query_texts=[query], n_results=5)
-        docs = results.get("documents", [[]])[0]
+        docs  = results.get("documents", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
-        combined = [{"text": d, "meta": m} for d, m in zip(docs, metas)]
-        return json.dumps(combined, ensure_ascii=False)
+        return json.dumps([{"text": d, "meta": m} for d, m in zip(docs, metas)], ensure_ascii=False)
     except Exception as e:
         return f"خطأ: {e}"
 
 
-@tool("get_campaign_stats")
+@crewai_tool("get_campaign_stats")
 def get_campaign_stats(campaign_id: str) -> str:
-    """يجلب إحصائيات حملة معينة."""
+    """يجلب إحصائيات حملة."""
     async def _stats():
         db = await get_session()
         try:
@@ -218,19 +195,13 @@ def get_campaign_stats(campaign_id: str) -> str:
             camp = res.scalar_one_or_none()
             if not camp:
                 return json.dumps({"error": "حملة غير موجودة"})
-
-            # إحصائيات الرسائل
-            total_q  = select(func.count(Message.id)).where(Message.campaign_id == int(campaign_id))
+            total_q   = select(func.count(Message.id)).where(Message.campaign_id == int(campaign_id))
             deleted_q = select(func.count(Message.id)).where(
-                Message.campaign_id == int(campaign_id),
-                Message.status == "deleted"
-            )
+                Message.campaign_id == int(campaign_id), Message.status == "deleted")
             total   = (await db.execute(total_q)).scalar() or 0
             deleted = (await db.execute(deleted_q)).scalar() or 0
             return json.dumps({
-                "campaign": camp.to_dict(),
-                "total_messages": total,
-                "deleted": deleted,
+                "campaign": camp.to_dict(), "total_messages": total, "deleted": deleted,
                 "success_rate": round((total - deleted) / total * 100, 1) if total else 0,
             }, ensure_ascii=False)
         finally:
@@ -248,163 +219,107 @@ async def _log_audit(agent: str, action: str, details: dict):
         await db.close()
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# تعريف الوكلاء
-# ══════════════════════════════════════════════════════════════════════════════
-
-_llm = LLM(
-    model=PREFERRED_LLM,
-    api_key=OPENAI_API_KEY if OPENAI_API_KEY else None,
-)
+def _build_llm():
+    """ينشئ LLM عند الطلب فقط — لا يُنفَّذ عند الاستيراد."""
+    if not CREWAI_AVAILABLE:
+        raise RuntimeError("CrewAI غير مثبت")
+    api_key = OPENAI_API_KEY or GOOGLE_API_KEY or GROQ_API_KEY or DEEPSEEK_API_KEY or None
+    return LLM(model=PREFERRED_LLM, api_key=api_key)
 
 
-def build_orchestrator() -> Agent:
+def build_orchestrator(llm):
     return Agent(
         role="قائد الفريق",
-        goal="فهم أمر المستخدم وتوزيع المهام على الوكلاء المناسبين وضمان تنفيذها بنجاح.",
-        backstory=(
-            "أنت مدير ذكي يفهم سياق الأعمال ويحوّل الأوامر الطبيعية إلى خطط قابلة للتنفيذ. "
-            "تتميز بالإيجاز والدقة."
-        ),
-        tools=[recall_memory],
-        llm=_llm,
-        verbose=False,
+        goal="فهم أمر المستخدم وتوزيع المهام على الوكلاء المناسبين.",
+        backstory="مدير ذكي يحوّل الأوامر الطبيعية إلى خطط قابلة للتنفيذ.",
+        tools=[recall_memory], llm=llm, verbose=False,
     )
 
-
-def build_planner() -> Agent:
+def build_planner(llm):
     return Agent(
         role="المخطط الاستراتيجي",
-        goal=(
-            "تحليل الأمر واستعلام قاعدة البيانات لاقتراح قائمة مجموعات مستهدفة، "
-            "اختيار الصيغة الأنسب، وتحديد جدول الإرسال."
-        ),
-        backstory=(
-            "خبير في تحليل البيانات وتخطيط حملات التسويق عبر تيليجرام. "
-            "يراعي معدلات النجاح السابقة ومخاطر الحظر."
-        ),
-        tools=[query_groups, recall_memory],
-        llm=_llm,
-        verbose=False,
+        goal="تحليل الأمر واستعلام قاعدة البيانات لاقتراح قائمة مجموعات مستهدفة.",
+        backstory="خبير في تحليل البيانات وتخطيط حملات تيليجرام.",
+        tools=[query_groups, recall_memory], llm=llm, verbose=False,
     )
 
-
-def build_executor() -> Agent:
+def build_executor(llm):
     return Agent(
         role="المنفذ الميداني",
-        goal="تنفيذ خطة المخطط بإرسال الرسائل عبر الحسابات المناسبة مع مراعاة التأخيرات.",
-        backstory=(
-            "متخصص في تشغيل عمليات تيليجرام. يعرف متى يُرسل ومن أي حساب "
-            "لتجنب الحظر وتحقيق أعلى وصول."
-        ),
-        tools=[send_to_group, query_groups],
-        llm=_llm,
-        verbose=False,
+        goal="تنفيذ خطة الإرسال بإرسال الرسائل عبر الحسابات المناسبة.",
+        backstory="متخصص في تشغيل عمليات تيليجرام.",
+        tools=[send_to_group, query_groups], llm=llm, verbose=False,
     )
 
-
-def build_monitor() -> Agent:
+def build_monitor(llm):
     return Agent(
         role="المراقب الذكي",
-        goal="مراقبة الرسائل المرسلة والكشف الفوري عن حذفها وتصنيف بوتات الحماية.",
-        backstory=(
-            "عين ساهرة لا تغفل. يرصد كل رسالة ويسجل وقت الحذف وسببه، "
-            "ويبني قاعدة معرفة عن بوتات الحماية في كل مجموعة."
-        ),
-        tools=[check_deletion_status, store_memory],
-        llm=_llm,
-        verbose=False,
+        goal="مراقبة الرسائل المرسلة والكشف عن حذفها.",
+        backstory="عين ساهرة ترصد كل رسالة وتسجل وقت الحذف وسببه.",
+        tools=[check_deletion_status, store_memory], llm=llm, verbose=False,
     )
 
-
-def build_analyzer() -> Agent:
+def build_analyzer(llm):
     return Agent(
         role="المحلل والمحسّن",
-        goal=(
-            "تحليل نتائج الحملات، تحديث تصنيف المجموعات، "
-            "واقتراح تحسينات للصيغ والجداول الزمنية."
-        ),
-        backstory=(
-            "عالم بيانات يحوّل الأرقام إلى رؤى قابلة للتطبيق. "
-            "يتعلم من كل حملة ويحسّن الأداء باستمرار."
-        ),
-        tools=[get_campaign_stats, store_memory, recall_memory, query_groups],
-        llm=_llm,
-        verbose=False,
+        goal="تحليل نتائج الحملات واقتراح تحسينات.",
+        backstory="عالم بيانات يحوّل الأرقام إلى رؤى قابلة للتطبيق.",
+        tools=[get_campaign_stats, store_memory, recall_memory, query_groups], llm=llm, verbose=False,
     )
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# نقطة الدخول الرئيسية للكوبيلوت
-# ══════════════════════════════════════════════════════════════════════════════
 
 async def run_copilot(command: str) -> dict:
-    """
-    يستقبل أمراً نصياً ويشغّل طاقم الوكلاء لتنفيذه.
-    يعيد {"result": "...", "log": [...]}
-    """
+    """يستقبل أمراً نصياً ويشغّل طاقم الوكلاء لتنفيذه."""
     await _log_audit("Orchestrator", "copilot_command", {"command": command})
 
-    orchestrator = build_orchestrator()
-    planner      = build_planner()
-    executor     = build_executor()
-    monitor      = build_monitor()
-    analyzer     = build_analyzer()
+    if not CREWAI_AVAILABLE:
+        msg = "⚠️ CrewAI غير مثبت — الأمر سُجِّل لكن لم يُنفَّذ."
+        await _log_audit("Orchestrator", "copilot_error", {"error": msg})
+        return {"status": "error", "detail": msg}
+
+    try:
+        llm = _build_llm()
+    except Exception as e:
+        msg = f"⚠️ فشل بناء LLM: {e}"
+        await _log_audit("Orchestrator", "copilot_error", {"error": msg})
+        return {"status": "error", "detail": msg}
+
+    orchestrator = build_orchestrator(llm)
+    planner      = build_planner(llm)
+    executor     = build_executor(llm)
+    monitor      = build_monitor(llm)
+    analyzer     = build_analyzer(llm)
 
     task_orchestrate = Task(
-        description=(
-            f"الأمر المستلم: «{command}»\n"
-            "حدّد نوع العملية (إرسال/تحليل/تقرير/انضمام) وضع خطة مختصرة."
-        ),
-        expected_output="خطة مختصرة بنقاط تتضمن: نوع العملية، المجموعات المستهدفة، الصيغة.",
+        description=f"الأمر المستلم: «{command}»\nحدّد نوع العملية وضع خطة مختصرة.",
+        expected_output="خطة مختصرة: نوع العملية، المجموعات المستهدفة، الصيغة.",
         agent=orchestrator,
     )
-
     task_plan = Task(
-        description=(
-            "بناءً على الخطة المحددة، استعلم عن المجموعات المناسبة من قاعدة البيانات "
-            "وحدد قائمة الإرسال والجدول الزمني."
-        ),
-        expected_output="قائمة JSON بمعرفات المجموعات والحسابات والصيغ المختارة.",
-        agent=planner,
-        context=[task_orchestrate],
+        description="استعلم عن المجموعات المناسبة وحدد قائمة الإرسال والجدول الزمني.",
+        expected_output="قائمة JSON بمعرفات المجموعات والحسابات والصيغ.",
+        agent=planner, context=[task_orchestrate],
     )
-
     task_execute = Task(
-        description=(
-            "نفّذ خطة الإرسال: أرسل الرسائل للمجموعات المحددة باستخدام أداة send_to_group. "
-            "الزم بالتأخيرات البشرية."
-        ),
+        description="نفّذ خطة الإرسال باستخدام أداة send_to_group. الزم بالتأخيرات البشرية.",
         expected_output="تقرير بعدد الرسائل المرسلة وأي أخطاء.",
-        agent=executor,
-        context=[task_plan],
+        agent=executor, context=[task_plan],
     )
-
     task_monitor = Task(
-        description=(
-            "راقب الرسائل المرسلة وتحقق من حالة حذفها. "
-            "سجّل أي حذف في الذاكرة مع تصنيف بوت الحماية."
-        ),
+        description="راقب الرسائل المرسلة وتحقق من حالة حذفها. سجّل أي حذف مع تصنيف بوت الحماية.",
         expected_output="تقرير بعدد الرسائل المحذوفة وتصنيف المجموعات.",
-        agent=monitor,
-        context=[task_execute],
+        agent=monitor, context=[task_execute],
     )
-
     task_analyze = Task(
-        description=(
-            "بعد اكتمال الدورة، حلّل النتائج وقدّم توصيات لتحسين الحملة القادمة. "
-            "خزّن الرؤى في ChromaDB."
-        ),
+        description="حلّل النتائج وقدّم توصيات لتحسين الحملة القادمة. خزّن الرؤى في ChromaDB.",
         expected_output="ملخص تحليلي مع توصيات قابلة للتطبيق.",
-        agent=analyzer,
-        context=[task_monitor],
+        agent=analyzer, context=[task_monitor],
     )
 
     crew = Crew(
         agents=[orchestrator, planner, executor, monitor, analyzer],
         tasks=[task_orchestrate, task_plan, task_execute, task_monitor, task_analyze],
-        process=Process.sequential,
-        verbose=False,
+        process=Process.sequential, verbose=False,
     )
 
     try:
