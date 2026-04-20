@@ -13,7 +13,7 @@ pyrogram>=2.0.106
 tgcrypto>=1.2.5
 
 # ─── AI Agents ────────────────────────────────────────────────────────────────
-crewai>=0.30.0
+crewai>=0.80.0
 langchain>=0.2.0
 langchain-openai>=0.1.6
 langchain-community>=0.2.0
