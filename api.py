@@ -672,7 +672,10 @@ async def copilot(req: CopilotReq, background: BackgroundTasks):
 
 async def _copilot_task(command: str):
     from agents import run_copilot
-    result = await run_copilot(command)
+    try:
+        result = await run_copilot(command)
+    except Exception as e:
+        result = {"status": "error", "detail": str(e)}
     await ws_manager.broadcast({"type": "copilot_result", "data": result})
 
 

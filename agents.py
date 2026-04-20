@@ -220,10 +220,40 @@ async def _log_audit(agent: str, action: str, details: dict):
 
 
 def _build_llm():
-    """ينشئ LLM عند الطلب فقط — لا يُنفَّذ عند الاستيراد."""
+    """ينشئ LLM عند الطلب فقط — يختار المفتاح الصحيح حسب نوع الموديل."""
     if not CREWAI_AVAILABLE:
         raise RuntimeError("CrewAI غير مثبت")
-    api_key = OPENAI_API_KEY or GOOGLE_API_KEY or GROQ_API_KEY or DEEPSEEK_API_KEY or None
+
+    model = PREFERRED_LLM.lower()
+
+    if "gemini" in model:
+        api_key = GOOGLE_API_KEY
+        if not api_key:
+            raise RuntimeError("GOOGLE_API_KEY غير محدد")
+        # Gemini يحتاج متغير البيئة GEMINI_API_KEY أو GOOGLE_API_KEY
+        import os
+        os.environ["GEMINI_API_KEY"] = api_key
+        os.environ["GOOGLE_API_KEY"] = api_key
+    elif "groq" in model:
+        api_key = GROQ_API_KEY
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY غير محدد")
+        import os
+        os.environ["GROQ_API_KEY"] = api_key
+    elif "deepseek" in model:
+        api_key = DEEPSEEK_API_KEY
+        if not api_key:
+            raise RuntimeError("DEEPSEEK_API_KEY غير محدد")
+    elif "anthropic" in model or "claude" in model:
+        from config import ANTHROPIC_API_KEY
+        api_key = ANTHROPIC_API_KEY
+        if not api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY غير محدد")
+    else:
+        api_key = OPENAI_API_KEY
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY غير محدد")
+
     return LLM(model=PREFERRED_LLM, api_key=api_key)
 
 
@@ -324,8 +354,9 @@ async def run_copilot(command: str) -> dict:
 
     try:
         result = await asyncio.to_thread(crew.kickoff)
-        await _log_audit("Analyzer", "copilot_done", {"result": str(result)[:500]})
-        return {"status": "ok", "result": str(result)}
+        result_str = str(result)
+        await _log_audit("Analyzer", "copilot_done", {"result": result_str[:1000]})
+        return {"status": "ok", "result": result_str}
     except Exception as e:
         logger.error(f"خطأ في تشغيل الوكلاء: {e}")
         await _log_audit("Orchestrator", "copilot_error", {"error": str(e)})
