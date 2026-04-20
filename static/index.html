@@ -1284,7 +1284,7 @@ function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))retu
 // AI MONITOR
 // ═══════════════════════════════════════════════════════
 let _aiModels=[
-  {id:'gemini-flash',name:'Gemini 1.5 Flash',provider:'Google',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',role:'النموذج الرئيسي',tasks:['قائد الفريق','المخطط','المنفذ','المراقب','المحلل'],contextWindow:1000000,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-1.5-flash',isDefault:true},
+  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',role:'النموذج الرئيسي',tasks:['قائد الفريق','المخطط','المنفذ','المراقب','المحلل'],contextWindow:1000000,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-1.5-flash',isDefault:true},
   {id:'chromadb',name:'ChromaDB',provider:'Chroma',avatar:'🗄️',avatarBg:'linear-gradient(135deg,#7c3aed,#4f46e5)',role:'ذاكرة متجهية',tasks:['حفظ الذاكرة','استرجاع السياق'],contextWindow:null,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:0,status:'active',modelString:'chromadb-local',isDefault:false},
 ];
 async function renderAiMonitor(){
