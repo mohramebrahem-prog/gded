@@ -466,8 +466,14 @@ function connectWS() {
     const d = JSON.parse(e.data);
     if (d.type === 'ping') return;
     if (d.type === 'copilot_result') {
-      addCpMsg(d.data?.result || 'تم التنفيذ', 'bot');
-      toast(d.data?.result || 'تم التنفيذ', 'success');
+      if (d.data?.status === 'error') {
+        addCpMsg('❌ ' + (d.data?.detail || 'فشل التنفيذ'), 'bot');
+        toast('❌ فشل: ' + (d.data?.detail || '').slice(0, 80), 'error');
+      } else {
+        addCpMsg(d.data?.result || 'تم التنفيذ', 'bot');
+        toast('✅ تم التنفيذ', 'success');
+      }
+      if (state.page === 'engineer') setTimeout(()=>renderEngineer(), 1000);
     } else if (d.type === 'account_added') { toast(`✅ حساب ${d.phone} أُضيف`, 'success'); addNotif(`حساب ${d.phone} أُضيف`); }
     else if (d.type === 'group_joined') toast(`✅ انضممت لـ ${d.title}`, 'success');
     else if (d.type === 'groups_synced') toast(`🔄 مزامنة: ${d.added} مجموعة`, 'info');
@@ -1284,7 +1290,7 @@ function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))retu
 // AI MONITOR
 // ═══════════════════════════════════════════════════════
 let _aiModels=[
-  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',role:'النموذج الرئيسي',tasks:['قائد الفريق','المخطط','المنفذ','المراقب','المحلل'],contextWindow:1000000,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-1.5-flash',isDefault:true},
+  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',role:'النموذج الرئيسي',tasks:['قائد الفريق','المخطط','المنفذ','المراقب','المحلل'],contextWindow:1000000,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-2.0-flash',isDefault:true},
   {id:'chromadb',name:'ChromaDB',provider:'Chroma',avatar:'🗄️',avatarBg:'linear-gradient(135deg,#7c3aed,#4f46e5)',role:'ذاكرة متجهية',tasks:['حفظ الذاكرة','استرجاع السياق'],contextWindow:null,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:0,status:'active',modelString:'chromadb-local',isDefault:false},
 ];
 async function renderAiMonitor(){
@@ -1382,7 +1388,8 @@ async function renderEngineer(){
         ${statusBadge(status)}
       </div>
       <div class="row-card-sub">${ts}</div>
-      ${result?`<div style="margin-top:6px;font-size:11px;color:var(--green)">✅ ${(result.details?.result||'').slice(0,100)}</div>`:''}
+      ${result?`<div style="margin-top:6px;font-size:11px;color:var(--green)">✅ ${(result.details?.result||'').slice(0,150)}</div>`:''}
+      ${isErr?`<div style="margin-top:6px;font-size:11px;color:var(--danger)">❌ ${(isErr.details?.error||'خطأ غير معروف').slice(0,150)}</div>`:''}
     </div>`;
   }).join('')}
   ${commands.length===0?`<div class="empty-state"><div class="es-icon">🤖</div><p>لم يُرسل أي أمر بعد</p></div>`:''}`;
