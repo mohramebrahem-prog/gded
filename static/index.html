@@ -58,6 +58,27 @@ html,body{height:100%;font-family:'Tajawal',sans-serif;background:var(--bg);colo
 .nav-more-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text);font-size:13px;font-weight:700;width:100%;background:none;border:none;font-family:inherit;text-align:right}
 .nav-more-item:active{background:var(--card2)}
 
+/* ═══ SIDEBAR ═══ */
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{opacity:1;pointer-events:all}
+.sidebar{position:fixed;top:0;right:-280px;width:280px;height:100%;background:var(--card);border-left:1px solid var(--border2);z-index:301;transition:right .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.sidebar.open{right:0}
+.sidebar-header{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sidebar-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sidebar-name{font-size:15px;font-weight:800;color:var(--white)}
+.sidebar-name span{font-size:11px;color:var(--muted);font-weight:500;display:block}
+.sidebar-close{margin-right:auto;padding:6px;border-radius:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+.sidebar-close:active{background:var(--card2)}
+.sidebar-body{flex:1;overflow-y:auto;padding:10px 8px 20px}
+.sidebar-section-lbl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:10px 8px 4px}
+.sidebar-item{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text);font-size:14px;font-weight:700;width:100%;background:none;border:none;font-family:inherit;text-align:right;transition:background .12s,color .12s;position:relative}
+.sidebar-item:active{background:var(--card3)}
+.sidebar-item.active{background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(124,58,237,.12));color:var(--accent)}
+.sidebar-item .s-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.sidebar-item .s-lbl{flex:1}
+.sidebar-item .s-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;flex-shrink:0}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 8px}
+
 /* ═══ CARDS ═══ */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
 .card-sm{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
@@ -265,6 +286,7 @@ td{padding:9px 10px;vertical-align:middle}
       </div>
     </div>
     <div class="topbar-spacer"></div>
+    <button class="tb-btn" onclick="openSidebar()" title="القائمة">☰</button>
     <button class="tb-btn" onclick="openSearch()" title="بحث">🔍</button>
     <button class="tb-btn" onclick="openNotifSheet()">
       🔔<span class="tb-badge" id="notif-badge" style="display:none"></span>
@@ -305,6 +327,63 @@ td{padding:9px 10px;vertical-align:middle}
   <button class="nav-more-item" onclick="navigate('engineer');closeMoreMenu()">🤖 المهندس AI</button>
   <button class="nav-more-item" onclick="navigate('audit');closeMoreMenu()">📋 سجل الأحداث</button>
   <button class="nav-more-item" onclick="navigate('settings');closeMoreMenu()">⚙️ الإعدادات</button>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🤖</div>
+    <div class="sidebar-name">TG AI System<span>نظام الإدارة</span></div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-section-lbl">الرئيسية</div>
+    <button class="sidebar-item active" id="sb-dashboard" onclick="sidebarNav('dashboard')">
+      <span class="s-icon">🏠</span><span class="s-lbl">لوحة التحكم</span>
+    </button>
+
+    <div class="sidebar-section-lbl">إدارة</div>
+    <button class="sidebar-item" id="sb-accounts" onclick="sidebarNav('accounts')">
+      <span class="s-icon">📱</span><span class="s-lbl">الحسابات</span>
+    </button>
+    <button class="sidebar-item" id="sb-groups" onclick="sidebarNav('groups')">
+      <span class="s-icon">👥</span><span class="s-lbl">المجموعات</span>
+    </button>
+    <button class="sidebar-item" id="sb-campaigns" onclick="sidebarNav('campaigns')">
+      <span class="s-icon">📢</span><span class="s-lbl">الحملات</span>
+    </button>
+    <button class="sidebar-item" id="sb-templates" onclick="sidebarNav('templates')">
+      <span class="s-icon">📝</span><span class="s-lbl">صيغ الإعلانات</span>
+    </button>
+    <button class="sidebar-item" id="sb-folders" onclick="sidebarNav('folders')">
+      <span class="s-icon">📂</span><span class="s-lbl">المجلدات</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-lbl">ذكاء اصطناعي</div>
+    <button class="sidebar-item" id="sb-ai_monitor" onclick="sidebarNav('ai_monitor')">
+      <span class="s-icon">🧠</span><span class="s-lbl">مراقبة AI</span>
+    </button>
+    <button class="sidebar-item" id="sb-engineer" onclick="sidebarNav('engineer')">
+      <span class="s-icon">🤖</span><span class="s-lbl">المهندس AI</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-lbl">النظام</div>
+    <button class="sidebar-item" id="sb-proxies" onclick="sidebarNav('proxies')">
+      <span class="s-icon">🌐</span><span class="s-lbl">البروكسيات</span>
+    </button>
+    <button class="sidebar-item" id="sb-analytics" onclick="sidebarNav('analytics')">
+      <span class="s-icon">📊</span><span class="s-lbl">التحليلات</span>
+    </button>
+    <button class="sidebar-item" id="sb-audit" onclick="sidebarNav('audit')">
+      <span class="s-icon">📋</span><span class="s-lbl">سجل الأحداث</span>
+    </button>
+    <button class="sidebar-item" id="sb-settings" onclick="sidebarNav('settings')">
+      <span class="s-icon">⚙️</span><span class="s-lbl">الإعدادات</span>
+    </button>
+  </div>
 </div>
 
 <!-- COPILOT DRAWER -->
@@ -452,6 +531,28 @@ function closeMoreMenu() { document.getElementById('nav-more-menu').classList.re
 document.addEventListener('click', e => {
   if (!e.target.closest('#nav-more') && !e.target.closest('#nav-more-menu')) closeMoreMenu();
 });
+
+// ═══════════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════════
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function sidebarNav(page) {
+  closeSidebar();
+  navigate(page);
+  // Update active state
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('sb-' + page);
+  if (target) target.classList.add('active');
+}
 
 // ═══════════════════════════════════════════════════════
 // SEARCH
