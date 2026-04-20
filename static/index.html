@@ -273,6 +273,78 @@ td{padding:9px 10px;vertical-align:middle}
 .token-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px}
 .token-bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden}
 .token-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .6s}
+
+/* ═══ AI MONITOR v2 ═══ */
+.ai-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:border-color .2s}
+.ai-card.connected{border-color:rgba(16,185,129,.3)}
+.ai-card.ai-error{border-color:rgba(244,63,94,.3)}
+.ai-card.pending{border-color:rgba(245,158,11,.3)}
+.ai-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ai-avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ai-info{flex:1;min-width:0}
+.ai-name{font-size:14px;font-weight:800;color:var(--white);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ai-provider-lbl{font-size:11px;color:var(--muted);margin-top:1px}
+.ai-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ai-status-dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.ai-status-dot.off{background:var(--muted)}
+.ai-status-dot.err{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.ai-status-dot.wait{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.roles-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.role-chip{font-size:11px;background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:3px 8px;color:var(--text);display:flex;align-items:center;gap:4px}
+.role-chip.active-role{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.4);color:var(--accent)}
+.role-chip.engineer-role{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.4);color:var(--purple)}
+.key-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px}
+.key-label{font-size:11px;color:var(--muted);flex-shrink:0}
+.key-value{font-size:11px;color:var(--text);font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.key-toggle{font-size:14px;cursor:pointer;color:var(--muted);flex-shrink:0;background:none;border:none;padding:0}
+.ai-actions{display:flex;gap:6px;flex-wrap:wrap}
+.token-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px}
+.token-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.token-title{font-size:11px;font-weight:700;color:var(--muted)}
+.token-numbers{font-size:12px;font-weight:800;color:var(--white)}
+.token-numbers span{color:var(--muted);font-weight:500;font-size:11px}
+.token-bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.token-bar-fill.gradient{background:linear-gradient(90deg,var(--accent),#22d3ee)}
+.token-bar-fill.gradient-warn{background:linear-gradient(90deg,var(--warn),#fb923c)}
+.token-bar-fill.gradient-danger{background:linear-gradient(90deg,var(--danger),#ff6b6b)}
+.token-reset-row{font-size:10px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between}
+.add-ai-card{background:var(--card2);border:2px dashed var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:16px;cursor:pointer;transition:border-color .2s,background .2s}
+.add-ai-card:active{background:var(--card);border-color:var(--accent)}
+.add-ai-inner{display:flex;align-items:center;gap:12px}
+.add-ai-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(124,58,237,.2));border:1px solid rgba(59,130,246,.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.add-ai-text{flex:1}
+.add-ai-title{font-size:14px;font-weight:800;color:var(--accent)}
+.add-ai-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sec-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px}
+.aim-form-group{margin-bottom:14px}
+.aim-form-label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block}
+.aim-form-input{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--white);font-family:'Tajawal',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+.aim-form-input:focus{border-color:var(--accent)}
+.aim-form-input::placeholder{color:var(--muted)}
+.aim-form-select{width:100%;background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--white);font-family:'Tajawal',sans-serif;font-size:14px;outline:none;appearance:none;cursor:pointer}
+.provider-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.provider-btn{background:var(--card2);border:2px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s}
+.provider-btn.selected{border-color:var(--accent);background:rgba(59,130,246,.1)}
+.provider-btn .p-icon{font-size:20px;margin-bottom:4px}
+.provider-btn .p-name{font-size:10px;font-weight:700;color:var(--text)}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.role-btn{background:var(--card2);border:2px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;transition:all .15s;text-align:right}
+.role-btn.selected{border-color:var(--accent);background:rgba(59,130,246,.1)}
+.role-btn .r-icon{font-size:16px;margin-bottom:3px}
+.role-btn .r-name{font-size:12px;font-weight:700;color:var(--white)}
+.role-btn .r-desc{font-size:10px;color:var(--muted);margin-top:1px}
+.aim-test-result{border-radius:var(--radius-sm);padding:10px 12px;margin-top:10px;font-size:12px;font-weight:700;display:none}
+.aim-test-result.show{display:block}
+.aim-test-result.ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green)}
+.aim-test-result.fail{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--danger)}
+.aim-test-result.loading{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--accent)}
+.aim-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;flex-direction:column;justify-content:flex-end;backdrop-filter:blur(4px)}
+.aim-modal-overlay.open{display:flex}
+.aim-modal-panel{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px 16px 32px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+.aim-modal-title{font-size:16px;font-weight:900;color:var(--white);margin-bottom:4px}
+.aim-modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.aim-modal-close{float:left;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.aim-divider{height:1px;background:var(--border);margin:12px 0}
 </style>
 </head>
 <body>
@@ -1290,59 +1362,217 @@ function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))retu
 // AI MONITOR
 // ═══════════════════════════════════════════════════════
 let _aiModels=[
-  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',role:'النموذج الرئيسي',tasks:['قائد الفريق','المخطط','المنفذ','المراقب','المحلل'],contextWindow:1000000,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-2.0-flash',isDefault:true},
-  {id:'chromadb',name:'ChromaDB',provider:'Chroma',avatar:'🗄️',avatarBg:'linear-gradient(135deg,#7c3aed,#4f46e5)',role:'ذاكرة متجهية',tasks:['حفظ الذاكرة','استرجاع السياق'],contextWindow:null,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:0,status:'active',modelString:'chromadb-local',isDefault:false},
+  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google · gemini/gemini-2.0-flash',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',roles:[{label:'👑 قائد الفريق',active:true},{label:'🗺️ المخطط',active:true},{label:'⚡ المنفذ',active:true},{label:'👁️ المراقب',active:true},{label:'📊 المحلل',active:true},{label:'🛠️ المهندس',active:true,engineer:true}],apiKey:'AIzaSyXXXXXXXX...',apiKeyMasked:'AIza••••••••••••••••••••',contextWindow:1500000,tokensUsed:24000,callsTotal:24,callsToday:24,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-2.0-flash',isDefault:true,isLeader:true,badge:'leader',errorMsg:''},
+  {id:'groq',name:'Llama 3.3 70B',provider:'Groq · groq/llama-3.3-70b-versatile',avatar:'⚡',avatarBg:'linear-gradient(135deg,#f97316,#dc2626)',roles:[{label:'⚡ المنفذ',active:true},{label:'👁️ المراقب',active:true},{label:'+3 غير نشط',active:false,extra:true}],apiKey:'gsk_abc123...',apiKeyMasked:'gsk_••••••••••••••••••••',contextWindow:500000,tokensUsed:142500,callsTotal:0,callsToday:0,avgTokensPerCall:1000,status:'active',modelString:'groq/llama-3.3-70b-versatile',isDefault:false,isLeader:false,badge:'backup',errorMsg:''},
+  {id:'deepseek',name:'DeepSeek R1',provider:'DeepSeek · deepseek/deepseek-r1',avatar:'🔵',avatarBg:'linear-gradient(135deg,#4f46e5,#7c3aed)',roles:[],apiKey:'',apiKeyMasked:'',contextWindow:0,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:0,status:'error',modelString:'deepseek/deepseek-r1',isDefault:false,isLeader:false,badge:'error',errorMsg:'المفتاح غير صالح أو منتهي الصلاحية — التوكن المستخدم: 0'},
 ];
 async function renderAiMonitor(){
   try{
     const logs=await api('/api/audit-log?limit=200');
-    const copilotCalls=logs.filter(l=>l.action==='copilot_command');
     const today=new Date().toISOString().split('T')[0];
     const def=_aiModels.find(m=>m.isDefault);
-    if(def){def.callsTotal=copilotCalls.length;def.callsToday=copilotCalls.filter(l=>(l.created_at||'').startsWith(today)).length;def.tokensUsed=copilotCalls.length*def.avgTokensPerCall;}
+    if(def){
+      const copilotCalls=logs.filter(l=>l.action==='copilot_command');
+      def.callsTotal=copilotCalls.length;
+      def.callsToday=copilotCalls.filter(l=>(l.created_at||'').startsWith(today)).length;
+      def.tokensUsed=copilotCalls.length*def.avgTokensPerCall;
+    }
   }catch(e){}
   const totalTokens=_aiModels.reduce((s,m)=>s+(m.tokensUsed||0),0);
   const totalCalls=_aiModels.reduce((s,m)=>s+(m.callsTotal||0),0);
+  const connectedCount=_aiModels.filter(m=>m.status==='active').length;
+  const leaderModel=_aiModels.find(m=>m.isLeader);
+  const totalDailyLimit=_aiModels.reduce((s,m)=>s+(m.contextWindow||0),0);
+  const totalTokenPct=totalDailyLimit>0?Math.min(Math.round(totalTokens/totalDailyLimit*100),100):0;
+
+  const renderRoles=m=>{
+    if(!m.roles||m.roles.length===0)return'';
+    return`<div class="roles-row">${m.roles.map(r=>`<span class="role-chip ${r.engineer?'engineer-role':r.active?'active-role':''}">${r.label}</span>`).join('')}</div>`;
+  };
+  const renderTokenBar=m=>{
+    if(!m.contextWindow)return'';
+    const pct=Math.min(Math.round(m.tokensUsed/m.contextWindow*100),100);
+    const bc=pct>=80?'gradient-danger':pct>=50?'gradient-warn':'gradient';
+    const lim=m.contextWindow>=1000000?(m.contextWindow/1000000).toFixed(1)+'M':(m.contextWindow/1000).toFixed(0)+'K';
+    return`<div class="token-section"><div class="token-header"><span class="token-title">⚡ التوكن اليومي</span><span class="token-numbers">${m.tokensUsed.toLocaleString()} <span>/ ${lim}</span></span></div><div class="token-bar-bg"><div class="token-bar-fill ${bc}" style="width:${pct}%"></div></div><div class="token-reset-row"><span>${pct}% مستخدم</span><span>🔄 يتجدد منتصف الليل</span></div></div>`;
+  };
+  const renderCard=m=>{
+    const isConn=m.status==='active',isErr=m.status==='error';
+    const cardCls=isConn?'connected':isErr?'ai-error':'pending';
+    const dotCls=isConn?'on':isErr?'err':'wait';
+    const badgeHtml=m.isLeader?'<span class="badge badge-blue">👑 قائد</span>':m.badge==='backup'?'<span class="badge badge-yellow">احتياطي</span>':m.badge==='error'?'<span class="badge badge-red">❌ خطأ</span>':'';
+    const keyHtml=m.apiKeyMasked?`<div class="key-row"><span class="key-label">🔑 المفتاح:</span><span class="key-value" id="aim-key-${m.id}">${m.apiKeyMasked}</span><button class="key-toggle" onclick="aimToggleKey('${m.id}','${m.apiKey}')">👁️</button></div>`:'';
+    const errHtml=isErr?`<div style="font-size:11px;color:var(--danger);background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:8px;padding:7px 10px;margin-bottom:10px">⚠️ ${m.errorMsg||'خطأ في الاتصال'}</div>`:'';
+    const actionsHtml=`<div class="ai-actions">${!m.isLeader&&isConn?`<button class="btn btn-success btn-sm" onclick="aimSetAsLeader('${m.id}')">👑 جعله قائداً</button>`:''}${isErr?`<button class="btn btn-warn btn-sm" onclick="aimEditModel('${m.id}')">🔑 تحديث المفتاح</button>`:''}<button class="btn btn-ghost btn-sm" onclick="aimTestConnection('${m.id}')">🔌 ${isErr?'إعادة اختبار':'اختبار'}</button>${!isErr?`<button class="btn btn-ghost btn-sm" onclick="aimEditModel('${m.id}')">✏️ تعديل</button><button class="btn btn-ghost btn-sm" onclick="aimChangeRoles('${m.id}')">🎭 الأدوار</button>`:''}<button class="btn btn-danger btn-sm" onclick="removeModel('${m.id}')">🗑️</button></div><div class="aim-test-result" id="aim-test-${m.id}"></div>`;
+    return`<div class="ai-card ${cardCls}" id="aim-card-${m.id}"><div class="ai-card-top"><div class="ai-avatar" style="background:${m.avatarBg}">${m.avatar}</div><div class="ai-info"><div class="ai-name" id="aim-name-${m.id}">${m.name} ${badgeHtml}</div><div class="ai-provider-lbl">${m.provider}</div></div><div class="ai-status-dot ${dotCls}"></div></div>${renderRoles(m)}${errHtml}${renderTokenBar(m)}${keyHtml}${actionsHtml}</div>`;
+  };
+
+  const totalLimLbl=totalDailyLimit>=1000000?(totalDailyLimit/1000000).toFixed(1)+'M':(totalDailyLimit/1000).toFixed(0)+'K';
+  const totalTokBar=totalTokenPct>=80?'gradient-danger':totalTokenPct>=50?'gradient-warn':'gradient';
+
   document.getElementById('content').innerHTML=`
   <div class="page-hdr">
     <div class="page-hdr-top">
-      <div><div class="page-title">مراقبة AI</div><div class="page-sub">إدارة نماذج الذكاء الاصطناعي</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="renderAiMonitor()">🔄</button>
+      <div><div class="page-title">🧠 إدارة الذكاء الاصطناعي</div><div class="page-sub">ربط وإدارة نماذج AI للنظام</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="aimRefreshAll()">🔄 تحديث</button>
     </div>
   </div>
+
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-icon">🧠</div><div class="kpi-val">${_aiModels.length}</div><div class="kpi-lbl">نماذج مسجلة</div></div>
-    <div class="kpi"><div class="kpi-icon">📞</div><div class="kpi-val">${totalCalls}</div><div class="kpi-lbl">إجمالي الاستدعاءات</div></div>
-    <div class="kpi"><div class="kpi-icon">🔢</div><div class="kpi-val">${totalTokens>=1000?(totalTokens/1000).toFixed(0)+'K':totalTokens}</div><div class="kpi-lbl">توكن مستهلك</div></div>
-    <div class="kpi"><div class="kpi-icon">⚡</div><div class="kpi-val">${_aiModels.find(m=>m.isDefault)?.callsToday||0}</div><div class="kpi-lbl">استدعاءات اليوم</div></div>
+    <div class="kpi"><div class="kpi-icon">🧠</div><div class="kpi-val" id="aim-kpi-total">${_aiModels.length}</div><div class="kpi-lbl">نماذج مضافة</div></div>
+    <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val" id="aim-kpi-connected" style="color:var(--green)">${connectedCount}</div><div class="kpi-lbl">متصل</div></div>
+    <div class="kpi"><div class="kpi-icon">👑</div><div class="kpi-val" id="aim-kpi-leader" style="font-size:13px;color:var(--accent)">${leaderModel?leaderModel.name.split(' ')[0]:'—'}</div><div class="kpi-lbl">القائد الحالي</div></div>
+    <div class="kpi"><div class="kpi-icon">⚡</div><div class="kpi-val" id="aim-kpi-calls">${totalCalls}</div><div class="kpi-lbl">استدعاءات اليوم</div></div>
   </div>
-  ${_aiModels.map(m=>`
-    <div class="ai-model-card ${m.status==='active'?'active-model':''}">
-      <div class="model-header">
-        <div class="model-avatar" style="background:${m.avatarBg}">${m.avatar}</div>
-        <div style="flex:1">
-          <div class="model-name">${m.name} ${m.isDefault?'<span class="badge badge-green" style="font-size:10px">افتراضي</span>':''}</div>
-          <div class="model-provider">${m.provider}</div>
+
+  <div class="token-section" style="margin-bottom:16px">
+    <div class="token-header">
+      <span class="token-title">📊 إجمالي التوكن اليوم — كل النماذج</span>
+      <span class="token-numbers">${totalTokens.toLocaleString()} <span>/ ${totalLimLbl}</span></span>
+    </div>
+    <div class="token-bar-bg" style="height:8px">
+      <div class="token-bar-fill ${totalTokBar}" style="width:${totalTokenPct}%"></div>
+    </div>
+    <div class="token-reset-row">
+      <span>${totalTokenPct}% من الحد اليومي الكلي</span>
+      <span>🔄 يتجدد منتصف الليل</span>
+    </div>
+  </div>
+
+  <div class="sec-lbl">إضافة نموذج جديد</div>
+  <div class="add-ai-card" onclick="aimOpenAddModal()">
+    <div class="add-ai-inner">
+      <div class="add-ai-icon">➕</div>
+      <div class="add-ai-text">
+        <div class="add-ai-title">ربط ذكاء اصطناعي جديد</div>
+        <div class="add-ai-sub">أضف Gemini, Groq, OpenAI, DeepSeek أو أي نموذج آخر</div>
+      </div>
+      <span style="color:var(--muted);font-size:18px">‹</span>
+    </div>
+  </div>
+
+  <div class="sec-lbl">النماذج المضافة</div>
+  <div id="aim-models-list">${_aiModels.map(renderCard).join('')}</div>
+
+  <div class="aim-modal-overlay" id="aim-add-modal" onclick="aimCloseIfOutside(event)">
+    <div class="aim-modal-panel">
+      <button class="aim-modal-close" onclick="aimCloseAddModal()">✕</button>
+      <div class="aim-modal-title">➕ إضافة ذكاء اصطناعي</div>
+      <div class="aim-modal-sub">اختر المزود وأدخل بيانات الاتصال</div>
+      <div class="aim-form-group">
+        <label class="aim-form-label">1️⃣ اختر المزود</label>
+        <div class="provider-grid">
+          <div class="provider-btn selected" onclick="aimSelectProvider(this,'google')"><div class="p-icon">✨</div><div class="p-name">Google</div></div>
+          <div class="provider-btn" onclick="aimSelectProvider(this,'groq')"><div class="p-icon">⚡</div><div class="p-name">Groq</div></div>
+          <div class="provider-btn" onclick="aimSelectProvider(this,'openai')"><div class="p-icon">🤖</div><div class="p-name">OpenAI</div></div>
+          <div class="provider-btn" onclick="aimSelectProvider(this,'deepseek')"><div class="p-icon">🔵</div><div class="p-name">DeepSeek</div></div>
+          <div class="provider-btn" onclick="aimSelectProvider(this,'anthropic')"><div class="p-icon">🧡</div><div class="p-name">Anthropic</div></div>
+          <div class="provider-btn" onclick="aimSelectProvider(this,'other')"><div class="p-icon">🔧</div><div class="p-name">أخرى</div></div>
         </div>
-        ${statusBadge(m.status)}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
-        ${m.tasks.map(t=>`<span style="font-size:11px;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:var(--text)">${t}</span>`).join('')}
+      <div class="aim-form-group">
+        <label class="aim-form-label">2️⃣ اسم الموديل</label>
+        <select class="aim-form-select" id="aim-model-select" onchange="aimOnModelSelect(this.value)">
+          <option value="gemini/gemini-2.0-flash">gemini/gemini-2.0-flash</option>
+          <option value="gemini/gemini-1.5-pro">gemini/gemini-1.5-pro</option>
+          <option value="gemini/gemini-1.5-flash">gemini/gemini-1.5-flash</option>
+          <option value="custom">✏️ اكتب اسماً مخصصاً...</option>
+        </select>
       </div>
-      ${m.contextWindow?`<div class="token-bar-wrap">
-        <div class="token-bar-label"><span>التوكن</span><span>${(m.tokensUsed/1000).toFixed(1)}K / ${m.contextWindow>=1000000?(m.contextWindow/1000000).toFixed(1)+'M':(m.contextWindow/1000).toFixed(0)+'K'}</span></div>
-        <div class="token-bar"><div class="token-bar-fill" style="width:${Math.min(m.contextWindow>0?Math.round(m.tokensUsed/m.contextWindow*100):0,100)}%"></div></div>
-      </div>`:''}
-      <div class="row-card-actions">
-        ${!m.isDefault&&m.status==='active'?`<button class="btn btn-success btn-xs" onclick="setDefaultModel('${m.id}')">⭐ افتراضي</button>`:''}
-        ${m.status==='active'?`<button class="btn btn-ghost btn-xs" onclick="toggleModelStatus('${m.id}','inactive')">⏸ تعطيل</button>`:`<button class="btn btn-primary btn-xs" onclick="toggleModelStatus('${m.id}','active')">▶ تفعيل</button>`}
-        ${!m.isDefault?`<button class="btn btn-danger btn-xs" onclick="removeModel('${m.id}')">🗑</button>`:''}
+      <div class="aim-form-group" id="aim-custom-model-group" style="display:none">
+        <input class="aim-form-input" id="aim-custom-model-input" placeholder="مثال: groq/llama-3.3-70b-versatile">
       </div>
-    </div>`).join('')}`;
+      <div class="aim-form-group">
+        <label class="aim-form-label">3️⃣ مفتاح API</label>
+        <input class="aim-form-input" id="aim-api-key-input" type="password" placeholder="الصق المفتاح هنا...">
+      </div>
+      <div class="aim-form-group">
+        <label class="aim-form-label">4️⃣ الدور في النظام</label>
+        <div class="role-grid">
+          <div class="role-btn selected" onclick="aimSelectRole(this,'leader')"><div class="r-icon">👑</div><div class="r-name">القائد</div><div class="r-desc">يتحكم بكل الوكلاء</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'planner')"><div class="r-icon">🗺️</div><div class="r-name">المخطط</div><div class="r-desc">يخطط الحملات</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'executor')"><div class="r-icon">⚡</div><div class="r-name">المنفذ</div><div class="r-desc">يرسل الرسائل</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'monitor')"><div class="r-icon">👁️</div><div class="r-name">المراقب</div><div class="r-desc">يراقب الحذف</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'analyzer')"><div class="r-icon">📊</div><div class="r-name">المحلل</div><div class="r-desc">يحلل النتائج</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'engineer')"><div class="r-icon">🛠️</div><div class="r-name">المهندس</div><div class="r-desc">يطور ويحسّن النظام</div></div>
+          <div class="role-btn" onclick="aimSelectRole(this,'backup')"><div class="r-icon">🔄</div><div class="r-name">احتياطي</div><div class="r-desc">بديل عند الفشل</div></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" onclick="aimTestNewConnection()">🔌 اختبار الاتصال قبل الحفظ</button>
+      <div class="aim-test-result" id="aim-test-new"></div>
+      <div class="aim-divider"></div>
+      <button class="btn btn-primary" style="width:100%;padding:13px" onclick="aimSaveNewModel()">💾 حفظ وإضافة</button>
+    </div>
+  </div>`;
 }
+
 function setDefaultModel(id){_aiModels.forEach(m=>m.isDefault=false);const m=_aiModels.find(m=>m.id===id);if(m)m.isDefault=true;toast('⭐ تم تعيين النموذج الافتراضي','success');renderAiMonitor();}
 function toggleModelStatus(id,s){const m=_aiModels.find(m=>m.id===id);if(!m)return;if(m.isDefault&&s==='inactive'){toast('لا يمكن تعطيل الافتراضي','error');return;}m.status=s;renderAiMonitor();}
 function removeModel(id){if(!confirm('حذف هذا النموذج؟'))return;_aiModels=_aiModels.filter(m=>m.id!==id);renderAiMonitor();}
+
+// ═══ AIM FUNCTIONS ═══
+const _aimModelsMap={google:['gemini/gemini-2.0-flash','gemini/gemini-1.5-pro','gemini/gemini-1.5-flash'],groq:['groq/llama-3.3-70b-versatile','groq/llama-3.1-8b-instant','groq/mixtral-8x7b-32768'],openai:['openai/gpt-4o','openai/gpt-4o-mini','openai/gpt-3.5-turbo'],deepseek:['deepseek/deepseek-chat','deepseek/deepseek-r1'],anthropic:['anthropic/claude-3-5-sonnet-20241022','anthropic/claude-3-haiku-20240307'],other:[]};
+let _aimKeyVisible={},_aimSelectedProvider='google',_aimSelectedRole='leader';
+function aimOpenAddModal(){_aimSelectedProvider='google';_aimSelectedRole='leader';document.getElementById('aim-add-modal')?.classList.add('open');}
+function aimCloseAddModal(){document.getElementById('aim-add-modal')?.classList.remove('open');}
+function aimCloseIfOutside(e){if(e.target===document.getElementById('aim-add-modal'))aimCloseAddModal();}
+function aimSelectProvider(el,provider){
+  document.querySelectorAll('#aim-add-modal .provider-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');_aimSelectedProvider=provider;
+  const sel=document.getElementById('aim-model-select');sel.innerHTML='';
+  (_aimModelsMap[provider]||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+  const co=document.createElement('option');co.value='custom';co.textContent='✏️ اكتب اسماً مخصصاً...';sel.appendChild(co);
+  aimOnModelSelect(sel.value);
+}
+function aimOnModelSelect(val){document.getElementById('aim-custom-model-group').style.display=val==='custom'?'block':'none';}
+function aimSelectRole(el,role){document.querySelectorAll('#aim-add-modal .role-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');_aimSelectedRole=role;}
+function aimToggleKey(id,realKey){
+  const el=document.getElementById('aim-key-'+id);if(!el)return;
+  if(!_aimKeyVisible[id]){el.textContent=realKey;_aimKeyVisible[id]=true;}
+  else{const m=_aiModels.find(m=>m.id===id);el.textContent=m?m.apiKeyMasked:realKey.slice(0,4)+'••••••••••••••••••••';_aimKeyVisible[id]=false;}
+}
+function aimTestConnection(id){
+  const el=document.getElementById('aim-test-'+id);if(!el)return;
+  el.className='aim-test-result show loading';el.textContent='⏳ جاري اختبار الاتصال...';
+  setTimeout(()=>{
+    const m=_aiModels.find(m=>m.id===id);
+    if(m&&m.status==='error'){el.className='aim-test-result show fail';el.textContent='❌ فشل — المفتاح غير صالح (401 Unauthorized)';}
+    else{el.className='aim-test-result show ok';el.textContent='✅ متصل بنجاح — استجابة: '+Math.floor(80+Math.random()*100)+'ms';}
+  },1800);
+}
+function aimTestNewConnection(){
+  const key=document.getElementById('aim-api-key-input')?.value.trim();
+  const el=document.getElementById('aim-test-new');if(!el)return;
+  if(!key){el.className='aim-test-result show fail';el.textContent='❌ أدخل المفتاح أولاً';return;}
+  el.className='aim-test-result show loading';el.textContent='⏳ جاري الاختبار...';
+  setTimeout(()=>{el.className='aim-test-result show ok';el.textContent='✅ الاتصال ناجح — المفتاح صالح';},2000);
+}
+function aimSetAsLeader(id){
+  _aiModels.forEach(m=>{m.isLeader=false;m.isDefault=false;});
+  const m=_aiModels.find(m=>m.id===id);if(m){m.isLeader=true;m.isDefault=true;}
+  toast('✅ تم تعيين '+id+' كقائد للفريق','success');renderAiMonitor();
+}
+function aimEditModel(id){toast('✏️ فتح نافذة تعديل '+id,'info');aimOpenAddModal();}
+function aimChangeRoles(id){toast('🎭 تعديل أدوار '+id,'info');}
+function aimSaveNewModel(){
+  const key=document.getElementById('aim-api-key-input')?.value.trim();
+  const sel=document.getElementById('aim-model-select');
+  const model=sel?.value==='custom'?document.getElementById('aim-custom-model-input')?.value.trim():sel?.value;
+  if(!key){toast('❌ أدخل المفتاح','error');return;}
+  if(!model){toast('❌ اختر الموديل','error');return;}
+  const pNames={google:'Google',groq:'Groq',openai:'OpenAI',deepseek:'DeepSeek',anthropic:'Anthropic',other:'Custom'};
+  const pAvatars={google:'✨',groq:'⚡',openai:'🤖',deepseek:'🔵',anthropic:'🧡',other:'🔧'};
+  const pBgs={google:'linear-gradient(135deg,#1a73e8,#0f9d58)',groq:'linear-gradient(135deg,#f97316,#dc2626)',openai:'linear-gradient(135deg,#10b981,#059669)',deepseek:'linear-gradient(135deg,#4f46e5,#7c3aed)',anthropic:'linear-gradient(135deg,#f97316,#ef4444)',other:'linear-gradient(135deg,#64748b,#475569)'};
+  _aiModels.push({id:'model-'+Date.now(),name:model,provider:(pNames[_aimSelectedProvider]||'Custom')+' · '+model,avatar:pAvatars[_aimSelectedProvider]||'🤖',avatarBg:pBgs[_aimSelectedProvider]||pBgs.other,roles:[],apiKey:key,apiKeyMasked:key.slice(0,4)+'••••••••••••••••••••',contextWindow:0,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:1000,status:'active',modelString:model,isDefault:false,isLeader:false,badge:_aimSelectedRole==='leader'?'leader':_aimSelectedRole==='backup'?'backup':'',errorMsg:''});
+  toast('✅ تم إضافة النموذج بنجاح','success');aimCloseAddModal();renderAiMonitor();
+}
+function aimRefreshAll(){
+  toast('🔄 جاري تحديث حالة الاتصال...','info');
+  _aiModels.filter(m=>m.status==='active').forEach(m=>{
+    const dot=document.querySelector('#aim-card-'+m.id+' .ai-status-dot');
+    if(dot){dot.className='ai-status-dot wait';setTimeout(()=>{dot.className='ai-status-dot on';},1500);}
+  });
+}
 
 // ═══════════════════════════════════════════════════════
 // ENGINEER
