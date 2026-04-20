@@ -670,56 +670,9 @@ async function renderDashboard() {
 // ═══════════════════════════════════════════════════════
 // GROUPS
 // ═══════════════════════════════════════════════════════
-async function renderGroups(filters={}) {
-  document.getElementById('content').innerHTML=`<div class="loading-center"><div class="spinner"></div></div>`;
-  const params=new URLSearchParams();
-  if(filters.search) params.set('search',filters.search);
-  if(filters.category) params.set('category',filters.category);
-  if(filters.is_joined!==undefined) params.set('is_joined',filters.is_joined);
-  if(filters.protection_bot) params.set('protection_bot',filters.protection_bot);
-  const groups=await api('/api/groups?'+params.toString());
-  const joined=groups.filter(g=>g.is_joined).length;
-  const banned=groups.filter(g=>g.is_banned).length;
-  const black=groups.filter(g=>g.is_blacklisted).length;
-
-  document.getElementById('content').innerHTML=`
-  <div class="page-hdr">
-    <div class="page-hdr-top">
-      <div><div class="page-title">المجموعات</div><div class="page-sub">${fmt(groups.length)} مجموعة</div></div>
-      <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
-    </div>
-  </div>
-
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-val">${fmt(joined)}</div><div class="kpi-lbl">✅ منضم</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--danger)">${fmt(banned)}</div><div class="kpi-lbl">🚫 محظور</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">${fmt(black)}</div><div class="kpi-lbl">قائمة سوداء</div></div>
-    <div class="kpi"><div class="kpi-val">${fmt(groups.length)}</div><div class="kpi-lbl">الإجمالي</div></div>
-  </div>
-
-  <div class="filter-bar">
-    <input class="finput" id="g-search" placeholder="🔍 بحث..." value="${filters.search||''}" oninput="debounceGroups()">
-    <select class="fselect" id="g-joined" onchange="applyGroupFilters()">
-      <option value="">الكل</option>
-      <option value="true" ${filters.is_joined==='true'?'selected':''}>منضم</option>
-      <option value="false" ${filters.is_joined==='false'?'selected':''}>مغادر</option>
-    </select>
-    <select class="fselect" id="g-cat" onchange="applyGroupFilters()">
-      <option value="">كل التصنيفات</option>
-      ${['تعليمي','تقني','تجاري','ترفيهي','إخباري','عام'].map(c=>`<option value="${c}" ${filters.category===c?'selected':''}>${c}</option>`).join('')}
-    </select>
-    <select class="fselect" id="g-prot" onchange="applyGroupFilters()">
-      <option value="">كل الحماية</option>
-      <option value="none">بدون</option>
-      <option value="جبل">جبل</option>
-      <option value="الماسة">الماسة</option>
-    </select>
-  </div>
-
-  <div id="groups-list">
-  ${groups.length===0?`<div class="empty-state"><div class="es-icon">👥</div><p>لا توجد مجموعات</p></div>`:''}
-  ${groups.map(g=>`
-    <div class="row-card">
+let _allGroups=[];
+function _groupCard(g){
+  return `<div class="row-card" data-id="${g.id}" data-cat="${g.category||''}" data-joined="${g.is_joined}" data-prot="${g.protection_bot||''}" data-title="${(g.title||'').toLowerCase()}">
       <div class="row-card-hdr">
         <div>
           <div class="row-card-title">${g.is_favorite?'⭐ ':''}${g.title}</div>
@@ -740,29 +693,85 @@ async function renderGroups(filters={}) {
         ${g.is_joined?`<button class="btn btn-danger btn-xs" onclick="leaveGroup(${g.id})">🚪</button>`:''}
         <button class="btn btn-ghost btn-xs" onclick="toggleBlacklist(${g.id},${g.is_blacklisted})">${g.is_blacklisted?'♻️':'🚫'}</button>
       </div>
-    </div>`).join('')}
+    </div>`;
+}
+async function renderGroups() {
+  document.getElementById('content').innerHTML=`<div class="loading-center"><div class="spinner"></div></div>`;
+  _allGroups=await api('/api/groups');
+  const joined=_allGroups.filter(g=>g.is_joined).length;
+  const banned=_allGroups.filter(g=>g.is_banned).length;
+  const black=_allGroups.filter(g=>g.is_blacklisted).length;
+
+  document.getElementById('content').innerHTML=`
+  <div class="page-hdr">
+    <div class="page-hdr-top">
+      <div><div class="page-title">المجموعات</div><div class="page-sub" id="g-count">${fmt(_allGroups.length)} مجموعة</div></div>
+      <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val">${fmt(joined)}</div><div class="kpi-lbl">✅ منضم</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--danger)">${fmt(banned)}</div><div class="kpi-lbl">🚫 محظور</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--warn)">${fmt(black)}</div><div class="kpi-lbl">قائمة سوداء</div></div>
+    <div class="kpi"><div class="kpi-val">${fmt(_allGroups.length)}</div><div class="kpi-lbl">الإجمالي</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <input class="finput" id="g-search" placeholder="🔍 بحث..." oninput="debounceGroups()">
+    <select class="fselect" id="g-joined" onchange="applyGroupFilters()">
+      <option value="">الكل</option>
+      <option value="true">منضم</option>
+      <option value="false">مغادر</option>
+    </select>
+    <select class="fselect" id="g-cat" onchange="applyGroupFilters()">
+      <option value="">كل التصنيفات</option>
+      ${['تعليمي','تقني','تجاري','ترفيهي','إخباري','عام'].map(c=>`<option value="${c}">${c}</option>`).join('')}
+    </select>
+    <select class="fselect" id="g-prot" onchange="applyGroupFilters()">
+      <option value="">كل الحماية</option>
+      <option value="none">بدون</option>
+      <option value="جبل">جبل</option>
+      <option value="الماسة">الماسة</option>
+    </select>
+  </div>
+
+  <div id="groups-list">
+  ${_allGroups.length===0?`<div class="empty-state"><div class="es-icon">👥</div><p>لا توجد مجموعات</p></div>`:_allGroups.map(_groupCard).join('')}
   </div>`;
 }
 
 let _gDebTimer;
 function debounceGroups(){clearTimeout(_gDebTimer);_gDebTimer=setTimeout(applyGroupFilters,400);}
 function applyGroupFilters(){
-  renderGroups({
-    search:document.getElementById('g-search')?.value||'',
-    category:document.getElementById('g-cat')?.value||'',
-    is_joined:document.getElementById('g-joined')?.value||undefined,
-    protection_bot:document.getElementById('g-prot')?.value||'',
+  const search=(document.getElementById('g-search')?.value||'').toLowerCase();
+  const cat=document.getElementById('g-cat')?.value||'';
+  const joined=document.getElementById('g-joined')?.value||'';
+  const prot=document.getElementById('g-prot')?.value||'';
+  const filtered=_allGroups.filter(g=>{
+    if(search && !(g.title||'').toLowerCase().includes(search)) return false;
+    if(cat && g.category!==cat) return false;
+    if(joined==='true' && !g.is_joined) return false;
+    if(joined==='false' && g.is_joined) return false;
+    if(prot==='none' && g.protection_bot) return false;
+    if(prot && prot!=='none' && g.protection_bot!==prot) return false;
+    return true;
   });
+  const list=document.getElementById('groups-list');
+  const cnt=document.getElementById('g-count');
+  if(list) list.innerHTML=filtered.length===0?`<div class="empty-state"><div class="es-icon">👥</div><p>لا توجد نتائج</p></div>`:filtered.map(_groupCard).join('');
+  if(cnt) cnt.textContent=fmt(filtered.length)+' مجموعة';
 }
-async function toggleFav(id){await api('/api/groups/action','POST',{action:'favorite',group_id:id});applyGroupFilters();}
+async function _refreshGroups(){_allGroups=await api('/api/groups');applyGroupFilters();}
+async function toggleFav(id){await api('/api/groups/action','POST',{action:'favorite',group_id:id});_refreshGroups();}
 async function toggleBlacklist(id,current){
   await api('/api/groups/action','POST',{action:current?'unblacklist':'blacklist',group_id:id});
   toast(current?'أُزيلت من القائمة السوداء':'أُضيفت للقائمة السوداء','info');
-  applyGroupFilters();
+  _refreshGroups();
 }
 async function leaveGroup(id){
   if(!confirm('مغادرة هذه المجموعة؟')) return;
-  try{await api('/api/groups/action','POST',{action:'leave',group_id:id});toast('تمت المغادرة','success');applyGroupFilters();}
+  try{await api('/api/groups/action','POST',{action:'leave',group_id:id});toast('تمت المغادرة','success');_refreshGroups();}
   catch(e){toast('خطأ: '+e.message,'error');}
 }
 
@@ -1416,7 +1425,7 @@ async function showEditGroup(id){
       activity_level:document.getElementById('eg-act').value,
       notes:document.getElementById('eg-notes').value,
     }});
-    toast('تم التحديث','success');applyGroupFilters();
+    toast('تم التحديث','success');_refreshGroups();
   });
 }
 
