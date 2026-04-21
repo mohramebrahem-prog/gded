@@ -1000,6 +1000,101 @@ async def set_preferred_model(data: dict):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# AI DIAGNOSTIC ENDPOINT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/ai/test")
+async def test_ai_full():
+    """
+    تشخيص كامل لنظام الذكاء الاصطناعي:
+    - هل CrewAI مثبت؟
+    - هل المفاتيح موجودة؟
+    - هل الموديلات يمكن بناؤها؟
+    - اختبار استدعاء حقيقي بسيط لكل موديل متاح
+    """
+    import os, time
+    from agents import CREWAI_AVAILABLE, _get_candidates, CHROMA_AVAILABLE
+
+    results = {
+        "crewai_available": CREWAI_AVAILABLE,
+        "chroma_available": CHROMA_AVAILABLE,
+        "preferred_llm": os.environ.get("PREFERRED_LLM", "غير محدد"),
+        "candidates": _get_candidates(),
+        "keys": {
+            "GROQ_API_KEY":      "✅ موجود" if os.environ.get("GROQ_API_KEY")      else "❌ مفقود",
+            "GOOGLE_API_KEY":    "✅ موجود" if os.environ.get("GOOGLE_API_KEY")    else "❌ مفقود",
+            "DEEPSEEK_API_KEY":  "✅ موجود" if os.environ.get("DEEPSEEK_API_KEY")  else "❌ مفقود",
+            "OPENAI_API_KEY":    "✅ موجود" if os.environ.get("OPENAI_API_KEY")    else "❌ مفقود",
+            "ANTHROPIC_API_KEY": "✅ موجود" if os.environ.get("ANTHROPIC_API_KEY") else "❌ مفقود",
+        },
+        "llm_build_tests": [],
+        "live_call_tests": [],
+    }
+
+    if not CREWAI_AVAILABLE:
+        results["diagnosis"] = "❌ CrewAI غير مثبت — هذا هو السبب الرئيسي لعدم اشتغال AI"
+        return results
+
+    # ── اختبار بناء LLM لكل موديل ──────────────────────────────────────────
+    from agents import _build_llm_for, _get_candidates
+    for model_str in _get_candidates():
+        try:
+            _build_llm_for(model_str)
+            results["llm_build_tests"].append({"model": model_str, "build": "✅ نجح"})
+        except Exception as e:
+            results["llm_build_tests"].append({"model": model_str, "build": f"❌ فشل: {str(e)[:120]}"})
+
+    # ── اختبار استدعاء حقيقي خفيف عبر litellm مباشرة ──────────────────────
+    try:
+        import litellm
+        litellm.set_verbose = False
+
+        for model_str in _get_candidates()[:3]:   # أول 3 فقط لتفادي الإبطاء
+            t0 = time.time()
+            try:
+                resp = await asyncio.to_thread(
+                    litellm.completion,
+                    model=model_str,
+                    messages=[{"role": "user", "content": "قل: مرحبا (كلمة واحدة فقط)"}],
+                    max_tokens=10,
+                    timeout=15,
+                )
+                text = resp.choices[0].message.content.strip()
+                elapsed = round(time.time() - t0, 2)
+                results["live_call_tests"].append({
+                    "model": model_str,
+                    "status": "✅ يعمل",
+                    "response": text,
+                    "latency_sec": elapsed,
+                })
+            except Exception as e:
+                elapsed = round(time.time() - t0, 2)
+                err = str(e)
+                is_quota = any(x in err.lower() for x in ["429", "quota", "rate_limit", "resource_exhausted", "exceeded"])
+                results["live_call_tests"].append({
+                    "model": model_str,
+                    "status": "⚠️ quota/rate-limit" if is_quota else "❌ خطأ",
+                    "error": err[:200],
+                    "latency_sec": elapsed,
+                })
+    except ImportError:
+        results["live_call_tests"].append({"error": "❌ litellm غير مثبت"})
+
+    # ── تشخيص نهائي ─────────────────────────────────────────────────────────
+    working = [t for t in results["live_call_tests"] if "✅" in t.get("status", "")]
+    if working:
+        results["diagnosis"] = f"✅ {len(working)} موديل يعمل بشكل صحيح"
+    else:
+        quota_issues = [t for t in results["live_call_tests"] if "quota" in t.get("status", "")]
+        if quota_issues:
+            results["diagnosis"] = "⚠️ جميع الموديلات لديها quota منتهية — تحتاج مفاتيح جديدة"
+        else:
+            results["diagnosis"] = "❌ جميع الاختبارات فشلت — راجع المفاتيح والمكتبات"
+
+    return results
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # STATIC (SPA)
 # ══════════════════════════════════════════════════════════════════════════════
 STATIC_DIR = Path(__file__).parent / "static"
