@@ -59,22 +59,23 @@ def _run_async(coro):
 
 
 @crewai_tool("query_groups")
-def query_groups(criteria: str = "{}") -> str:
+def query_groups(criteria: Any = None) -> str:
     """
     يستعلم عن المجموعات من قاعدة البيانات.
-    criteria: نص JSON اختياري مثل {"category":"news","is_joined":true,"min_members":100}
-    أو أرسل {} لجلب كل المجموعات.
+    criteria: معايير البحث — يقبل نص JSON أو dict أو فارغ.
+    مثال: {"category":"news","is_joined":true,"min_members":100}
+    أو أرسل فارغاً لجلب كل المجموعات.
     """
     async def _query():
         try:
-            # Groq قد يرسل dict مباشرة أو string أو None
-            if criteria is None or criteria == "":
+            # Groq يرسل dict مباشرة، Gemini يرسل string — نقبل كليهما
+            if criteria is None or criteria == "" or criteria == "{}":
                 params = {}
             elif isinstance(criteria, dict):
                 params = criteria
             else:
                 c = str(criteria).strip()
-                # أحياناً Groq يرسل Python repr بدل JSON
+                # أحياناً يُرسل Python repr بدل JSON
                 c = c.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
                 params = json.loads(c) if c and c != "{}" else {}
         except Exception:
@@ -173,20 +174,25 @@ def check_deletion_status(message_id: int) -> str:
 
 
 @crewai_tool("store_memory")
-def store_memory(memory_id: str, text: str, metadata: str = "{}") -> str:
+def store_memory(memory_id: str, text: str, metadata: Any = None) -> str:
     """
     يخزن معلومة في الذاكرة الدائمة للنظام.
     memory_id: معرف فريد للذاكرة
     text: النص المراد حفظه
-    metadata: بيانات إضافية اختيارية كـ JSON string
+    metadata: بيانات إضافية اختيارية (dict أو JSON string)
     """
     if not CHROMA_AVAILABLE:
         return "ChromaDB غير متاح - تم تجاهل الحفظ"
     try:
-        try:
-            meta = json.loads(metadata) if isinstance(metadata, str) and metadata else {}
-        except Exception:
+        if metadata is None:
             meta = {}
+        elif isinstance(metadata, dict):
+            meta = metadata
+        else:
+            try:
+                meta = json.loads(str(metadata)) if metadata else {}
+            except Exception:
+                meta = {}
         _memory_col.upsert(ids=[memory_id], documents=[text], metadatas=[meta])
         return "تم حفظ الذاكرة"
     except Exception as e:
