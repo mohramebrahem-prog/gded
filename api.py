@@ -931,17 +931,77 @@ class AIModelSaveReq(BaseModel):
 
 @app.post("/api/ai/models")
 async def save_ai_model(req: AIModelSaveReq):
-    """يضيف موديل جديد من الواجهة (يُخزن في الذاكرة حتى إعادة التشغيل)."""
+    """
+    يضيف موديل جديد من الواجهة:
+    1. يكتب المفتاح في ملف .env (دائم)
+    2. يحدّث os.environ فوراً (بدون إعادة تشغيل)
+    3. يضبط PREFERRED_LLM إذا كان الدور leader
+    """
     import os, re
     if not req.model_string or not req.api_key:
         raise HTTPException(400, "model_string و api_key مطلوبان")
 
+    # ── تحديد اسم متغير البيئة المناسب للمفتاح ────────────────────────────
+    m = req.model_string.lower()
+    if "gemini" in m or "google" in m:
+        env_key_name = "GOOGLE_API_KEY"
+    elif "groq" in m or "llama" in m or "mixtral" in m:
+        env_key_name = "GROQ_API_KEY"
+    elif "deepseek" in m:
+        env_key_name = "DEEPSEEK_API_KEY"
+    elif "claude" in m or "anthropic" in m:
+        env_key_name = "ANTHROPIC_API_KEY"
+    elif "gpt" in m or "openai" in m:
+        env_key_name = "OPENAI_API_KEY"
+    else:
+        env_key_name = "OPENAI_API_KEY"
+
+    # ── كتابة المفتاح في .env (دائم عبر إعادة التشغيل) ───────────────────
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        lines = env_path.read_text(encoding="utf-8").splitlines()
+        found = False
+        new_lines = []
+        for line in lines:
+            if line.startswith(f"{env_key_name}="):
+                new_lines.append(f"{env_key_name}={req.api_key}")
+                found = True
+            else:
+                new_lines.append(line)
+        if not found:
+            new_lines.append(f"{env_key_name}={req.api_key}")
+        env_path.write_text("
+".join(new_lines) + "
+", encoding="utf-8")
+
+    # ── تحديث os.environ فوراً ─────────────────────────────────────────────
+    os.environ[env_key_name] = req.api_key
+
+    # ── إذا الدور leader، اضبط PREFERRED_LLM ─────────────────────────────
+    if req.role == "leader":
+        os.environ["PREFERRED_LLM"] = req.model_string
+        if env_path.exists():
+            lines = env_path.read_text(encoding="utf-8").splitlines()
+            found = False
+            new_lines = []
+            for line in lines:
+                if line.startswith("PREFERRED_LLM="):
+                    new_lines.append(f"PREFERRED_LLM={req.model_string}")
+                    found = True
+                else:
+                    new_lines.append(line)
+            if not found:
+                new_lines.append(f"PREFERRED_LLM={req.model_string}")
+            env_path.write_text("
+".join(new_lines) + "
+", encoding="utf-8")
+
+    # ── إضافة للقائمة في الذاكرة (للعرض في الواجهة) ──────────────────────
     prov = _detect_provider(req.model_string)
     model_id = "model-" + re.sub(r"[^a-z0-9]", "-", req.model_string.lower())[:20]
 
-    # إزالة إذا كان موجوداً بنفس الـ id
     global _extra_models
-    _extra_models = [m for m in _extra_models if m["id"] != model_id]
+    _extra_models = [m2 for m2 in _extra_models if m2["id"] != model_id]
 
     _extra_models.append({
         "id": model_id,
@@ -959,12 +1019,13 @@ async def save_ai_model(req: AIModelSaveReq):
         "avgTokensPerCall": 1000,
         "status": "active",
         "modelString": req.model_string,
-        "isDefault": False,
-        "isLeader": False,
+        "isDefault": req.role == "leader",
+        "isLeader": req.role == "leader",
         "badge": req.role if req.role in ("leader", "backup") else "",
         "errorMsg": "",
     })
-    return {"status": "ok", "id": model_id}
+
+    return {"status": "ok", "id": model_id, "env_key": env_key_name, "saved_to_env": True}
 
 
 @app.post("/api/ai/set-preferred")
