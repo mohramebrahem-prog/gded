@@ -933,9 +933,9 @@ class AIModelSaveReq(BaseModel):
 async def save_ai_model(req: AIModelSaveReq):
     """
     يضيف موديل جديد من الواجهة:
-    1. يكتب المفتاح في ملف .env (دائم)
-    2. يحدّث os.environ فوراً (بدون إعادة تشغيل)
-    3. يضبط PREFERRED_LLM إذا كان الدور leader
+    - يحدّث os.environ فوراً (يشتغل بدون restart)
+    - يضبط PREFERRED_LLM إذا كان الدور leader
+    ملاحظة: المفاتيح الدائمة تُضاف عبر Railway Variables
     """
     import os, re
     if not req.model_string or not req.api_key:
@@ -956,41 +956,12 @@ async def save_ai_model(req: AIModelSaveReq):
     else:
         env_key_name = "OPENAI_API_KEY"
 
-    # ── كتابة المفتاح في .env (دائم عبر إعادة التشغيل) ───────────────────
-    env_path = Path(__file__).parent / ".env"
-    if env_path.exists():
-        lines = env_path.read_text(encoding="utf-8").splitlines()
-        found = False
-        new_lines = []
-        for line in lines:
-            if line.startswith(f"{env_key_name}="):
-                new_lines.append(f"{env_key_name}={req.api_key}")
-                found = True
-            else:
-                new_lines.append(line)
-        if not found:
-            new_lines.append(f"{env_key_name}={req.api_key}")
-        env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-
     # ── تحديث os.environ فوراً ─────────────────────────────────────────────
     os.environ[env_key_name] = req.api_key
 
     # ── إذا الدور leader، اضبط PREFERRED_LLM ─────────────────────────────
     if req.role == "leader":
         os.environ["PREFERRED_LLM"] = req.model_string
-        if env_path.exists():
-            lines = env_path.read_text(encoding="utf-8").splitlines()
-            found = False
-            new_lines = []
-            for line in lines:
-                if line.startswith("PREFERRED_LLM="):
-                    new_lines.append(f"PREFERRED_LLM={req.model_string}")
-                    found = True
-                else:
-                    new_lines.append(line)
-            if not found:
-                new_lines.append(f"PREFERRED_LLM={req.model_string}")
-            env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
     # ── إضافة للقائمة في الذاكرة (للعرض في الواجهة) ──────────────────────
     prov = _detect_provider(req.model_string)
@@ -1026,34 +997,36 @@ async def save_ai_model(req: AIModelSaveReq):
 
 @app.post("/api/ai/set-preferred")
 async def set_preferred_model(data: dict):
-    """يغير PREFERRED_LLM في ملف .env الحالي."""
+    """يغير PREFERRED_LLM في os.environ فوراً."""
     model = data.get("model_string", "").strip()
     if not model:
         raise HTTPException(400, "model_string مطلوب")
 
-    env_path = Path(__file__).parent / ".env"
-    if not env_path.exists():
-        raise HTTPException(404, "ملف .env غير موجود")
-
-    lines = env_path.read_text(encoding="utf-8").splitlines()
-    found = False
-    new_lines = []
-    for line in lines:
-        if line.startswith("PREFERRED_LLM="):
-            new_lines.append(f"PREFERRED_LLM={model}")
-            found = True
-        else:
-            new_lines.append(line)
-    if not found:
-        new_lines.append(f"PREFERRED_LLM={model}")
-
-    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-
-    # حدّث os.environ مباشرة حتى يراه agents.py فوراً بدون إعادة تشغيل
     import os as _os
     _os.environ["PREFERRED_LLM"] = model
 
     return {"status": "ok", "preferred_llm": model}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SYSTEM TEST ENDPOINT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/system-test")
+async def system_test_endpoint():
+    """
+    اختبار شامل لكل مكونات النظام:
+    - متغيرات البيئة
+    - المكتبات المثبتة
+    - قاعدة البيانات
+    - الذكاء الاصطناعي
+    - تيليجرام
+    - API Endpoints
+    - WebSocket
+    النتائج تُحفظ في AuditLog وتظهر في السجل.
+    """
+    from system_test import run_all_tests
+    return await run_all_tests()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
