@@ -680,6 +680,323 @@ async def _copilot_task(command: str):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# AI CONFIG
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _mask_key(key: str) -> str:
+    """يخفي معظم المفتاح ويظهر أول 4 أحرف فقط."""
+    if not key or len(key) < 5:
+        return ""
+    return key[:4] + "••••••••••••••••••••"
+
+
+def _detect_provider(model_str: str) -> dict:
+    """يكتشف المزود من اسم الموديل."""
+    m = model_str.lower()
+    if "gemini" in m:
+        return {"name": "Google", "avatar": "✨", "bg": "linear-gradient(135deg,#1a73e8,#0f9d58)"}
+    if "groq" in m or "llama" in m or "mixtral" in m:
+        return {"name": "Groq", "avatar": "⚡", "bg": "linear-gradient(135deg,#f97316,#dc2626)"}
+    if "deepseek" in m:
+        return {"name": "DeepSeek", "avatar": "🔵", "bg": "linear-gradient(135deg,#4f46e5,#7c3aed)"}
+    if "gpt" in m or "openai" in m:
+        return {"name": "OpenAI", "avatar": "🤖", "bg": "linear-gradient(135deg,#10b981,#059669)"}
+    if "claude" in m or "anthropic" in m:
+        return {"name": "Anthropic", "avatar": "🧡", "bg": "linear-gradient(135deg,#f97316,#ef4444)"}
+    return {"name": "Custom", "avatar": "🔧", "bg": "linear-gradient(135deg,#64748b,#475569)"}
+
+
+_ALL_ROLES = [
+    {"key": "leader",   "label": "👑 قائد الفريق", "active": True},
+    {"key": "planner",  "label": "🗺️ المخطط",      "active": True},
+    {"key": "executor", "label": "⚡ المنفذ",       "active": True},
+    {"key": "monitor",  "label": "👁️ المراقب",      "active": True},
+    {"key": "analyzer", "label": "📊 المحلل",       "active": True},
+    {"key": "engineer", "label": "🛠️ المهندس",      "active": True, "engineer": True},
+]
+
+# سجل الموديلات المضافة يدوياً من الواجهة (يُخزن في الذاكرة طوال عمر السيرفر)
+_extra_models: list[dict] = []
+
+
+@app.get("/api/ai/config")
+async def get_ai_config(db: AsyncSession = Depends(get_db)):
+    """
+    يرجع قائمة نماذج AI المضبوطة في .env
+    مع إحصائيات حقيقية من AuditLog.
+    """
+    import os
+    from config import (
+        GOOGLE_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY,
+        OPENAI_API_KEY, ANTHROPIC_API_KEY, PREFERRED_LLM,
+    )
+
+    # ── إحصائيات من AuditLog ──────────────────────────────────────────────
+    today_str = datetime.utcnow().date().isoformat()
+
+    total_calls_q = await db.execute(
+        select(func.count(AuditLog.id)).where(AuditLog.action == "copilot_command")
+    )
+    total_calls: int = total_calls_q.scalar() or 0
+
+    today_calls_q = await db.execute(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.action == "copilot_command",
+            AuditLog.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0),
+        )
+    )
+    today_calls: int = today_calls_q.scalar() or 0
+
+    done_q = await db.execute(
+        select(func.count(AuditLog.id)).where(AuditLog.action == "copilot_done")
+    )
+    done_total: int = done_q.scalar() or 0
+
+    error_q = await db.execute(
+        select(func.count(AuditLog.id)).where(AuditLog.action == "copilot_error")
+    )
+    error_total: int = error_q.scalar() or 0
+
+    # ── بناء قائمة الموديلات من .env ─────────────────────────────────────
+    preferred = PREFERRED_LLM or "gemini/gemini-2.0-flash"
+    avg_tokens = 2400
+
+    env_models = []
+
+    if GOOGLE_API_KEY:
+        prov = _detect_provider(preferred if "gemini" in preferred else "gemini/gemini-2.0-flash")
+        model_str = preferred if "gemini" in preferred else "gemini/gemini-2.0-flash"
+        is_leader = "gemini" in preferred.lower()
+        env_models.append({
+            "id": "gemini",
+            "name": "Gemini 2.0 Flash" if "2.0" in model_str else "Gemini Flash",
+            "provider": f"{prov['name']} · {model_str}",
+            "avatar": prov["avatar"],
+            "avatarBg": prov["bg"],
+            "roles": _ALL_ROLES,
+            "apiKey": GOOGLE_API_KEY,
+            "apiKeyMasked": _mask_key(GOOGLE_API_KEY),
+            "contextWindow": 1500000,
+            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "callsTotal": total_calls if is_leader else 0,
+            "callsToday": today_calls if is_leader else 0,
+            "avgTokensPerCall": avg_tokens,
+            "status": "active",
+            "modelString": model_str,
+            "isDefault": is_leader,
+            "isLeader": is_leader,
+            "badge": "leader" if is_leader else "",
+            "errorMsg": "",
+        })
+
+    if GROQ_API_KEY:
+        prov = _detect_provider("groq/llama-3.3-70b-versatile")
+        model_str = preferred if "groq" in preferred.lower() or "llama" in preferred.lower() else "groq/llama-3.3-70b-versatile"
+        is_leader = "groq" in preferred.lower() or "llama" in preferred.lower()
+        env_models.append({
+            "id": "groq",
+            "name": "Llama 3.3 70B",
+            "provider": f"Groq · {model_str}",
+            "avatar": prov["avatar"],
+            "avatarBg": prov["bg"],
+            "roles": [
+                {"key": "executor", "label": "⚡ المنفذ",  "active": True},
+                {"key": "monitor",  "label": "👁️ المراقب", "active": True},
+            ],
+            "apiKey": GROQ_API_KEY,
+            "apiKeyMasked": _mask_key(GROQ_API_KEY),
+            "contextWindow": 500000,
+            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "callsTotal": total_calls if is_leader else 0,
+            "callsToday": today_calls if is_leader else 0,
+            "avgTokensPerCall": 1000,
+            "status": "active",
+            "modelString": model_str,
+            "isDefault": is_leader,
+            "isLeader": is_leader,
+            "badge": "leader" if is_leader else "backup",
+            "errorMsg": "",
+        })
+
+    if DEEPSEEK_API_KEY:
+        prov = _detect_provider("deepseek/deepseek-r1")
+        model_str = preferred if "deepseek" in preferred.lower() else "deepseek/deepseek-r1"
+        is_leader = "deepseek" in preferred.lower()
+        env_models.append({
+            "id": "deepseek",
+            "name": "DeepSeek R1",
+            "provider": f"DeepSeek · {model_str}",
+            "avatar": prov["avatar"],
+            "avatarBg": prov["bg"],
+            "roles": [
+                {"key": "analyzer", "label": "📊 المحلل", "active": True},
+            ],
+            "apiKey": DEEPSEEK_API_KEY,
+            "apiKeyMasked": _mask_key(DEEPSEEK_API_KEY),
+            "contextWindow": 64000,
+            "tokensUsed": total_calls * 1000 if is_leader else 0,
+            "callsTotal": total_calls if is_leader else 0,
+            "callsToday": today_calls if is_leader else 0,
+            "avgTokensPerCall": 1000,
+            "status": "active",
+            "modelString": model_str,
+            "isDefault": is_leader,
+            "isLeader": is_leader,
+            "badge": "leader" if is_leader else "backup",
+            "errorMsg": "",
+        })
+
+    if OPENAI_API_KEY:
+        prov = _detect_provider("openai/gpt-4o")
+        model_str = preferred if "gpt" in preferred.lower() or "openai" in preferred.lower() else "openai/gpt-4o"
+        is_leader = "gpt" in preferred.lower() or "openai" in preferred.lower()
+        env_models.append({
+            "id": "openai",
+            "name": "GPT-4o",
+            "provider": f"OpenAI · {model_str}",
+            "avatar": prov["avatar"],
+            "avatarBg": prov["bg"],
+            "roles": _ALL_ROLES,
+            "apiKey": OPENAI_API_KEY,
+            "apiKeyMasked": _mask_key(OPENAI_API_KEY),
+            "contextWindow": 128000,
+            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "callsTotal": total_calls if is_leader else 0,
+            "callsToday": today_calls if is_leader else 0,
+            "avgTokensPerCall": avg_tokens,
+            "status": "active",
+            "modelString": model_str,
+            "isDefault": is_leader,
+            "isLeader": is_leader,
+            "badge": "leader" if is_leader else "",
+            "errorMsg": "",
+        })
+
+    if ANTHROPIC_API_KEY:
+        prov = _detect_provider("claude")
+        model_str = preferred if "claude" in preferred.lower() or "anthropic" in preferred.lower() else "anthropic/claude-3-5-sonnet-20241022"
+        is_leader = "claude" in preferred.lower() or "anthropic" in preferred.lower()
+        env_models.append({
+            "id": "anthropic",
+            "name": "Claude 3.5 Sonnet",
+            "provider": f"Anthropic · {model_str}",
+            "avatar": prov["avatar"],
+            "avatarBg": prov["bg"],
+            "roles": _ALL_ROLES,
+            "apiKey": ANTHROPIC_API_KEY,
+            "apiKeyMasked": _mask_key(ANTHROPIC_API_KEY),
+            "contextWindow": 200000,
+            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "callsTotal": total_calls if is_leader else 0,
+            "callsToday": today_calls if is_leader else 0,
+            "avgTokensPerCall": avg_tokens,
+            "status": "active",
+            "modelString": model_str,
+            "isDefault": is_leader,
+            "isLeader": is_leader,
+            "badge": "leader" if is_leader else "",
+            "errorMsg": "",
+        })
+
+    # إذا لم يكن أي موديل هو القائد (PREFERRED_LLM غريب)، اجعل الأول قائداً
+    if env_models and not any(m["isLeader"] for m in env_models):
+        env_models[0]["isLeader"] = True
+        env_models[0]["isDefault"] = True
+        env_models[0]["badge"] = "leader"
+
+    all_models = env_models + _extra_models
+
+    return {
+        "models": all_models,
+        "preferred_llm": preferred,
+        "stats": {
+            "total_calls": total_calls,
+            "today_calls": today_calls,
+            "done_total": done_total,
+            "error_total": error_total,
+            "success_rate": round(done_total / total_calls * 100, 1) if total_calls else 0,
+        },
+    }
+
+
+class AIModelSaveReq(BaseModel):
+    model_string: str
+    api_key: str
+    role: str = "backup"
+    name: str = ""
+
+
+@app.post("/api/ai/models")
+async def save_ai_model(req: AIModelSaveReq):
+    """يضيف موديل جديد من الواجهة (يُخزن في الذاكرة حتى إعادة التشغيل)."""
+    import os, re
+    if not req.model_string or not req.api_key:
+        raise HTTPException(400, "model_string و api_key مطلوبان")
+
+    prov = _detect_provider(req.model_string)
+    model_id = "model-" + re.sub(r"[^a-z0-9]", "-", req.model_string.lower())[:20]
+
+    # إزالة إذا كان موجوداً بنفس الـ id
+    global _extra_models
+    _extra_models = [m for m in _extra_models if m["id"] != model_id]
+
+    _extra_models.append({
+        "id": model_id,
+        "name": req.name or req.model_string,
+        "provider": f"{prov['name']} · {req.model_string}",
+        "avatar": prov["avatar"],
+        "avatarBg": prov["bg"],
+        "roles": [],
+        "apiKey": req.api_key,
+        "apiKeyMasked": _mask_key(req.api_key),
+        "contextWindow": 0,
+        "tokensUsed": 0,
+        "callsTotal": 0,
+        "callsToday": 0,
+        "avgTokensPerCall": 1000,
+        "status": "active",
+        "modelString": req.model_string,
+        "isDefault": False,
+        "isLeader": False,
+        "badge": req.role if req.role in ("leader", "backup") else "",
+        "errorMsg": "",
+    })
+    return {"status": "ok", "id": model_id}
+
+
+@app.post("/api/ai/set-preferred")
+async def set_preferred_model(data: dict):
+    """يغير PREFERRED_LLM في ملف .env الحالي."""
+    model = data.get("model_string", "").strip()
+    if not model:
+        raise HTTPException(400, "model_string مطلوب")
+
+    env_path = Path(__file__).parent / ".env"
+    if not env_path.exists():
+        raise HTTPException(404, "ملف .env غير موجود")
+
+    lines = env_path.read_text(encoding="utf-8").splitlines()
+    found = False
+    new_lines = []
+    for line in lines:
+        if line.startswith("PREFERRED_LLM="):
+            new_lines.append(f"PREFERRED_LLM={model}")
+            found = True
+        else:
+            new_lines.append(line)
+    if not found:
+        new_lines.append(f"PREFERRED_LLM={model}")
+
+    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    # أعد تحميل الإعداد في الذاكرة
+    import importlib, config as cfg_module
+    importlib.reload(cfg_module)
+
+    return {"status": "ok", "preferred_llm": model}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # STATIC (SPA)
 # ══════════════════════════════════════════════════════════════════════════════
 STATIC_DIR = Path(__file__).parent / "static"
