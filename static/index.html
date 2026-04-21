@@ -374,14 +374,14 @@ td{padding:9px 10px;vertical-align:middle}
     <button class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
       <span class="nav-icon">🏠</span><span class="nav-lbl">الرئيسية</span>
     </button>
+    <button class="nav-item" onclick="navigate('campaigns')" id="nav-campaigns">
+      <span class="nav-icon">📢</span><span class="nav-lbl">الحملات</span>
+    </button>
     <button class="nav-item" onclick="navigate('groups')" id="nav-groups">
       <span class="nav-icon">👥</span><span class="nav-lbl">المجموعات</span>
     </button>
-    <button class="nav-item" onclick="navigate('accounts')" id="nav-accounts">
-      <span class="nav-icon">📱</span><span class="nav-lbl">الحسابات</span>
-    </button>
-    <button class="nav-item" onclick="navigate('campaigns')" id="nav-campaigns">
-      <span class="nav-icon">📢</span><span class="nav-lbl">الحملات</span>
+    <button class="nav-item" onclick="navigate('analytics')" id="nav-analytics">
+      <span class="nav-icon">📊</span><span class="nav-lbl">التحليلات</span>
     </button>
     <button class="nav-item" onclick="toggleMoreMenu()" id="nav-more">
       <span class="nav-icon">⋯</span><span class="nav-lbl">المزيد</span>
@@ -391,9 +391,9 @@ td{padding:9px 10px;vertical-align:middle}
 
 <!-- MORE MENU -->
 <div class="nav-more-menu" id="nav-more-menu">
+  <button class="nav-more-item" onclick="navigate('accounts');closeMoreMenu()">📱 الحسابات</button>
   <button class="nav-more-item" onclick="navigate('templates');closeMoreMenu()">📝 صيغ الإعلانات</button>
   <button class="nav-more-item" onclick="navigate('proxies');closeMoreMenu()">🌐 البروكسيات</button>
-  <button class="nav-more-item" onclick="navigate('analytics');closeMoreMenu()">📊 التحليلات</button>
   <button class="nav-more-item" onclick="navigate('folders');closeMoreMenu()">📂 المجلدات</button>
   <button class="nav-more-item" onclick="navigate('ai_monitor');closeMoreMenu()">🧠 مراقبة AI</button>
   <button class="nav-more-item" onclick="navigate('engineer');closeMoreMenu()">🤖 المهندس AI</button>
@@ -446,6 +446,7 @@ td{padding:9px 10px;vertical-align:middle}
     <button class="sidebar-item" id="sb-proxies" onclick="sidebarNav('proxies')">
       <span class="s-icon">🌐</span><span class="s-lbl">البروكسيات</span>
     </button>
+    <div class="sidebar-section-lbl">التحليلات والسجلات</div>
     <button class="sidebar-item" id="sb-analytics" onclick="sidebarNav('analytics')">
       <span class="s-icon">📊</span><span class="s-lbl">التحليلات</span>
     </button>
@@ -470,6 +471,8 @@ td{padding:9px 10px;vertical-align:middle}
       <button class="badge badge-blue" onclick="fillCp('انشر الإعلان في المجموعات التعليمية')" style="cursor:pointer">📢 نشر</button>
       <button class="badge badge-blue" onclick="fillCp('أوقف جميع الحملات')" style="cursor:pointer">⏸ إيقاف</button>
       <button class="badge badge-blue" onclick="fillCp('أظهر إحصائيات اليوم')" style="cursor:pointer">📊 إحصائيات</button>
+      <button class="badge badge-blue" onclick="fillCp('افحص جميع الحسابات')" style="cursor:pointer">🩺 فحص</button>
+      <button class="badge badge-blue" onclick="fillCp('أظهر المجموعات عالية النشاط')" style="cursor:pointer">⚡ نشاط</button>
     </div>
     <div class="cp-bar">
       <input class="finput" id="cp-input" placeholder="اكتب أمراً..." onkeydown="if(event.key==='Enter')sendCp()">
@@ -703,7 +706,7 @@ const pageTitles = {
   analytics:'التحليلات',audit:'سجل الأحداث',settings:'الإعدادات',
   folders:'المجلدات',engineer:'المهندس AI',ai_monitor:'مراقبة AI'
 };
-const mainNavPages=['dashboard','groups','accounts','campaigns'];
+const mainNavPages=['dashboard','campaigns','groups','analytics'];
 function navigate(page) {
   state.page=page;
   state.selectedGroups.clear();
@@ -868,6 +871,7 @@ function _groupCard(g){
       <div class="row-card-actions">
         <button class="btn btn-primary btn-xs" onclick="showSendMsg(${g.id},'${g.title.replace(/'/g,"\\'")}',${g.account_id||'null'})">📨 إرسال</button>
         <button class="btn btn-ghost btn-xs" onclick="toggleFav(${g.id})">${g.is_favorite?'⭐ إزالة':'☆ مفضلة'}</button>
+        ${g.username?`<button class="btn btn-ghost btn-xs" onclick="copyGroupLink('${g.username}')">🔗 رابط</button>`:''}
         <button class="btn btn-ghost btn-xs" onclick="showEditGroup(${g.id})">🏷️ تعديل</button>
         ${g.is_joined?`<button class="btn btn-danger btn-xs" onclick="leaveGroup(${g.id})">🚪</button>`:''}
         <button class="btn btn-ghost btn-xs" onclick="toggleBlacklist(${g.id},${g.is_blacklisted})">${g.is_blacklisted?'♻️':'🚫'}</button>
@@ -885,7 +889,10 @@ async function renderGroups() {
   <div class="page-hdr">
     <div class="page-hdr-top">
       <div><div class="page-title">المجموعات</div><div class="page-sub" id="g-count">${fmt(_allGroups.length)} مجموعة</div></div>
-      <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="exportGroupsCSV()" title="تصدير CSV">📤</button>
+        <button class="btn btn-primary btn-sm" onclick="showJoinGroup()">+ انضمام</button>
+      </div>
     </div>
   </div>
 
@@ -942,6 +949,28 @@ function applyGroupFilters(){
   if(cnt) cnt.textContent=fmt(filtered.length)+' مجموعة';
 }
 async function _refreshGroups(){_allGroups=await api('/api/groups');applyGroupFilters();}
+function exportGroupsCSV(){
+  if(!_allGroups||!_allGroups.length){toast('لا توجد مجموعات للتصدير','info');return;}
+  const headers=['المعرف','الاسم','المستخدم','الأعضاء','التصنيف','النشاط','الحالة','مفضلة','قائمة سوداء'];
+  const rows=_allGroups.map(g=>[
+    g.telegram_id||g.id,
+    `"${(g.title||'').replace(/"/g,'""')}"`,
+    g.username?'@'+g.username:'',
+    g.member_count||0,
+    g.category||'',
+    g.activity_level||'',
+    g.is_joined?'منضم':'مغادر',
+    g.is_favorite?'نعم':'لا',
+    g.is_blacklisted?'نعم':'لا',
+  ].join(','));
+  const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`groups_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();URL.revokeObjectURL(a.href);
+  toast(`✅ تم تصدير ${_allGroups.length} مجموعة`,'success');
+}
 async function toggleFav(id){await api('/api/groups/action','POST',{action:'favorite',group_id:id});_refreshGroups();}
 async function toggleBlacklist(id,current){
   await api('/api/groups/action','POST',{action:current?'unblacklist':'blacklist',group_id:id});
@@ -952,6 +981,13 @@ async function leaveGroup(id){
   if(!confirm('مغادرة هذه المجموعة؟')) return;
   try{await api('/api/groups/action','POST',{action:'leave',group_id:id});toast('تمت المغادرة','success');_refreshGroups();}
   catch(e){toast('خطأ: '+e.message,'error');}
+}
+function copyGroupLink(username){
+  const link='https://t.me/'+username;
+  navigator.clipboard.writeText(link).then(()=>toast('✅ تم نسخ الرابط: '+link,'success')).catch(()=>{
+    const el=document.createElement('textarea');el.value=link;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();
+    toast('✅ تم نسخ الرابط','success');
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -984,7 +1020,10 @@ async function renderCampaigns() {
         <div class="row-card-actions">
           ${c.status==='running'
             ?`<button class="btn btn-warn btn-xs" onclick="pauseCampaign(${c.id})">⏸ إيقاف</button>`
-            :c.status!=='done'?`<button class="btn btn-success btn-xs" onclick="runCampaign(${c.id})">▶ تشغيل</button>`:''}
+            :c.status==='done'
+              ?`<button class="btn btn-success btn-xs" onclick="runCampaign(${c.id})">🔁 إعادة</button>`
+              :`<button class="btn btn-success btn-xs" onclick="runCampaign(${c.id})">▶ تشغيل</button>`}
+          <button class="btn btn-teal btn-xs" onclick="showCampaignStats(${c.id})">📊</button>
           <button class="btn btn-ghost btn-xs" onclick="editCampaign(${c.id})">✏️ تعديل</button>
           <button class="btn btn-danger btn-xs" onclick="deleteCampaign(${c.id})">🗑</button>
         </div>
@@ -994,6 +1033,42 @@ async function renderCampaigns() {
 async function runCampaign(id){try{await api(`/api/campaigns/${id}/run`,'POST');toast('الحملة بدأت','success');renderCampaigns();}catch(e){toast('خطأ: '+e.message,'error');}}
 async function pauseCampaign(id){try{await api(`/api/campaigns/${id}/pause`,'POST');toast('الحملة موقوفة','info');renderCampaigns();}catch(e){toast('خطأ: '+e.message,'error');}}
 async function deleteCampaign(id){if(!confirm('حذف هذه الحملة؟'))return;try{await api(`/api/campaigns/${id}`,'DELETE');toast('تم الحذف','success');renderCampaigns();}catch(e){toast('خطأ: '+e.message,'error');}}
+async function showCampaignStats(id){
+  try{
+    const s=await api(`/api/campaigns/${id}/stats`);
+    const sent=s.sent||0,del=s.deleted||0,succ=s.successful||sent-del;
+    const rate=sent>0?Math.round(succ/sent*100):0;
+    showModal('📊 إحصائيات الحملة',`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:var(--card2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--white)">${sent}</div>
+          <div style="font-size:11px;color:var(--muted)">إجمالي الإرسال</div>
+        </div>
+        <div style="background:var(--card2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--green)">${succ}</div>
+          <div style="font-size:11px;color:var(--muted)">ناجح</div>
+        </div>
+        <div style="background:var(--card2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--danger)">${del}</div>
+          <div style="font-size:11px;color:var(--muted)">محذوف</div>
+        </div>
+        <div style="background:var(--card2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:${rate>=70?'var(--green)':rate>=40?'var(--warn)':'var(--danger)'}">${rate}%</div>
+          <div style="font-size:11px;color:var(--muted)">معدل النجاح</div>
+        </div>
+      </div>
+      <div style="background:var(--card2);border-radius:9px;padding:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--muted)">نسبة النجاح</span>
+          <span style="font-size:12px;color:var(--white)">${rate}%</span>
+        </div>
+        <div style="background:var(--card3);border-radius:4px;height:8px">
+          <div style="background:${rate>=70?'var(--green)':rate>=40?'var(--warn)':'var(--danger)'};height:8px;border-radius:4px;width:${rate}%;transition:width .5s"></div>
+        </div>
+      </div>
+    `,null);
+  }catch(e){toast('خطأ في جلب الإحصائيات','error');}
+}
 async function editCampaign(id){
   const camp=(await api('/api/campaigns')).find(c=>c.id===id);
   if(!camp) return;
@@ -1106,7 +1181,18 @@ async function renderAccounts() {
     </div>`;
   }).join('')}`;
 }
-function checkAllAccounts(){toast('🩺 جاري فحص جميع الحسابات...','info');}
+async function checkAllAccounts(){
+  const accs=await api('/api/accounts');
+  if(!accs.length){toast('لا توجد حسابات','info');return;}
+  toast(`🩺 جاري فحص ${accs.length} حساب...`,'info');
+  let ok=0,fail=0;
+  await Promise.all(accs.map(async a=>{
+    try{const r=await api(`/api/accounts/${a.id}/check`,'POST');r.connected?ok++:fail++;}
+    catch(e){fail++;}
+  }));
+  toast(`✅ ${ok} متصل  ❌ ${fail} غير متصل`,'success');
+  renderAccounts();
+}
 async function checkAccount(id){const r=await api(`/api/accounts/${id}/check`,'POST');toast(r.connected?'✅ الحساب متصل':'❌ الحساب غير متصل',r.connected?'success':'error');}
 async function syncAccount(id){try{const r=await api(`/api/accounts/${id}/sync`,'POST');toast(`🔄 مزامنة: ${r.added} جديدة`,'info');}catch(e){toast('خطأ: '+e.message,'error');}}
 async function deleteAccount(id){if(!confirm('حذف هذا الحساب؟'))return;try{await api(`/api/accounts/${id}`,'DELETE');toast('تم الحذف','success');renderAccounts();}catch(e){toast('خطأ: '+e.message,'error');}}
@@ -1552,8 +1638,91 @@ function aimSetAsLeader(id){
   const m=_aiModels.find(m=>m.id===id);if(m){m.isLeader=true;m.isDefault=true;}
   toast('✅ تم تعيين '+id+' كقائد للفريق','success');renderAiMonitor();
 }
-function aimEditModel(id){toast('✏️ فتح نافذة تعديل '+id,'info');aimOpenAddModal();}
-function aimChangeRoles(id){toast('🎭 تعديل أدوار '+id,'info');}
+function aimEditModel(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  // Build modal HTML with current values
+  const panel=document.createElement('div');
+  panel.className='aim-modal-overlay';
+  panel.id='aim-edit-modal';
+  panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+  panel.innerHTML=`<div style="background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800;color:var(--white)">✏️ تعديل النموذج</div>
+      <button onclick="document.getElementById('aim-edit-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div class="fg"><label class="flbl">اسم النموذج</label><input class="finput" id="aem-name" value="${m.name}"></div>
+    <div class="fg"><label class="flbl">🔑 مفتاح API</label><input class="finput" id="aem-key" type="password" placeholder="أدخل مفتاح جديد أو اترك فارغاً للإبقاء على القديم" value=""></div>
+    <div class="fg"><label class="flbl">الحالة</label>
+      <select class="fselect" id="aem-status">
+        <option value="active" ${m.status==='active'?'selected':''}>نشط ✅</option>
+        <option value="inactive" ${m.status==='inactive'?'selected':''}>معطل ⏸</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('aim-edit-modal').remove()">إلغاء</button>
+      <button class="btn btn-primary" style="flex:1" onclick="aimSaveEditModel('${id}')">💾 حفظ</button>
+    </div>
+  </div>`;
+  document.body.appendChild(panel);
+  panel.addEventListener('click',e=>{if(e.target===panel)panel.remove();});
+}
+function aimSaveEditModel(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const name=document.getElementById('aem-name')?.value.trim();
+  const key=document.getElementById('aem-key')?.value.trim();
+  const status=document.getElementById('aem-status')?.value;
+  if(name)m.name=name;
+  if(key){m.apiKey=key;m.apiKeyMasked=key.slice(0,4)+'••••••••••••••••••••';m.status='active';m.errorMsg='';}
+  if(status){if(m.isDefault&&status==='inactive'){toast('لا يمكن تعطيل النموذج الافتراضي','error');return;}m.status=status;}
+  document.getElementById('aim-edit-modal')?.remove();
+  toast('✅ تم حفظ التعديلات','success');
+  renderAiMonitor();
+}
+function aimChangeRoles(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const allRoles=[
+    {key:'leader',label:'👑 القائد',desc:'يتحكم بكل الوكلاء'},
+    {key:'planner',label:'🗺️ المخطط',desc:'يخطط الحملات'},
+    {key:'executor',label:'⚡ المنفذ',desc:'يرسل الرسائل'},
+    {key:'monitor',label:'👁️ المراقب',desc:'يراقب الحذف'},
+    {key:'analyzer',label:'📊 المحلل',desc:'يحلل النتائج'},
+    {key:'engineer',label:'🛠️ المهندس',desc:'يطور ويحسن'},
+    {key:'backup',label:'🔄 احتياطي',desc:'بديل عند الفشل'},
+  ];
+  const currentRoleKeys=(m.roles||[]).map(r=>r.key||r.label);
+  const panel=document.createElement('div');
+  panel.id='aim-roles-modal';
+  panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+  panel.innerHTML=`<div style="background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800;color:var(--white)">🎭 تعديل أدوار: ${m.name}</div>
+      <button onclick="document.getElementById('aim-roles-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      ${allRoles.map(r=>`<label style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:10px;cursor:pointer">
+        <input type="checkbox" id="ar-${r.key}" value="${r.key}" ${currentRoleKeys.includes(r.key)?'checked':''} style="width:16px;height:16px;cursor:pointer">
+        <div><div style="font-size:12px;font-weight:700;color:var(--white)">${r.label}</div><div style="font-size:10px;color:var(--muted)">${r.desc}</div></div>
+      </label>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('aim-roles-modal').remove()">إلغاء</button>
+      <button class="btn btn-primary" style="flex:1" onclick="aimSaveRoles('${id}')">💾 حفظ الأدوار</button>
+    </div>
+  </div>`;
+  document.body.appendChild(panel);
+  panel.addEventListener('click',e=>{if(e.target===panel)panel.remove();});
+}
+function aimSaveRoles(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const checked=[...document.querySelectorAll('[id^="ar-"]:checked')].map(cb=>cb.value);
+  m.roles=checked.map(k=>{
+    const labels={leader:'👑 القائد',planner:'🗺️ المخطط',executor:'⚡ المنفذ',monitor:'👁️ المراقب',analyzer:'📊 المحلل',engineer:'🛠️ المهندس',backup:'🔄 احتياطي'};
+    return{key:k,label:labels[k]||k,active:true};
+  });
+  document.getElementById('aim-roles-modal')?.remove();
+  toast(`✅ تم حفظ ${m.roles.length} دور للنموذج`,'success');
+  renderAiMonitor();
+}
 function aimSaveNewModel(){
   const key=document.getElementById('aim-api-key-input')?.value.trim();
   const sel=document.getElementById('aim-model-select');
@@ -1642,26 +1811,71 @@ async function sendEngineerCmd(){
 // SETTINGS
 // ═══════════════════════════════════════════════════════
 function renderSettings(){
+  const savedDelay=localStorage.getItem('cfg_delay')||'30';
+  const savedMaxMsg=localStorage.getItem('cfg_max_msg')||'10';
+  const savedAutoRetry=localStorage.getItem('cfg_auto_retry')||'true';
   document.getElementById('content').innerHTML=`
-  <div class="page-hdr"><div class="page-title">الإعدادات</div></div>
+  <div class="page-hdr"><div class="page-title">⚙️ الإعدادات</div></div>
+
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;font-size:13px">🚀 إعدادات الإرسال</div>
+    <div class="fg">
+      <label class="flbl">التأخير بين الرسائل (ثانية)</label>
+      <input class="finput" id="cfg-delay" type="number" min="5" max="300" value="${savedDelay}">
+    </div>
+    <div class="fg">
+      <label class="flbl">الحد الأقصى للرسائل في الجلسة</label>
+      <input class="finput" id="cfg-max-msg" type="number" min="1" max="100" value="${savedMaxMsg}">
+    </div>
+    <div class="fg" style="display:flex;align-items:center;justify-content:space-between">
+      <label class="flbl" style="margin:0">إعادة المحاولة تلقائياً عند الفشل</label>
+      <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+        <input type="checkbox" id="cfg-auto-retry" ${savedAutoRetry==='true'?'checked':''} style="opacity:0;width:0;height:0;position:absolute">
+        <span id="cfg-retry-track" style="position:absolute;inset:0;background:${savedAutoRetry==='true'?'var(--accent)':'var(--card3)'};border-radius:24px;transition:.2s" onclick="this.parentElement.querySelector('input').checked=!this.parentElement.querySelector('input').checked;this.style.background=this.parentElement.querySelector('input').checked?'var(--accent)':'var(--card3)'"></span>
+        <span style="position:absolute;left:${savedAutoRetry==='true'?'22':'2'}px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none" id="cfg-retry-thumb"></span>
+      </label>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;font-size:13px">💬 المساعد المباشر</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">تحكم بالنظام بأوامر عربية طبيعية</div>
+    <button class="btn btn-purple btn-full" onclick="openCopilot()">💬 فتح المساعد</button>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:800;color:var(--white);margin-bottom:14px;font-size:13px">🗑️ إدارة البيانات</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-warn btn-sm" style="flex:1" onclick="clearLocalSettings()">♻️ إعادة الضبط</button>
+      <a href="/docs" target="_blank" class="btn btn-ghost btn-sm" style="flex:1;text-decoration:none;justify-content:center">📚 API Docs</a>
+    </div>
+  </div>
+
   <div class="card">
     <div style="font-weight:800;color:var(--white);margin-bottom:12px;font-size:13px">ℹ️ معلومات النظام</div>
-    <div style="font-size:13px;color:var(--muted);line-height:2.2">
+    <div style="font-size:13px;color:var(--muted);line-height:2.4">
       <div>الإصدار: <span style="color:var(--white)">2.0.0</span></div>
       <div>الإطار: <span style="color:var(--white)">FastAPI + Pyrogram</span></div>
       <div>قاعدة البيانات: <span style="color:var(--white)">SQLite / PostgreSQL</span></div>
       <div>الوكلاء: <span style="color:var(--white)">CrewAI (5 وكلاء)</span></div>
     </div>
-  </div>
-  <div class="card">
-    <div style="font-weight:800;color:var(--white);margin-bottom:12px;font-size:13px">💬 المساعد المباشر</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">تحكم بالنظام بأوامر عربية طبيعية</div>
-    <button class="btn btn-purple btn-full" onclick="openCopilot()">💬 فتح المساعد</button>
-  </div>
-  <div class="card">
-    <div style="font-weight:800;color:var(--white);margin-bottom:12px;font-size:13px">🔗 روابط</div>
-    <a href="/docs" target="_blank" class="btn btn-ghost btn-full" style="text-decoration:none">📚 API Documentation</a>
   </div>`;
+}
+function saveSettings(){
+  const delay=document.getElementById('cfg-delay')?.value;
+  const maxMsg=document.getElementById('cfg-max-msg')?.value;
+  const retry=document.getElementById('cfg-auto-retry')?.checked;
+  if(delay) localStorage.setItem('cfg_delay',delay);
+  if(maxMsg) localStorage.setItem('cfg_max_msg',maxMsg);
+  localStorage.setItem('cfg_auto_retry',retry?'true':'false');
+  toast('✅ تم حفظ الإعدادات','success');
+}
+function clearLocalSettings(){
+  if(!confirm('إعادة جميع الإعدادات للافتراضي؟')) return;
+  ['cfg_delay','cfg_max_msg','cfg_auto_retry'].forEach(k=>localStorage.removeItem(k));
+  toast('✅ تم إعادة الضبط','success');
+  renderSettings();
 }
 
 // ═══════════════════════════════════════════════════════
