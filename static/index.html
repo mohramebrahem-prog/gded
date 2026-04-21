@@ -1447,23 +1447,23 @@ function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))retu
 // ═══════════════════════════════════════════════════════
 // AI MONITOR
 // ═══════════════════════════════════════════════════════
-let _aiModels=[
-  {id:'gemini-flash',name:'Gemini 2.0 Flash',provider:'Google · gemini/gemini-2.0-flash',avatar:'✨',avatarBg:'linear-gradient(135deg,#1a73e8,#0f9d58)',roles:[{label:'👑 قائد الفريق',active:true},{label:'🗺️ المخطط',active:true},{label:'⚡ المنفذ',active:true},{label:'👁️ المراقب',active:true},{label:'📊 المحلل',active:true},{label:'🛠️ المهندس',active:true,engineer:true}],apiKey:'AIzaSyXXXXXXXX...',apiKeyMasked:'AIza••••••••••••••••••••',contextWindow:1500000,tokensUsed:24000,callsTotal:24,callsToday:24,avgTokensPerCall:2400,status:'active',modelString:'gemini/gemini-2.0-flash',isDefault:true,isLeader:true,badge:'leader',errorMsg:''},
-  {id:'groq',name:'Llama 3.3 70B',provider:'Groq · groq/llama-3.3-70b-versatile',avatar:'⚡',avatarBg:'linear-gradient(135deg,#f97316,#dc2626)',roles:[{label:'⚡ المنفذ',active:true},{label:'👁️ المراقب',active:true},{label:'+3 غير نشط',active:false,extra:true}],apiKey:'gsk_abc123...',apiKeyMasked:'gsk_••••••••••••••••••••',contextWindow:500000,tokensUsed:142500,callsTotal:0,callsToday:0,avgTokensPerCall:1000,status:'active',modelString:'groq/llama-3.3-70b-versatile',isDefault:false,isLeader:false,badge:'backup',errorMsg:''},
-  {id:'deepseek',name:'DeepSeek R1',provider:'DeepSeek · deepseek/deepseek-r1',avatar:'🔵',avatarBg:'linear-gradient(135deg,#4f46e5,#7c3aed)',roles:[],apiKey:'',apiKeyMasked:'',contextWindow:0,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:0,status:'error',modelString:'deepseek/deepseek-r1',isDefault:false,isLeader:false,badge:'error',errorMsg:'المفتاح غير صالح أو منتهي الصلاحية — التوكن المستخدم: 0'},
-];
-async function renderAiMonitor(){
+// _aiModels تُملأ من السيرفر عند كل فتح للصفحة
+let _aiModels=[];
+let _aiStats={total_calls:0,today_calls:0,done_total:0,error_total:0,success_rate:0};
+
+async function _fetchAiConfig(){
   try{
-    const logs=await api('/api/audit-log?limit=200');
-    const today=new Date().toISOString().split('T')[0];
-    const def=_aiModels.find(m=>m.isDefault);
-    if(def){
-      const copilotCalls=logs.filter(l=>l.action==='copilot_command');
-      def.callsTotal=copilotCalls.length;
-      def.callsToday=copilotCalls.filter(l=>(l.created_at||'').startsWith(today)).length;
-      def.tokensUsed=copilotCalls.length*def.avgTokensPerCall;
-    }
-  }catch(e){}
+    const res=await api('/api/ai/config');
+    _aiModels=res.models||[];
+    _aiStats=res.stats||_aiStats;
+  }catch(e){
+    console.warn('فشل جلب إعدادات AI:',e);
+  }
+}
+
+async function renderAiMonitor(){
+  // جلب البيانات الحقيقية من السيرفر
+  await _fetchAiConfig();
   const totalTokens=_aiModels.reduce((s,m)=>s+(m.tokensUsed||0),0);
   const totalCalls=_aiModels.reduce((s,m)=>s+(m.callsTotal||0),0);
   const connectedCount=_aiModels.filter(m=>m.status==='active').length;
@@ -1633,10 +1633,18 @@ function aimTestNewConnection(){
   el.className='aim-test-result show loading';el.textContent='⏳ جاري الاختبار...';
   setTimeout(()=>{el.className='aim-test-result show ok';el.textContent='✅ الاتصال ناجح — المفتاح صالح';},2000);
 }
-function aimSetAsLeader(id){
-  _aiModels.forEach(m=>{m.isLeader=false;m.isDefault=false;});
-  const m=_aiModels.find(m=>m.id===id);if(m){m.isLeader=true;m.isDefault=true;}
-  toast('✅ تم تعيين '+id+' كقائد للفريق','success');renderAiMonitor();
+async function aimSetAsLeader(id){
+  const m=_aiModels.find(m=>m.id===id);
+  if(!m)return;
+  try{
+    await api('/api/ai/set-preferred','POST',{model_string:m.modelString});
+    _aiModels.forEach(x=>{x.isLeader=false;x.isDefault=false;});
+    m.isLeader=true;m.isDefault=true;
+    toast('✅ تم تعيين '+m.name+' كقائد وحفظه في .env','success');
+    await renderAiMonitor();
+  }catch(e){
+    toast('❌ فشل التعيين: '+e.message,'error');
+  }
 }
 function aimEditModel(id){
   const m=_aiModels.find(m=>m.id===id);if(!m)return;
@@ -1723,24 +1731,25 @@ function aimSaveRoles(id){
   toast(`✅ تم حفظ ${m.roles.length} دور للنموذج`,'success');
   renderAiMonitor();
 }
-function aimSaveNewModel(){
+async function aimSaveNewModel(){
   const key=document.getElementById('aim-api-key-input')?.value.trim();
   const sel=document.getElementById('aim-model-select');
   const model=sel?.value==='custom'?document.getElementById('aim-custom-model-input')?.value.trim():sel?.value;
   if(!key){toast('❌ أدخل المفتاح','error');return;}
   if(!model){toast('❌ اختر الموديل','error');return;}
-  const pNames={google:'Google',groq:'Groq',openai:'OpenAI',deepseek:'DeepSeek',anthropic:'Anthropic',other:'Custom'};
-  const pAvatars={google:'✨',groq:'⚡',openai:'🤖',deepseek:'🔵',anthropic:'🧡',other:'🔧'};
-  const pBgs={google:'linear-gradient(135deg,#1a73e8,#0f9d58)',groq:'linear-gradient(135deg,#f97316,#dc2626)',openai:'linear-gradient(135deg,#10b981,#059669)',deepseek:'linear-gradient(135deg,#4f46e5,#7c3aed)',anthropic:'linear-gradient(135deg,#f97316,#ef4444)',other:'linear-gradient(135deg,#64748b,#475569)'};
-  _aiModels.push({id:'model-'+Date.now(),name:model,provider:(pNames[_aimSelectedProvider]||'Custom')+' · '+model,avatar:pAvatars[_aimSelectedProvider]||'🤖',avatarBg:pBgs[_aimSelectedProvider]||pBgs.other,roles:[],apiKey:key,apiKeyMasked:key.slice(0,4)+'••••••••••••••••••••',contextWindow:0,tokensUsed:0,callsTotal:0,callsToday:0,avgTokensPerCall:1000,status:'active',modelString:model,isDefault:false,isLeader:false,badge:_aimSelectedRole==='leader'?'leader':_aimSelectedRole==='backup'?'backup':'',errorMsg:''});
-  toast('✅ تم إضافة النموذج بنجاح','success');aimCloseAddModal();renderAiMonitor();
+  try{
+    await api('/api/ai/models','POST',{model_string:model,api_key:key,role:_aimSelectedRole,name:model});
+    toast('✅ تم إضافة النموذج وحفظه في السيرفر','success');
+    aimCloseAddModal();
+    await renderAiMonitor();
+  }catch(e){
+    toast('❌ فشل الحفظ: '+e.message,'error');
+  }
 }
-function aimRefreshAll(){
-  toast('🔄 جاري تحديث حالة الاتصال...','info');
-  _aiModels.filter(m=>m.status==='active').forEach(m=>{
-    const dot=document.querySelector('#aim-card-'+m.id+' .ai-status-dot');
-    if(dot){dot.className='ai-status-dot wait';setTimeout(()=>{dot.className='ai-status-dot on';},1500);}
-  });
+async function aimRefreshAll(){
+  toast('🔄 جاري تحديث البيانات من السيرفر...','info');
+  await renderAiMonitor();
+  toast('✅ تم تحديث بيانات النماذج','success');
 }
 
 // ═══════════════════════════════════════════════════════
