@@ -757,6 +757,9 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
     )
     error_total: int = error_q.scalar() or 0
 
+    # التوكن يُحسب فقط على الاستدعاءات الناجحة (copilot_done) وليس الكلية
+    successful_calls: int = done_total
+
     # ── بناء قائمة الموديلات من .env ─────────────────────────────────────
     preferred = PREFERRED_LLM or "gemini/gemini-2.0-flash"
     avg_tokens = 2400
@@ -777,7 +780,7 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
             "apiKey": GOOGLE_API_KEY,
             "apiKeyMasked": _mask_key(GOOGLE_API_KEY),
             "contextWindow": 1500000,
-            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "tokensUsed": successful_calls * avg_tokens if is_leader else 0,
             "callsTotal": total_calls if is_leader else 0,
             "callsToday": today_calls if is_leader else 0,
             "avgTokensPerCall": avg_tokens,
@@ -806,7 +809,7 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
             "apiKey": GROQ_API_KEY,
             "apiKeyMasked": _mask_key(GROQ_API_KEY),
             "contextWindow": 500000,
-            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "tokensUsed": successful_calls * avg_tokens if is_leader else 0,
             "callsTotal": total_calls if is_leader else 0,
             "callsToday": today_calls if is_leader else 0,
             "avgTokensPerCall": 1000,
@@ -860,7 +863,7 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
             "apiKey": OPENAI_API_KEY,
             "apiKeyMasked": _mask_key(OPENAI_API_KEY),
             "contextWindow": 128000,
-            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "tokensUsed": successful_calls * avg_tokens if is_leader else 0,
             "callsTotal": total_calls if is_leader else 0,
             "callsToday": today_calls if is_leader else 0,
             "avgTokensPerCall": avg_tokens,
@@ -886,7 +889,7 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
             "apiKey": ANTHROPIC_API_KEY,
             "apiKeyMasked": _mask_key(ANTHROPIC_API_KEY),
             "contextWindow": 200000,
-            "tokensUsed": total_calls * avg_tokens if is_leader else 0,
+            "tokensUsed": successful_calls * avg_tokens if is_leader else 0,
             "callsTotal": total_calls if is_leader else 0,
             "callsToday": today_calls if is_leader else 0,
             "avgTokensPerCall": avg_tokens,
@@ -989,9 +992,9 @@ async def set_preferred_model(data: dict):
 
     env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
-    # أعد تحميل الإعداد في الذاكرة
-    import importlib, config as cfg_module
-    importlib.reload(cfg_module)
+    # حدّث os.environ مباشرة حتى يراه agents.py فوراً بدون إعادة تشغيل
+    import os as _os
+    _os.environ["PREFERRED_LLM"] = model
 
     return {"status": "ok", "preferred_llm": model}
 

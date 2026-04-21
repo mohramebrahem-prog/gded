@@ -219,10 +219,14 @@ async def _log_audit(agent: str, action: str, details: dict):
         await db.close()
 
 
-def _get_key_for_model(model: str) -> str:
-    """يرجع مفتاح API المناسب لأي موديل."""
+def _get_key_for_model(model_str: str) -> str:
+    """
+    يرجع مفتاح API المناسب ويضبط متغيرات البيئة المطلوبة.
+    يقرأ دائماً من os.environ أولاً ثم من config كاحتياطي.
+    """
     import os
-    m = model.lower()
+    m = model_str.lower()
+
     if "gemini" in m:
         key = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
         if not key:
@@ -230,80 +234,82 @@ def _get_key_for_model(model: str) -> str:
         os.environ["GEMINI_API_KEY"] = key
         os.environ["GOOGLE_API_KEY"] = key
         return key
+
     elif "groq" in m or "llama" in m or "mixtral" in m:
         key = os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
         if not key:
             raise RuntimeError("GROQ_API_KEY غير محدد")
         os.environ["GROQ_API_KEY"] = key
         return key
+
     elif "deepseek" in m:
         key = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
         if not key:
             raise RuntimeError("DEEPSEEK_API_KEY غير محدد")
+        os.environ["DEEPSEEK_API_KEY"] = key
         return key
+
     elif "anthropic" in m or "claude" in m:
-        import os as _os
         from config import ANTHROPIC_API_KEY as _ANT
-        key = _os.environ.get("ANTHROPIC_API_KEY", "") or _ANT
+        key = os.environ.get("ANTHROPIC_API_KEY", "") or _ANT
         if not key:
             raise RuntimeError("ANTHROPIC_API_KEY غير محدد")
+        os.environ["ANTHROPIC_API_KEY"] = key
         return key
+
     else:
         key = os.environ.get("OPENAI_API_KEY", "") or OPENAI_API_KEY
         if not key:
             raise RuntimeError("OPENAI_API_KEY غير محدد")
+        os.environ["OPENAI_API_KEY"] = key
         return key
+
+
+def _get_candidates() -> list:
+    """
+    يبني قائمة الموديلات مرتبة:
+    الأساسي (PREFERRED_LLM من os.environ) أولاً ثم الاحتياطية.
+    يقرأ PREFERRED_LLM من os.environ مباشرة حتى يعكس أي تغيير
+    تم عبر الواجهة أو api/set-preferred بدون إعادة تشغيل السيرفر.
+    """
+    import os
+    preferred = os.environ.get("PREFERRED_LLM", "") or PREFERRED_LLM or "groq/llama-3.3-70b-versatile"
+
+    candidates = [preferred]
+
+    _groq = os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
+    _deep = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
+    _gem  = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
+
+    # أضف الاحتياطيات بترتيب الأسرع → الأبطأ
+    if _groq and "groq" not in preferred.lower() and "llama" not in preferred.lower():
+        candidates.append("groq/llama-3.3-70b-versatile")
+    if _deep and "deepseek" not in preferred.lower():
+        candidates.append("deepseek/deepseek-chat")
+    if _gem and "gemini" not in preferred.lower():
+        candidates.append("gemini/gemini-2.0-flash")
+
+    return candidates
+
+
+def _build_llm_for(model_str: str):
+    """ينشئ LLM لموديل محدد."""
+    if not CREWAI_AVAILABLE:
+        raise RuntimeError("CrewAI غير مثبت")
+    api_key = _get_key_for_model(model_str)
+    return LLM(model=model_str, api_key=api_key)
 
 
 def _build_llm():
     """
-    ينشئ LLM عند الطلب — يقرأ PREFERRED_LLM من os.environ مباشرة
-    حتى يعكس أي تغيير تم من الواجهة. عند فشل الموديل الأساسي بـ 429
-    يتحول تلقائياً للموديل الاحتياطي (Groq أو DeepSeek).
+    ينشئ LLM للموديل الأساسي فقط.
+    ملاحظة: خطأ 429 يحدث عند crew.kickoff وليس هنا،
+    لذا الـ fallback الحقيقي موجود في run_copilot_with_fallback.
     """
     if not CREWAI_AVAILABLE:
         raise RuntimeError("CrewAI غير مثبت")
-
-    import os
-
-    # اقرأ PREFERRED_LLM من البيئة مباشرة (يعكس آخر تغيير)
-    preferred = os.environ.get("PREFERRED_LLM", PREFERRED_LLM) or PREFERRED_LLM
-
-    # قائمة الموديلات مرتبة: الأساسي أولاً ثم الاحتياطية
-    candidates = [preferred]
-
-    # أضف الاحتياطيات إذا كانت مفاتيحها متاحة وليست نفس الأساسي
-    _groq_key = os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
-    _deep_key  = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
-    _gem_key   = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
-
-    if "groq" not in preferred.lower() and _groq_key:
-        candidates.append("groq/llama-3.3-70b-versatile")
-    if "deepseek" not in preferred.lower() and _deep_key:
-        candidates.append("deepseek/deepseek-chat")
-    if "gemini" not in preferred.lower() and _gem_key:
-        candidates.append("gemini/gemini-2.0-flash")
-
-    last_err = None
-    for model_str in candidates:
-        try:
-            api_key = _get_key_for_model(model_str)
-            llm = LLM(model=model_str, api_key=api_key)
-            # إذا كان الموديل غير الأساسي هو المستخدم، سجّل تحذيراً
-            if model_str != preferred:
-                logger.warning(f"⚠️ تم التحويل للموديل الاحتياطي: {model_str} (الأساسي {preferred} فشل)")
-            return llm
-        except Exception as e:
-            last_err = e
-            err_str = str(e).lower()
-            # إذا الخطأ quota أو 429 → جرب الاحتياطي
-            if any(x in err_str for x in ["429", "quota", "resource_exhausted", "rate_limit"]):
-                logger.warning(f"⚠️ {model_str} quota منتهية، أجرب الاحتياطي...")
-                continue
-            # أي خطأ آخر → ارمه مباشرة
-            raise
-
-    raise RuntimeError(f"جميع الموديلات فشلت. آخر خطأ: {last_err}")
+    candidates = _get_candidates()
+    return _build_llm_for(candidates[0])
 
 
 def build_orchestrator(llm):
@@ -347,22 +353,8 @@ def build_analyzer(llm):
     )
 
 
-async def run_copilot(command: str) -> dict:
-    """يستقبل أمراً نصياً ويشغّل طاقم الوكلاء لتنفيذه."""
-    await _log_audit("Orchestrator", "copilot_command", {"command": command})
-
-    if not CREWAI_AVAILABLE:
-        msg = "⚠️ CrewAI غير مثبت — الأمر سُجِّل لكن لم يُنفَّذ."
-        await _log_audit("Orchestrator", "copilot_error", {"error": msg})
-        return {"status": "error", "detail": msg}
-
-    try:
-        llm = _build_llm()
-    except Exception as e:
-        msg = f"⚠️ فشل بناء LLM: {e}"
-        await _log_audit("Orchestrator", "copilot_error", {"error": msg})
-        return {"status": "error", "detail": msg}
-
+def _build_crew(llm):
+    """ينشئ طاقم الوكلاء بـ LLM محدد."""
     orchestrator = build_orchestrator(llm)
     planner      = build_planner(llm)
     executor     = build_executor(llm)
@@ -370,7 +362,7 @@ async def run_copilot(command: str) -> dict:
     analyzer     = build_analyzer(llm)
 
     task_orchestrate = Task(
-        description=f"الأمر المستلم: «{command}»\nحدّد نوع العملية وضع خطة مختصرة.",
+        description="الأمر المستلم سيُزوَّد في kickoff\nحدّد نوع العملية وضع خطة مختصرة.",
         expected_output="خطة مختصرة: نوع العملية، المجموعات المستهدفة، الصيغة.",
         agent=orchestrator,
     )
@@ -394,19 +386,78 @@ async def run_copilot(command: str) -> dict:
         expected_output="ملخص تحليلي مع توصيات قابلة للتطبيق.",
         agent=analyzer, context=[task_monitor],
     )
-
-    crew = Crew(
+    return Crew(
         agents=[orchestrator, planner, executor, monitor, analyzer],
         tasks=[task_orchestrate, task_plan, task_execute, task_monitor, task_analyze],
         process=Process.sequential, verbose=False,
     )
 
-    try:
-        result = await asyncio.to_thread(crew.kickoff)
-        result_str = str(result)
-        await _log_audit("Analyzer", "copilot_done", {"result": result_str[:1000]})
-        return {"status": "ok", "result": result_str}
-    except Exception as e:
-        logger.error(f"خطأ في تشغيل الوكلاء: {e}")
-        await _log_audit("Orchestrator", "copilot_error", {"error": str(e)})
-        return {"status": "error", "detail": str(e)}
+
+async def run_copilot(command: str) -> dict:
+    """
+    يستقبل أمراً نصياً ويشغّل طاقم الوكلاء.
+
+    آلية الـ Fallback:
+    - LLM() لا يتحقق من الاتصال عند البناء، الخطأ 429 يحدث عند crew.kickoff
+    - لذا نجرب كل موديل احتياطي كاملاً (بناء crew + kickoff) عند الفشل
+    - الأولوية: PREFERRED_LLM → Groq → DeepSeek → Gemini
+    """
+    await _log_audit("Orchestrator", "copilot_command", {"command": command})
+
+    if not CREWAI_AVAILABLE:
+        msg = "⚠️ CrewAI غير مثبت — الأمر سُجِّل لكن لم يُنفَّذ."
+        await _log_audit("Orchestrator", "copilot_error", {"error": msg})
+        return {"status": "error", "detail": msg}
+
+    candidates = _get_candidates()
+    last_err = None
+
+    for model_str in candidates:
+        try:
+            llm = _build_llm_for(model_str)
+        except Exception as e:
+            last_err = e
+            logger.warning(f"⚠️ فشل بناء LLM للموديل {model_str}: {e}")
+            continue
+
+        crew = _build_crew(llm)
+        # أضف الأمر في وصف المهمة الأولى
+        crew.tasks[0].description = f"الأمر المستلم: «{command}»\nحدّد نوع العملية وضع خطة مختصرة."
+
+        try:
+            result = await asyncio.to_thread(crew.kickoff)
+            result_str = str(result)
+            used_model = model_str
+            if model_str != candidates[0]:
+                prefix = "[تم التحويل تلقائياً لـ " + model_str + "]\n\n"
+                result_str = prefix + result_str
+                logger.warning("✅ نجح الاحتياطي: " + model_str)
+            await _log_audit("Analyzer", "copilot_done", {
+                "result": result_str[:1000],
+                "model_used": used_model,
+            })
+            return {"status": "ok", "result": result_str, "model_used": model_str}
+
+        except Exception as e:
+            last_err = e
+            err_str = str(e).lower()
+            is_quota_err = any(x in err_str for x in [
+                "429", "quota", "resource_exhausted",
+                "rate_limit", "rate limit", "exceeded",
+                "too many requests",
+            ])
+            if is_quota_err:
+                logger.warning(f"⚠️ {model_str} رفض بـ quota/429، أجرب الاحتياطي التالي...")
+                continue
+            # خطأ غير متعلق بـ quota → توقف فوراً
+            logger.error(f"❌ خطأ غير متوقع من {model_str}: {e}")
+            await _log_audit("Orchestrator", "copilot_error", {
+                "error": str(e), "model": model_str,
+            })
+            return {"status": "error", "detail": str(e)}
+
+    # جميع الموديلات فشلت
+    final_msg = f"❌ جميع الموديلات فشلت (quota منتهية). آخر خطأ: {last_err}"
+    logger.error(final_msg)
+    await _log_audit("Orchestrator", "copilot_error", {"error": final_msg})
+    return {"status": "error", "detail": final_msg}
