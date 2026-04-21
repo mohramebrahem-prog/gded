@@ -35,13 +35,6 @@ PREFERRED_LLM     = os.getenv("PREFERRED_LLM",    "gemini/gemini-2.0-flash")
 
 # ─── Server ───────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
-if SECRET_KEY == "change-me-in-production":
-    import warnings
-    warnings.warn(
-        "\n⚠️  تحذير أمني: SECRET_KEY يستخدم القيمة الافتراضية!\n"
-        "   أضف متغير البيئة SECRET_KEY بقيمة سرية قوية في Railway.\n",
-        stacklevel=2,
-    )
 HOST       = os.getenv("HOST", "0.0.0.0")
 PORT       = int(os.getenv("PORT", "8000"))
 DEBUG      = os.getenv("DEBUG", "false").lower() == "true"

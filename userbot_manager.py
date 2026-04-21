@@ -76,7 +76,6 @@ async def add_account(phone: str, proxy: Optional[dict] = None) -> dict:
             "client": client,
             "phone_code_hash": sent.phone_code_hash,
             "proxy": proxy,
-            "created_at": datetime.utcnow(),
         }
         return {"status": "code_sent", "phone": phone}
     except FloodWait as e:
