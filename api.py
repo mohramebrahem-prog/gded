@@ -970,9 +970,7 @@ async def save_ai_model(req: AIModelSaveReq):
                 new_lines.append(line)
         if not found:
             new_lines.append(f"{env_key_name}={req.api_key}")
-        env_path.write_text("
-".join(new_lines) + "
-", encoding="utf-8")
+        env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
     # ── تحديث os.environ فوراً ─────────────────────────────────────────────
     os.environ[env_key_name] = req.api_key
@@ -992,9 +990,7 @@ async def save_ai_model(req: AIModelSaveReq):
                     new_lines.append(line)
             if not found:
                 new_lines.append(f"PREFERRED_LLM={req.model_string}")
-            env_path.write_text("
-".join(new_lines) + "
-", encoding="utf-8")
+            env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
     # ── إضافة للقائمة في الذاكرة (للعرض في الواجهة) ──────────────────────
     prov = _detect_provider(req.model_string)
