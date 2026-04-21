@@ -219,42 +219,91 @@ async def _log_audit(agent: str, action: str, details: dict):
         await db.close()
 
 
+def _get_key_for_model(model: str) -> str:
+    """يرجع مفتاح API المناسب لأي موديل."""
+    import os
+    m = model.lower()
+    if "gemini" in m:
+        key = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
+        if not key:
+            raise RuntimeError("GOOGLE_API_KEY غير محدد")
+        os.environ["GEMINI_API_KEY"] = key
+        os.environ["GOOGLE_API_KEY"] = key
+        return key
+    elif "groq" in m or "llama" in m or "mixtral" in m:
+        key = os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
+        if not key:
+            raise RuntimeError("GROQ_API_KEY غير محدد")
+        os.environ["GROQ_API_KEY"] = key
+        return key
+    elif "deepseek" in m:
+        key = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
+        if not key:
+            raise RuntimeError("DEEPSEEK_API_KEY غير محدد")
+        return key
+    elif "anthropic" in m or "claude" in m:
+        import os as _os
+        from config import ANTHROPIC_API_KEY as _ANT
+        key = _os.environ.get("ANTHROPIC_API_KEY", "") or _ANT
+        if not key:
+            raise RuntimeError("ANTHROPIC_API_KEY غير محدد")
+        return key
+    else:
+        key = os.environ.get("OPENAI_API_KEY", "") or OPENAI_API_KEY
+        if not key:
+            raise RuntimeError("OPENAI_API_KEY غير محدد")
+        return key
+
+
 def _build_llm():
-    """ينشئ LLM عند الطلب فقط — يختار المفتاح الصحيح حسب نوع الموديل."""
+    """
+    ينشئ LLM عند الطلب — يقرأ PREFERRED_LLM من os.environ مباشرة
+    حتى يعكس أي تغيير تم من الواجهة. عند فشل الموديل الأساسي بـ 429
+    يتحول تلقائياً للموديل الاحتياطي (Groq أو DeepSeek).
+    """
     if not CREWAI_AVAILABLE:
         raise RuntimeError("CrewAI غير مثبت")
 
-    model = PREFERRED_LLM.lower()
+    import os
 
-    if "gemini" in model:
-        api_key = GOOGLE_API_KEY
-        if not api_key:
-            raise RuntimeError("GOOGLE_API_KEY غير محدد")
-        # Gemini يحتاج متغير البيئة GEMINI_API_KEY أو GOOGLE_API_KEY
-        import os
-        os.environ["GEMINI_API_KEY"] = api_key
-        os.environ["GOOGLE_API_KEY"] = api_key
-    elif "groq" in model:
-        api_key = GROQ_API_KEY
-        if not api_key:
-            raise RuntimeError("GROQ_API_KEY غير محدد")
-        import os
-        os.environ["GROQ_API_KEY"] = api_key
-    elif "deepseek" in model:
-        api_key = DEEPSEEK_API_KEY
-        if not api_key:
-            raise RuntimeError("DEEPSEEK_API_KEY غير محدد")
-    elif "anthropic" in model or "claude" in model:
-        from config import ANTHROPIC_API_KEY
-        api_key = ANTHROPIC_API_KEY
-        if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY غير محدد")
-    else:
-        api_key = OPENAI_API_KEY
-        if not api_key:
-            raise RuntimeError("OPENAI_API_KEY غير محدد")
+    # اقرأ PREFERRED_LLM من البيئة مباشرة (يعكس آخر تغيير)
+    preferred = os.environ.get("PREFERRED_LLM", PREFERRED_LLM) or PREFERRED_LLM
 
-    return LLM(model=PREFERRED_LLM, api_key=api_key)
+    # قائمة الموديلات مرتبة: الأساسي أولاً ثم الاحتياطية
+    candidates = [preferred]
+
+    # أضف الاحتياطيات إذا كانت مفاتيحها متاحة وليست نفس الأساسي
+    _groq_key = os.environ.get("GROQ_API_KEY", "") or GROQ_API_KEY
+    _deep_key  = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
+    _gem_key   = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
+
+    if "groq" not in preferred.lower() and _groq_key:
+        candidates.append("groq/llama-3.3-70b-versatile")
+    if "deepseek" not in preferred.lower() and _deep_key:
+        candidates.append("deepseek/deepseek-chat")
+    if "gemini" not in preferred.lower() and _gem_key:
+        candidates.append("gemini/gemini-2.0-flash")
+
+    last_err = None
+    for model_str in candidates:
+        try:
+            api_key = _get_key_for_model(model_str)
+            llm = LLM(model=model_str, api_key=api_key)
+            # إذا كان الموديل غير الأساسي هو المستخدم، سجّل تحذيراً
+            if model_str != preferred:
+                logger.warning(f"⚠️ تم التحويل للموديل الاحتياطي: {model_str} (الأساسي {preferred} فشل)")
+            return llm
+        except Exception as e:
+            last_err = e
+            err_str = str(e).lower()
+            # إذا الخطأ quota أو 429 → جرب الاحتياطي
+            if any(x in err_str for x in ["429", "quota", "resource_exhausted", "rate_limit"]):
+                logger.warning(f"⚠️ {model_str} quota منتهية، أجرب الاحتياطي...")
+                continue
+            # أي خطأ آخر → ارمه مباشرة
+            raise
+
+    raise RuntimeError(f"جميع الموديلات فشلت. آخر خطأ: {last_err}")
 
 
 def build_orchestrator(llm):
