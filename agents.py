@@ -59,11 +59,24 @@ def _run_async(coro):
 
 
 @crewai_tool("query_groups")
-def query_groups(criteria: str) -> str:
-    """يستعلم عن المجموعات من قاعدة البيانات بناءً على معايير JSON."""
+def query_groups(criteria: str = "{}") -> str:
+    """
+    يستعلم عن المجموعات من قاعدة البيانات.
+    criteria: نص JSON اختياري مثل {"category":"news","is_joined":true,"min_members":100}
+    أو أرسل {} لجلب كل المجموعات.
+    """
     async def _query():
         try:
-            params = json.loads(criteria) if isinstance(criteria, str) else criteria
+            # Groq قد يرسل dict مباشرة أو string أو None
+            if criteria is None or criteria == "":
+                params = {}
+            elif isinstance(criteria, dict):
+                params = criteria
+            else:
+                c = str(criteria).strip()
+                # أحياناً Groq يرسل Python repr بدل JSON
+                c = c.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
+                params = json.loads(c) if c and c != "{}" else {}
         except Exception:
             params = {}
         db = await get_session()
@@ -95,17 +108,16 @@ def query_groups(criteria: str) -> str:
 
 
 @crewai_tool("send_to_group")
-def send_to_group(payload: str) -> str:
-    """يرسل رسالة لمجموعة. payload: {"account_id":1,"group_id":1,"message":"نص"}"""
+def send_to_group(account_id: int, group_id: int, message: str) -> str:
+    """
+    يرسل رسالة نصية لمجموعة تيليجرام.
+    account_id: رقم الحساب المرسِل
+    group_id: رقم المجموعة في قاعدة البيانات
+    message: نص الرسالة
+    """
     async def _send():
         import userbot_manager as um
-        try:
-            data = json.loads(payload)
-        except Exception:
-            return json.dumps({"status": "error", "detail": "payload غير صالح"})
-        account_id = data.get("account_id")
-        group_id   = data.get("group_id")
-        text       = data.get("message", "")
+        text = message
         client = await um.get_client(account_id)
         if not client:
             return json.dumps({"status": "error", "detail": "العميل غير متاح"})
@@ -141,8 +153,11 @@ def send_to_group(payload: str) -> str:
 
 
 @crewai_tool("check_deletion_status")
-def check_deletion_status(message_id: str) -> str:
-    """يتحقق من حالة رسالة."""
+def check_deletion_status(message_id: int) -> str:
+    """
+    يتحقق من حالة رسالة مرسلة ويعرف إذا تم حذفها.
+    message_id: رقم الرسالة في قاعدة البيانات
+    """
     async def _check():
         db = await get_session()
         try:
@@ -158,13 +173,21 @@ def check_deletion_status(message_id: str) -> str:
 
 
 @crewai_tool("store_memory")
-def store_memory(payload: str) -> str:
-    """يخزن ذاكرة في ChromaDB."""
+def store_memory(memory_id: str, text: str, metadata: str = "{}") -> str:
+    """
+    يخزن معلومة في الذاكرة الدائمة للنظام.
+    memory_id: معرف فريد للذاكرة
+    text: النص المراد حفظه
+    metadata: بيانات إضافية اختيارية كـ JSON string
+    """
     if not CHROMA_AVAILABLE:
-        return "ChromaDB غير متاح"
+        return "ChromaDB غير متاح - تم تجاهل الحفظ"
     try:
-        data = json.loads(payload)
-        _memory_col.upsert(ids=[data["id"]], documents=[data["text"]], metadatas=[data.get("metadata", {})])
+        try:
+            meta = json.loads(metadata) if isinstance(metadata, str) and metadata else {}
+        except Exception:
+            meta = {}
+        _memory_col.upsert(ids=[memory_id], documents=[text], metadatas=[meta])
         return "تم حفظ الذاكرة"
     except Exception as e:
         return f"خطأ: {e}"
@@ -172,21 +195,29 @@ def store_memory(payload: str) -> str:
 
 @crewai_tool("recall_memory")
 def recall_memory(query: str) -> str:
-    """يسترجع ذاكرة من ChromaDB."""
+    """
+    يسترجع معلومات من الذاكرة الدائمة للنظام.
+    query: نص البحث
+    """
     if not CHROMA_AVAILABLE:
-        return "ChromaDB غير متاح"
+        return "ChromaDB غير متاح - لا توجد ذاكرة محفوظة"
     try:
         results = _memory_col.query(query_texts=[query], n_results=5)
         docs  = results.get("documents", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
+        if not docs:
+            return "لا توجد ذاكرة مطابقة"
         return json.dumps([{"text": d, "meta": m} for d, m in zip(docs, metas)], ensure_ascii=False)
     except Exception as e:
         return f"خطأ: {e}"
 
 
 @crewai_tool("get_campaign_stats")
-def get_campaign_stats(campaign_id: str) -> str:
-    """يجلب إحصائيات حملة."""
+def get_campaign_stats(campaign_id: int) -> str:
+    """
+    يجلب إحصائيات حملة إعلانية.
+    campaign_id: رقم الحملة في قاعدة البيانات
+    """
     async def _stats():
         db = await get_session()
         try:
