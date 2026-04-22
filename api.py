@@ -718,6 +718,9 @@ _ALL_ROLES = [
 # سجل الموديلات المضافة يدوياً من الواجهة (يُخزن في الذاكرة طوال عمر السيرفر)
 _extra_models: list[dict] = []
 
+# حفظ الأدوار المعدّلة لكل موديل (id → roles list)
+_model_roles_override: dict[str, list] = {}
+
 
 @app.get("/api/ai/config")
 async def get_ai_config(db: AsyncSession = Depends(get_db)):
@@ -908,6 +911,10 @@ async def get_ai_config(db: AsyncSession = Depends(get_db)):
         env_models[0]["badge"] = "leader"
 
     all_models = env_models + _extra_models
+    # تطبيق تعديلات الأدوار المحفوظة
+    for m in all_models:
+        if m["id"] in _model_roles_override:
+            m["roles"] = _model_roles_override[m["id"]]
 
     return {
         "models": all_models,
@@ -1022,6 +1029,26 @@ async def delete_ai_model(model_id: str):
         # النموذج من .env — لا يمكن حذفه لكن نرجع ok
         return {"status": "ok", "note": "نموذج .env لا يُحذف — أزله من Railway Variables"}
     return {"status": "deleted", "id": model_id}
+
+
+class AIRolesUpdateReq(BaseModel):
+    roles: list[dict]
+
+
+@app.put("/api/ai/models/{model_id}/roles")
+async def update_model_roles(model_id: str, req: AIRolesUpdateReq):
+    """
+    يحدّث أدوار موديل معين ويحفظها في الذاكرة.
+    تُطبَّق التعديلات عند كل استدعاء /api/ai/config.
+    """
+    global _model_roles_override, _extra_models
+    _model_roles_override[model_id] = req.roles
+    # تحديث الـ _extra_models أيضاً لو كان الموديل مضافاً يدوياً
+    for m in _extra_models:
+        if m["id"] == model_id:
+            m["roles"] = req.roles
+            break
+    return {"status": "ok", "id": model_id, "roles_count": len(req.roles)}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
