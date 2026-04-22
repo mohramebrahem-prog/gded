@@ -346,6 +346,47 @@ td{padding:9px 10px;vertical-align:middle}
 .aim-modal-close{float:left;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
 .aim-divider{height:1px;background:var(--border);margin:12px 0}
 .spinner-sm{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0;}
+/* AI Monitor - new features */
+.aim-tabs{display:flex;gap:4px;background:var(--card2);border-radius:10px;padding:4px;margin-bottom:14px}
+.aim-tab{flex:1;text-align:center;padding:7px 4px;font-size:11px;font-weight:700;color:var(--muted);border-radius:7px;cursor:pointer;transition:all .15s}
+.aim-tab.active{background:var(--accent);color:#fff}
+.aim-tab-content{display:none}
+.aim-tab-content.active{display:block}
+.alert-item{display:flex;align-items:flex-start;gap:10px;background:var(--card2);border-radius:10px;padding:10px 12px;margin-bottom:8px;border-right:3px solid var(--border)}
+.alert-item.warn{border-color:var(--warn)}
+.alert-item.danger{border-color:var(--danger)}
+.alert-item.info{border-color:var(--accent)}
+.alert-item.success{border-color:var(--green)}
+.alert-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.alert-body{flex:1}
+.alert-title{font-size:12px;font-weight:800;color:var(--white)}
+.alert-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.alert-time{font-size:10px;color:var(--muted);margin-top:3px}
+.bench-row{display:flex;align-items:center;gap:8px;background:var(--card2);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.bench-avatar{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.bench-info{flex:1;min-width:0}
+.bench-name{font-size:12px;font-weight:800;color:var(--white)}
+.bench-bar-wrap{height:6px;background:var(--border);border-radius:3px;margin-top:4px;overflow:hidden}
+.bench-bar{height:100%;border-radius:3px;transition:width .6s ease}
+.bench-ms{font-size:12px;font-weight:800;color:var(--white);flex-shrink:0;min-width:52px;text-align:left}
+.log-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.log-item:last-child{border:none}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.log-dot.ok{background:var(--green)}
+.log-dot.err{background:var(--danger)}
+.log-dot.run{background:var(--accent)}
+.log-text{flex:1;font-size:11px;color:var(--text);line-height:1.4}
+.log-time{font-size:10px;color:var(--muted);flex-shrink:0}
+.aim-chat-history{height:200px;overflow-y:auto;background:var(--card2);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.aim-chat-msg{max-width:85%;padding:7px 10px;border-radius:10px;font-size:12px;line-height:1.5}
+.aim-chat-msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-radius:10px 10px 2px 10px}
+.aim-chat-msg.bot{background:var(--card);color:var(--text);align-self:flex-start;border-radius:10px 10px 10px 2px;border:1px solid var(--border)}
+.aim-chat-msg.loading{opacity:.6}
+.auto-switch-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:10px;padding:12px;margin-bottom:10px}
+.toggle-track{width:42px;height:24px;border-radius:12px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--green)}
+.toggle-thumb{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:right .2s}
+.toggle-track.on .toggle-thumb{right:calc(100% - 21px)}
 </style>
 </head>
 <body>
@@ -1457,22 +1498,68 @@ function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))retu
 let _aiModels=[];
 let _aiStats={total_calls:0,today_calls:0,done_total:0,error_total:0,success_rate:0};
 
+// _aiModels تُملأ من السيرفر عند كل فتح للصفحة
+let _aiModels=[];
+let _aiStats={total_calls:0,today_calls:0,done_total:0,error_total:0,success_rate:0};
+let _aimAutoRefreshTimer=null;
+let _aimAutoRefresh=false;
+let _aimAutoSwitch=false;
+let _aimAlerts=[];
+let _aimBenchResults={};
+let _aimChatHistory=[];
+let _aimActiveTab='models';
+
 async function _fetchAiConfig(){
   try{
     const res=await api('/api/ai/config');
     _aiModels=res.models||[];
     _aiStats=res.stats||_aiStats;
+    _aimCheckAlerts();
   }catch(e){
     console.warn('فشل جلب إعدادات AI:',e);
   }
 }
 
+function _aimCheckAlerts(){
+  const now=new Date().toLocaleTimeString('ar');
+  // تنبيه توكن 80%+
+  _aiModels.forEach(m=>{
+    if(m.contextWindow>0){
+      const pct=Math.round(m.tokensUsed/m.contextWindow*100);
+      if(pct>=80){
+        _addAlert('warn','⚠️ تحذير توكن',`${m.name} وصل ${pct}% من حد التوكن`,now);
+      }
+    }
+    if(m.status==='error'){
+      _addAlert('danger','❌ انقطاع اتصال',`${m.name} خرج عن الخدمة`,now);
+      // تبديل تلقائي
+      if(_aimAutoSwitch&&m.isLeader){
+        const backup=_aiModels.find(x=>!x.isLeader&&x.status==='active');
+        if(backup){
+          _addAlert('info','🔄 تبديل تلقائي',`تم التبديل من ${m.name} إلى ${backup.name}`,now);
+          api('/api/ai/set-preferred','POST',{model_string:backup.modelString}).catch(()=>{});
+        }
+      }
+    }
+  });
+}
+
+function _addAlert(type,title,desc,time){
+  _aimAlerts.unshift({type,title,desc,time:time||new Date().toLocaleTimeString('ar')});
+  if(_aimAlerts.length>30)_aimAlerts=_aimAlerts.slice(0,30);
+}
+
 async function renderAiMonitor(){
-  // جلب البيانات الحقيقية من السيرفر
   await _fetchAiConfig();
+  _aimDrawPage();
+}
+
+function _aimDrawPage(){
   const totalTokens=_aiModels.reduce((s,m)=>s+(m.tokensUsed||0),0);
   const totalCalls=_aiModels.reduce((s,m)=>s+(m.callsTotal||0),0);
+  const todayCalls=_aiModels.reduce((s,m)=>s+(m.callsToday||0),0);
   const connectedCount=_aiModels.filter(m=>m.status==='active').length;
+  const errorCount=_aiModels.filter(m=>m.status==='error').length;
   const leaderModel=_aiModels.find(m=>m.isLeader);
   const totalDailyLimit=_aiModels.reduce((s,m)=>s+(m.contextWindow||0),0);
   const totalTokenPct=totalDailyLimit>0?Math.min(Math.round(totalTokens/totalDailyLimit*100),100):0;
@@ -1495,56 +1582,171 @@ async function renderAiMonitor(){
     const badgeHtml=m.isLeader?'<span class="badge badge-blue">👑 قائد</span>':m.badge==='backup'?'<span class="badge badge-yellow">احتياطي</span>':m.badge==='error'?'<span class="badge badge-red">❌ خطأ</span>':'';
     const keyHtml=m.apiKeyMasked?`<div class="key-row"><span class="key-label">🔑 المفتاح:</span><span class="key-value" id="aim-key-${m.id}">${m.apiKeyMasked}</span><button class="key-toggle" onclick="aimToggleKey('${m.id}','${m.apiKey}')">👁️</button></div>`:'';
     const errHtml=isErr?`<div style="font-size:11px;color:var(--danger);background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:8px;padding:7px 10px;margin-bottom:10px">⚠️ ${m.errorMsg||'خطأ في الاتصال'}</div>`:'';
-    const actionsHtml=`<div class="ai-actions">${!m.isLeader&&isConn?`<button class="btn btn-success btn-sm" onclick="aimSetAsLeader('${m.id}')">👑 جعله قائداً</button>`:''}${isErr?`<button class="btn btn-warn btn-sm" onclick="aimEditModel('${m.id}')">🔑 تحديث المفتاح</button>`:''}<button class="btn btn-ghost btn-sm" onclick="aimTestConnection('${m.id}')">🔌 ${isErr?'إعادة اختبار':'اختبار'}</button>${!isErr?`<button class="btn btn-ghost btn-sm" onclick="aimEditModel('${m.id}')">✏️ تعديل</button><button class="btn btn-ghost btn-sm" onclick="aimChangeRoles('${m.id}')">🎭 الأدوار</button>`:''}<button class="btn btn-danger btn-sm" onclick="removeModel('${m.id}')">🗑️</button></div><div class="aim-test-result" id="aim-test-${m.id}"></div>`;
-    return`<div class="ai-card ${cardCls}" id="aim-card-${m.id}"><div class="ai-card-top"><div class="ai-avatar" style="background:${m.avatarBg}">${m.avatar}</div><div class="ai-info"><div class="ai-name" id="aim-name-${m.id}">${m.name} ${badgeHtml}</div><div class="ai-provider-lbl">${m.provider}</div></div><div class="ai-status-dot ${dotCls}"></div></div>${renderRoles(m)}${errHtml}${renderTokenBar(m)}${keyHtml}${actionsHtml}</div>`;
+    const benchMs=_aimBenchResults[m.id];
+    const benchHtml=benchMs?`<div style="font-size:10px;color:var(--muted);margin-bottom:6px">⏱️ آخر benchmark: <span style="color:${benchMs<1000?'var(--green)':benchMs<3000?'var(--warn)':'var(--danger)'};font-weight:700">${benchMs}ms</span></div>`:'';
+    const actionsHtml=`<div class="ai-actions">${!m.isLeader&&isConn?`<button class="btn btn-success btn-sm" onclick="aimSetAsLeader('${m.id}')">👑 قائداً</button>`:''}${isErr?`<button class="btn btn-warn btn-sm" onclick="aimEditModel('${m.id}')">🔑 تحديث</button>`:''}<button class="btn btn-ghost btn-sm" onclick="aimTestConnection('${m.id}')">🔌 ${isErr?'إعادة':'اختبار'}</button>${!isErr?`<button class="btn btn-ghost btn-sm" onclick="aimEditModel('${m.id}')">✏️</button><button class="btn btn-ghost btn-sm" onclick="aimChangeRoles('${m.id}')">🎭</button><button class="btn btn-ghost btn-sm" onclick="aimShowDetails('${m.id}')">📋</button><button class="btn btn-ghost btn-sm" onclick="aimBenchmarkSingle('${m.id}')">⏱️</button>`:''}<button class="btn btn-danger btn-sm" onclick="removeModel('${m.id}')">🗑️</button></div><div class="aim-test-result" id="aim-test-${m.id}"></div>`;
+    return`<div class="ai-card ${cardCls}" id="aim-card-${m.id}"><div class="ai-card-top"><div class="ai-avatar" style="background:${m.avatarBg}">${m.avatar}</div><div class="ai-info"><div class="ai-name" id="aim-name-${m.id}">${m.name} ${badgeHtml}</div><div class="ai-provider-lbl">${m.provider}</div></div><div class="ai-status-dot ${dotCls}"></div></div>${renderRoles(m)}${errHtml}${benchHtml}${renderTokenBar(m)}${keyHtml}${actionsHtml}</div>`;
   };
 
   const totalLimLbl=totalDailyLimit>=1000000?(totalDailyLimit/1000000).toFixed(1)+'M':(totalDailyLimit/1000).toFixed(0)+'K';
   const totalTokBar=totalTokenPct>=80?'gradient-danger':totalTokenPct>=50?'gradient-warn':'gradient';
 
+  // بناء تبويب الإحصائيات / الرسم البياني
+  const chartLabels=_aiModels.map(m=>m.name.split(' ')[0]);
+  const chartCalls=_aiModels.map(m=>m.callsTotal||0);
+  const chartTokens=_aiModels.map(m=>Math.round((m.tokensUsed||0)/1000));
+
+  // بناء تبويب السجل
+  const logItems=_aimAlerts.slice(0,20);
+
+  // بناء تبويب الـ Benchmark
+  const hasBench=Object.keys(_aimBenchResults).length>0;
+  const maxMs=hasBench?Math.max(...Object.values(_aimBenchResults)):1;
+  const benchRows=_aiModels.map(m=>{
+    const ms=_aimBenchResults[m.id];
+    const pct=ms?Math.round(ms/maxMs*100):0;
+    const color=!ms?'var(--border)':ms<1000?'var(--green)':ms<3000?'var(--warn)':'var(--danger)';
+    return`<div class="bench-row"><div class="bench-avatar" style="background:${m.avatarBg}">${m.avatar}</div><div class="bench-info"><div class="bench-name">${m.name}</div><div class="bench-bar-wrap"><div class="bench-bar" style="width:${pct}%;background:${color}"></div></div></div><div class="bench-ms">${ms?ms+'ms':'—'}</div></div>`;
+  }).join('');
+
   document.getElementById('content').innerHTML=`
   <div class="page-hdr">
     <div class="page-hdr-top">
-      <div><div class="page-title">🧠 إدارة الذكاء الاصطناعي</div><div class="page-sub">ربط وإدارة نماذج AI للنظام</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="aimRefreshAll()">🔄 تحديث</button>
+      <div><div class="page-title">🧠 مراقبة الذكاء الاصطناعي</div><div class="page-sub">إدارة ومراقبة نماذج AI</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" id="aim-autorefresh-btn" onclick="aimToggleAutoRefresh()" title="تحديث تلقائي كل 30 ثانية">${_aimAutoRefresh?'⏹️ إيقاف':'🔄 تلقائي'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="aimRefreshAll()">🔄</button>
+      </div>
     </div>
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-icon">🧠</div><div class="kpi-val" id="aim-kpi-total">${_aiModels.length}</div><div class="kpi-lbl">نماذج مضافة</div></div>
-    <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val" id="aim-kpi-connected" style="color:var(--green)">${connectedCount}</div><div class="kpi-lbl">متصل</div></div>
-    <div class="kpi"><div class="kpi-icon">👑</div><div class="kpi-val" id="aim-kpi-leader" style="font-size:13px;color:var(--accent)">${leaderModel?leaderModel.name.split(' ')[0]:'—'}</div><div class="kpi-lbl">القائد الحالي</div></div>
-    <div class="kpi"><div class="kpi-icon">⚡</div><div class="kpi-val" id="aim-kpi-calls">${totalCalls}</div><div class="kpi-lbl">استدعاءات اليوم</div></div>
+    <div class="kpi"><div class="kpi-icon">🧠</div><div class="kpi-val">${_aiModels.length}</div><div class="kpi-lbl">نماذج</div></div>
+    <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val" style="color:var(--green)">${connectedCount}</div><div class="kpi-lbl">متصل</div></div>
+    <div class="kpi"><div class="kpi-icon">❌</div><div class="kpi-val" style="color:var(--danger)">${errorCount}</div><div class="kpi-lbl">خطأ</div></div>
+    <div class="kpi"><div class="kpi-icon">⚡</div><div class="kpi-val">${todayCalls}</div><div class="kpi-lbl">اليوم</div></div>
   </div>
 
-  <div class="token-section" style="margin-bottom:16px">
+  <div class="token-section" style="margin-bottom:14px">
     <div class="token-header">
-      <span class="token-title">📊 إجمالي التوكن اليوم — كل النماذج</span>
+      <span class="token-title">📊 إجمالي التوكن — كل النماذج</span>
       <span class="token-numbers">${totalTokens.toLocaleString()} <span>/ ${totalLimLbl}</span></span>
     </div>
-    <div class="token-bar-bg" style="height:8px">
-      <div class="token-bar-fill ${totalTokBar}" style="width:${totalTokenPct}%"></div>
-    </div>
-    <div class="token-reset-row">
-      <span>${totalTokenPct}% من الحد اليومي الكلي</span>
-      <span>🔄 يتجدد منتصف الليل</span>
-    </div>
+    <div class="token-bar-bg" style="height:8px"><div class="token-bar-fill ${totalTokBar}" style="width:${totalTokenPct}%"></div></div>
+    <div class="token-reset-row"><span>${totalTokenPct}% من الحد الكلي</span><span>🔄 يتجدد منتصف الليل</span></div>
   </div>
 
-  <div class="sec-lbl">إضافة نموذج جديد</div>
-  <div class="add-ai-card" onclick="aimOpenAddModal()">
-    <div class="add-ai-inner">
-      <div class="add-ai-icon">➕</div>
-      <div class="add-ai-text">
-        <div class="add-ai-title">ربط ذكاء اصطناعي جديد</div>
-        <div class="add-ai-sub">أضف Gemini, Groq, OpenAI, DeepSeek أو أي نموذج آخر</div>
+  <!-- تبويبات -->
+  <div class="aim-tabs">
+    <div class="aim-tab ${_aimActiveTab==='models'?'active':''}" onclick="aimSwitchTab('models')">🤖 النماذج</div>
+    <div class="aim-tab ${_aimActiveTab==='stats'?'active':''}" onclick="aimSwitchTab('stats')">📊 إحصائيات</div>
+    <div class="aim-tab ${_aimActiveTab==='tools'?'active':''}" onclick="aimSwitchTab('tools')">🛠️ أدوات</div>
+    <div class="aim-tab ${_aimActiveTab==='log'?'active':''}" onclick="aimSwitchTab('log')" style="position:relative">${_aimAlerts.length>0?`<span style="position:absolute;top:2px;left:6px;background:var(--danger);color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center">${Math.min(_aimAlerts.length,9)}</span>`:''}🔔 تنبيهات</div>
+  </div>
+
+  <!-- تبويب النماذج -->
+  <div class="aim-tab-content ${_aimActiveTab==='models'?'active':''}">
+    <div class="sec-lbl">إضافة نموذج جديد</div>
+    <div class="add-ai-card" onclick="aimOpenAddModal()">
+      <div class="add-ai-inner">
+        <div class="add-ai-icon">➕</div>
+        <div class="add-ai-text"><div class="add-ai-title">ربط ذكاء اصطناعي جديد</div><div class="add-ai-sub">Gemini, Groq, OpenAI, DeepSeek أو أي نموذج</div></div>
+        <span style="color:var(--muted);font-size:18px">‹</span>
       </div>
-      <span style="color:var(--muted);font-size:18px">‹</span>
+    </div>
+    <div class="sec-lbl">النماذج المضافة</div>
+    <div id="aim-models-list">${_aiModels.map(renderCard).join('')}</div>
+  </div>
+
+  <!-- تبويب الإحصائيات -->
+  <div class="aim-tab-content ${_aimActiveTab==='stats'?'active':''}">
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:800;color:var(--white);margin-bottom:12px">📊 مقارنة الاستدعاءات بين النماذج</div>
+      <canvas id="aim-chart-calls" height="160"></canvas>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:800;color:var(--white);margin-bottom:12px">⚡ التوكن المستخدم (بالآلاف)</div>
+      <canvas id="aim-chart-tokens" height="160"></canvas>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:800;color:var(--white);margin-bottom:10px">📋 ملخص تفصيلي</div>
+      ${_aiModels.map(m=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:8px;background:${m.avatarBg};display:flex;align-items:center;justify-content:center;font-size:14px">${m.avatar}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--white)">${m.name}</div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:11px;color:var(--muted)">الكلي: <span style="color:var(--white);font-weight:700">${m.callsTotal||0}</span></div>
+          <div style="font-size:11px;color:var(--muted)">اليوم: <span style="color:var(--accent);font-weight:700">${m.callsToday||0}</span></div>
+        </div>
+      </div>`).join('')}
     </div>
   </div>
 
-  <div class="sec-lbl">النماذج المضافة</div>
-  <div id="aim-models-list">${_aiModels.map(renderCard).join('')}</div>
+  <!-- تبويب الأدوات -->
+  <div class="aim-tab-content ${_aimActiveTab==='tools'?'active':''}">
+    <!-- تبديل تلقائي -->
+    <div class="auto-switch-toggle">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--white)">🔄 تبديل تلقائي</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">عند فشل القائد يتحول للاحتياطي</div>
+      </div>
+      <div class="toggle-track ${_aimAutoSwitch?'on':''}" onclick="aimToggleAutoSwitch()" id="aim-autoswitch-track"><div class="toggle-thumb"></div></div>
+    </div>
+    <!-- اختبار جماعي -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:8px">🔌 اختبار جماعي</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">اختبار اتصال كل النماذج دفعة واحدة</div>
+      <button class="btn btn-primary" style="width:100%" id="aim-bulk-test-btn" onclick="aimBulkTest()">▶ تشغيل الاختبار الجماعي</button>
+      <div id="aim-bulk-results" style="margin-top:10px"></div>
+    </div>
+    <!-- Benchmark -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px">⏱️ Benchmark السرعة</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">قياس سرعة استجابة كل نموذج</div>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" id="aim-bench-btn" onclick="aimRunBenchmark()">⚡ تشغيل Benchmark</button>
+      <div id="aim-bench-rows">${benchRows}</div>
+    </div>
+    <!-- مقارنة نموذجين -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:8px">⚖️ مقارنة نموذجين</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <select class="fselect" id="aim-cmp-a" style="flex:1">${_aiModels.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select>
+        <select class="fselect" id="aim-cmp-b" style="flex:1">${_aiModels.map((m,i)=>`<option value="${m.id}" ${i===1?'selected':''}>${m.name}</option>`).join('')}</select>
+      </div>
+      <input class="finput" id="aim-cmp-msg" placeholder="اكتب رسالة للمقارنة..." style="margin-bottom:8px">
+      <button class="btn btn-ghost" style="width:100%" onclick="aimCompare()">🔍 مقارنة</button>
+      <div id="aim-cmp-result" style="margin-top:10px"></div>
+    </div>
+    <!-- محادثة مباشرة -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:800;color:var(--white);margin-bottom:4px">💬 محادثة مباشرة</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <select class="fselect" id="aim-chat-model" style="flex:1">${_aiModels.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select>
+        <button class="btn btn-ghost btn-sm" onclick="aimClearChat()">🗑️</button>
+      </div>
+      <div class="aim-chat-history" id="aim-chat-history">${_aimChatHistory.map(h=>`<div class="aim-chat-msg ${h.role}">${h.text}</div>`).join('')||'<div style="color:var(--muted);font-size:11px;text-align:center;margin:auto">ابدأ محادثة مع أي نموذج</div>'}</div>
+      <div style="display:flex;gap:6px">
+        <input class="finput" id="aim-chat-input" placeholder="اكتب رسالتك..." style="flex:1" onkeydown="if(event.key==='Enter')aimSendChat()">
+        <button class="btn btn-primary btn-sm" onclick="aimSendChat()">▶</button>
+      </div>
+    </div>
+    <!-- تصدير CSV -->
+    <div style="margin-top:10px">
+      <button class="btn btn-ghost" style="width:100%" onclick="aimExportCSV()">📥 تصدير بيانات النماذج CSV</button>
+    </div>
+  </div>
+
+  <!-- تبويب التنبيهات -->
+  <div class="aim-tab-content ${_aimActiveTab==='log'?'active':''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:800;color:var(--white)">🔔 سجل التنبيهات (${_aimAlerts.length})</div>
+      <button class="btn btn-ghost btn-sm" onclick="_aimAlerts=[];_aimDrawPage()">🗑️ مسح</button>
+    </div>
+    ${logItems.length===0?`<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px">✅ لا توجد تنبيهات</div>`
+    :logItems.map(a=>`<div class="alert-item ${a.type}"><div class="alert-icon">${a.type==='danger'?'❌':a.type==='warn'?'⚠️':a.type==='success'?'✅':'ℹ️'}</div><div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div><div class="alert-time">${a.time}</div></div></div>`).join('')}
+  </div>
 
   <div class="aim-modal-overlay" id="aim-add-modal" onclick="aimCloseIfOutside(event)">
     <div class="aim-modal-panel">
@@ -1596,6 +1798,14 @@ async function renderAiMonitor(){
       <button class="btn btn-primary" style="width:100%;padding:13px" onclick="aimSaveNewModel()">💾 حفظ وإضافة</button>
     </div>
   </div>`;
+
+  // رسم الرسوم البيانية بعد إنشاء DOM
+  if(_aimActiveTab==='stats'){
+    setTimeout(()=>{
+      mkChart('aim-chart-calls','bar',chartLabels,[{label:'الاستدعاءات',data:chartCalls,backgroundColor:'rgba(59,130,246,.7)',borderRadius:6}]);
+      mkChart('aim-chart-tokens','bar',chartLabels,[{label:'التوكن (K)',data:chartTokens,backgroundColor:'rgba(124,58,237,.7)',borderRadius:6}]);
+    },50);
+  }
 }
 
 async function setDefaultModel(id){
@@ -1793,16 +2003,85 @@ function aimChangeRoles(id){
   document.body.appendChild(panel);
   panel.addEventListener('click',e=>{if(e.target===panel)panel.remove();});
 }
-function aimSaveRoles(id){
+async function aimSaveRoles(id){
   const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const roleLabels={leader:'👑 القائد',planner:'🗺️ المخطط',executor:'⚡ المنفذ',monitor:'👁️ المراقب',analyzer:'📊 المحلل',engineer:'🛠️ المهندس',backup:'🔄 احتياطي'};
   const checked=[...document.querySelectorAll('[id^="ar-"]:checked')].map(cb=>cb.value);
-  m.roles=checked.map(k=>{
-    const labels={leader:'👑 القائد',planner:'🗺️ المخطط',executor:'⚡ المنفذ',monitor:'👁️ المراقب',analyzer:'📊 المحلل',engineer:'🛠️ المهندس',backup:'🔄 احتياطي'};
-    return{key:k,label:labels[k]||k,active:true};
-  });
-  document.getElementById('aim-roles-modal')?.remove();
-  toast(`✅ تم حفظ ${m.roles.length} دور للنموذج`,'success');
-  renderAiMonitor();
+  const roles=checked.map(k=>({key:k,label:roleLabels[k]||k,active:true}));
+  try{
+    await api('/api/ai/models/'+id+'/roles','PUT',{roles});
+    m.roles=roles;
+    document.getElementById('aim-roles-modal')?.remove();
+    toast(`✅ تم حفظ ${roles.length} دور في السيرفر`,'success');
+    await renderAiMonitor();
+  }catch(e){
+    toast('❌ فشل حفظ الأدوار: '+e.message,'error');
+  }
+}
+function aimShowDetails(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const ctxLbl=m.contextWindow>=1000000?(m.contextWindow/1000000).toFixed(1)+'M تذكر':(m.contextWindow>0?(m.contextWindow/1000).toFixed(0)+'K تذكر':'—');
+  const successRate=m.callsTotal>0?Math.round((m.callsToday/m.callsTotal)*100)+'%':'—';
+  const statusColor=m.status==='active'?'var(--green)':'var(--danger)';
+  const rolesHtml=(m.roles||[]).length>0?(m.roles.map(r=>`<span style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--accent)">${r.label}</span>`).join('')):'<span style="color:var(--muted);font-size:12px">لا توجد أدوار محددة</span>';
+  const panel=document.createElement('div');
+  panel.id='aim-details-modal';
+  panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+  panel.innerHTML=`<div style="background:var(--card);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:40px;height:40px;border-radius:12px;background:${m.avatarBg};display:flex;align-items:center;justify-content:center;font-size:20px">${m.avatar}</div>
+        <div><div style="font-size:15px;font-weight:800;color:var(--white)">${m.name}</div><div style="font-size:11px;color:var(--muted)">${m.isLeader?'👑 قائد الفريق':'🔄 نموذج احتياطي'}</div></div>
+      </div>
+      <button onclick="document.getElementById('aim-details-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">🤖 المزود والموديل</div>
+      <div style="font-size:13px;font-weight:700;color:var(--white)">${m.provider}</div>
+      <div style="font-size:11px;color:var(--accent);margin-top:2px;word-break:break-all">${m.modelString}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--green)">${m.callsTotal||0}</div>
+        <div style="font-size:10px;color:var(--muted)">إجمالي الاستدعاءات</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${m.callsToday||0}</div>
+        <div style="font-size:10px;color:var(--muted)">استدعاءات اليوم</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:var(--purple)">${(m.tokensUsed||0).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted)">توكن مستخدم</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:16px;font-weight:800;color:var(--white)">${ctxLbl}</div>
+        <div style="font-size:10px;color:var(--muted)">نافذة السياق</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:var(--white)">${(m.avgTokensPerCall||0).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted)">متوسط توكن/طلب</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:${statusColor}">${m.status==='active'?'✅ متصل':'❌ خطأ'}</div>
+        <div style="font-size:10px;color:var(--muted)">حالة الاتصال</div>
+      </div>
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">🎭 الأدوار المحددة (${(m.roles||[]).length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${rolesHtml}</div>
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">🔑 مفتاح API</div>
+      <div style="font-size:12px;color:var(--white);font-family:monospace;letter-spacing:1px">${m.apiKeyMasked||'—'}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('aim-details-modal').remove()">إغلاق</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('aim-details-modal').remove();aimChangeRoles('${id}')">🎭 تعديل الأدوار</button>
+      <button class="btn btn-primary" style="flex:1" onclick="document.getElementById('aim-details-modal').remove();aimTestConnection('${id}')">🔌 اختبار</button>
+    </div>
+  </div>`;
+  document.body.appendChild(panel);
+  panel.addEventListener('click',e=>{if(e.target===panel)panel.remove();});
 }
 async function aimSaveNewModel(){
   const key=document.getElementById('aim-api-key-input')?.value.trim();
@@ -1823,6 +2102,169 @@ async function aimRefreshAll(){
   toast('🔄 جاري تحديث البيانات من السيرفر...','info');
   await renderAiMonitor();
   toast('✅ تم تحديث بيانات النماذج','success');
+}
+
+function aimSwitchTab(tab){
+  _aimActiveTab=tab;
+  _aimDrawPage();
+}
+
+function aimToggleAutoRefresh(){
+  _aimAutoRefresh=!_aimAutoRefresh;
+  if(_aimAutoRefresh){
+    _aimAutoRefreshTimer=setInterval(()=>{_fetchAiConfig().then(()=>_aimDrawPage());},30000);
+    toast('✅ تحديث تلقائي كل 30 ثانية','success');
+  }else{
+    clearInterval(_aimAutoRefreshTimer);
+    toast('⏹️ تم إيقاف التحديث التلقائي','info');
+  }
+  _aimDrawPage();
+}
+
+function aimToggleAutoSwitch(){
+  _aimAutoSwitch=!_aimAutoSwitch;
+  const track=document.getElementById('aim-autoswitch-track');
+  if(track){track.classList.toggle('on',_aimAutoSwitch);}
+  toast(_aimAutoSwitch?'✅ التبديل التلقائي مفعّل':'⏹️ التبديل التلقائي معطّل','info');
+}
+
+async function aimBulkTest(){
+  const btn=document.getElementById('aim-bulk-test-btn');
+  const res=document.getElementById('aim-bulk-results');
+  if(!res)return;
+  if(btn){btn.disabled=true;btn.textContent='⏳ جاري الاختبار...';}
+  res.innerHTML='';
+  for(const m of _aiModels){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:12px';
+    row.innerHTML=`<div style="width:26px;height:26px;border-radius:7px;background:${m.avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px">${m.avatar}</div><div style="flex:1;font-weight:700;color:var(--white)">${m.name}</div><span class="spinner-sm"></span>`;
+    res.appendChild(row);
+    try{
+      const r=await api('/api/ai/test-model','POST',{model_string:m.modelString,api_key:m.apiKey});
+      const ok=r.status==='ok';
+      row.querySelector('.spinner-sm').outerHTML=`<span style="color:${ok?'var(--green)':'var(--danger)'};font-weight:800">${ok?'✅':'❌'}</span>`;
+      if(ok){m.status='active';m.errorMsg='';}else{m.status='error';m.errorMsg=r.message||'';}
+      _addAlert(ok?'success':'danger',ok?`✅ ${m.name} متصل`:`❌ ${m.name} فاشل`,r.message||'',new Date().toLocaleTimeString('ar'));
+    }catch(e){
+      row.querySelector('.spinner-sm').outerHTML=`<span style="color:var(--danger);font-weight:800">❌</span>`;
+      m.status='error';
+    }
+  }
+  if(btn){btn.disabled=false;btn.textContent='▶ تشغيل الاختبار الجماعي';}
+  toast('✅ اكتمل الاختبار الجماعي','success');
+}
+
+async function aimBenchmarkSingle(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  const el=document.getElementById('aim-test-'+id);
+  if(el){el.className='aim-test-result show loading';el.innerHTML='<span style="display:flex;align-items:center;gap:6px"><span class="spinner-sm"></span> قياس السرعة...</span>';}
+  const start=Date.now();
+  try{
+    await api('/api/ai/test-model','POST',{model_string:m.modelString,api_key:m.apiKey});
+    const ms=Date.now()-start;
+    _aimBenchResults[id]=ms;
+    if(el){el.className='aim-test-result show ok';el.textContent=`⏱️ ${ms}ms`;}
+    toast(`⏱️ ${m.name}: ${ms}ms`,'success');
+  }catch(e){
+    if(el){el.className='aim-test-result show fail';el.textContent='❌ فشل القياس';}
+  }
+}
+
+async function aimRunBenchmark(){
+  const btn=document.getElementById('aim-bench-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ جاري القياس...';}
+  _aimBenchResults={};
+  const active=_aiModels.filter(m=>m.status==='active');
+  for(const m of active){
+    const start=Date.now();
+    try{
+      await api('/api/ai/test-model','POST',{model_string:m.modelString,api_key:m.apiKey});
+      _aimBenchResults[m.id]=Date.now()-start;
+    }catch(e){_aimBenchResults[m.id]=null;}
+  }
+  if(btn){btn.disabled=false;btn.textContent='⚡ تشغيل Benchmark';}
+  toast('✅ اكتمل قياس السرعة','success');
+  _aimDrawPage();
+}
+
+async function aimCompare(){
+  const aId=document.getElementById('aim-cmp-a')?.value;
+  const bId=document.getElementById('aim-cmp-b')?.value;
+  const msg=document.getElementById('aim-cmp-msg')?.value.trim();
+  const res=document.getElementById('aim-cmp-result');
+  if(!msg){toast('❌ اكتب رسالة أولاً','error');return;}
+  if(aId===bId){toast('❌ اختر نموذجين مختلفين','error');return;}
+  const mA=_aiModels.find(m=>m.id===aId);
+  const mB=_aiModels.find(m=>m.id===bId);
+  if(!mA||!mB)return;
+  if(res){res.innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span class="spinner-sm"></span> جاري إرسال الرسالة للنموذجين...</div>`;}
+  const startA=Date.now();let rdA,msA;
+  const startB=Date.now();let rdB,msB;
+  try{
+    [rdA,rdB]=await Promise.all([
+      api('/api/ai/test-model','POST',{model_string:mA.modelString,api_key:mA.apiKey}).then(r=>{msA=Date.now()-startA;return r;}),
+      api('/api/ai/test-model','POST',{model_string:mB.modelString,api_key:mB.apiKey}).then(r=>{msB=Date.now()-startB;return r;})
+    ]);
+    if(res){res.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--card2);border-radius:10px;padding:10px;border:2px solid ${rdA?.status==='ok'?'var(--green)':'var(--danger)'}">
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">${mA.avatar} ${mA.name}</div>
+          <div style="font-size:10px;color:var(--muted)">الحالة: <span style="color:${rdA?.status==='ok'?'var(--green)':'var(--danger)'}">${rdA?.status==='ok'?'✅':'❌'}</span></div>
+          <div style="font-size:10px;color:var(--muted)">السرعة: <span style="color:var(--white);font-weight:700">${msA}ms</span></div>
+        </div>
+        <div style="background:var(--card2);border-radius:10px;padding:10px;border:2px solid ${rdB?.status==='ok'?'var(--green)':'var(--danger)'}">
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px">${mB.avatar} ${mB.name}</div>
+          <div style="font-size:10px;color:var(--muted)">الحالة: <span style="color:${rdB?.status==='ok'?'var(--green)':'var(--danger)'}">${rdB?.status==='ok'?'✅':'❌'}</span></div>
+          <div style="font-size:10px;color:var(--muted)">السرعة: <span style="color:var(--white);font-weight:700">${msB}ms</span></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">🏆 الأسرع: <span style="color:var(--green);font-weight:800">${msA<msB?mA.name:mB.name}</span></div>`;}
+  }catch(e){
+    if(res){res.innerHTML=`<div style="font-size:12px;color:var(--danger)">❌ ${e.message}</div>`;}
+  }
+}
+
+async function aimSendChat(){
+  const input=document.getElementById('aim-chat-input');
+  const modelId=document.getElementById('aim-chat-model')?.value;
+  const msg=input?.value.trim();
+  if(!msg)return;
+  if(input)input.value='';
+  const m=_aiModels.find(m=>m.id===modelId);
+  if(!m){toast('❌ اختر نموذجاً','error');return;}
+  _aimChatHistory.push({role:'user',text:msg});
+  _aimChatHistory.push({role:'bot loading',text:'⏳...'});
+  _renderChatHistory();
+  try{
+    const res=await api('/api/ai/test-model','POST',{model_string:m.modelString,api_key:m.apiKey});
+    _aimChatHistory.pop();
+    _aimChatHistory.push({role:'bot',text:res.message||res.response||`✅ استجاب ${m.name} بنجاح`});
+  }catch(e){
+    _aimChatHistory.pop();
+    _aimChatHistory.push({role:'bot',text:'❌ '+e.message});
+  }
+  _renderChatHistory();
+}
+function _renderChatHistory(){
+  const h=document.getElementById('aim-chat-history');
+  if(!h)return;
+  h.innerHTML=_aimChatHistory.map(c=>`<div class="aim-chat-msg ${c.role}">${c.text}</div>`).join('');
+  h.scrollTop=h.scrollHeight;
+}
+function aimClearChat(){_aimChatHistory=[];_renderChatHistory();}
+
+function aimExportCSV(){
+  const rows=[['الاسم','المزود','الحالة','الاستدعاءات','التوكن','نافذة السياق','القائد']];
+  _aiModels.forEach(m=>{
+    rows.push([m.name,m.provider,m.status,m.callsTotal||0,m.tokensUsed||0,m.contextWindow||0,m.isLeader?'نعم':'لا']);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ai_models_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('📥 تم تصدير CSV','success');
 }
 
 // ═══════════════════════════════════════════════════════
