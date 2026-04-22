@@ -880,7 +880,8 @@ function _groupCard(g){
 }
 async function renderGroups() {
   document.getElementById('content').innerHTML=`<div class="loading-center"><div class="spinner"></div></div>`;
-  _allGroups=await api('/api/groups');
+  try{_allGroups=await api('/api/groups');}
+  catch(e){document.getElementById('content').innerHTML=`<div class="empty-state"><div class="es-icon">⚠️</div><p>خطأ في تحميل المجموعات: ${e.message}</p><button class="btn btn-primary btn-sm" onclick="renderGroups()">🔄 إعادة المحاولة</button></div>`;return;}
   const joined=_allGroups.filter(g=>g.is_joined).length;
   const banned=_allGroups.filter(g=>g.is_banned).length;
   const black=_allGroups.filter(g=>g.is_blacklisted).length;
@@ -1036,7 +1037,7 @@ async function deleteCampaign(id){if(!confirm('حذف هذه الحملة؟'))re
 async function showCampaignStats(id){
   try{
     const s=await api(`/api/campaigns/${id}/stats`);
-    const sent=s.sent||0,del=s.deleted||0,succ=s.successful||sent-del;
+    const sent=s.total||0,del=s.deleted||0,succ=s.success||(sent-del);
     const rate=sent>0?Math.round(succ/sent*100):0;
     showModal('📊 إحصائيات الحملة',`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -1372,7 +1373,9 @@ async function renderAudit(){
 // ═══════════════════════════════════════════════════════
 // FOLDERS
 // ═══════════════════════════════════════════════════════
-let _importJobs=[],_importIdSeq=1;
+let _importJobs=(()=>{try{const s=localStorage.getItem('_importJobs');return s?JSON.parse(s):[]}catch(e){return []}})();
+let _importIdSeq=(()=>{try{return parseInt(localStorage.getItem('_importIdSeq')||'1');}catch(e){return 1}})();
+function _saveImportJobs(){try{localStorage.setItem('_importJobs',JSON.stringify(_importJobs));localStorage.setItem('_importIdSeq',String(_importIdSeq));}catch(e){}}
 async function renderFolders(){
   let grpData={total:0,joined:0};
   try{const stats=await api('/api/stats/overview');grpData.total=stats.groups?.total||0;grpData.joined=stats.groups?.joined||0;}catch(e){}
@@ -1426,6 +1429,7 @@ async function submitNewImport(){
   if(links.length===0){toast('لا توجد روابط صالحة','error');return;}
   const job={id:_importIdSeq++,name,type:'folder',accountId:accId,links,total:links.length,joined:0,failed:0,failedLinks:[],groups:[],status:'running',date:new Date().toISOString().split('T')[0]};
   _importJobs.unshift(job);
+  _saveImportJobs();
   toast(`🚀 بدأ استيراد ${links.length} رابط...`,'info');
   renderFolders();
   for(const link of links){
@@ -1439,10 +1443,11 @@ async function submitNewImport(){
     await new Promise(r=>setTimeout(r,1500+Math.random()*1500));
   }
   job.status=job.failed===job.total?'failed':'done';
+  _saveImportJobs();
   if(state.page==='folders')renderFolders();
   toast(job.status==='done'?`✅ اكتمل: ${job.joined} منضم`:`⚠️ ${job.failed} فاشل من ${job.total}`,'success');
 }
-function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))return;_importJobs=_importJobs.filter(j=>j.id!==id);renderFolders();toast('تم الحذف','success');}
+function deleteImport(id){if(!confirm('حذف هذا الاستيراد؟'))return;_importJobs=_importJobs.filter(j=>j.id!==id);_saveImportJobs();renderFolders();toast('تم الحذف','success');}
 
 // ═══════════════════════════════════════════════════════
 // AI MONITOR
@@ -1592,14 +1597,47 @@ async function renderAiMonitor(){
   </div>`;
 }
 
-function setDefaultModel(id){_aiModels.forEach(m=>m.isDefault=false);const m=_aiModels.find(m=>m.id===id);if(m)m.isDefault=true;toast('⭐ تم تعيين النموذج الافتراضي','success');renderAiMonitor();}
+async function setDefaultModel(id){
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
+  try{
+    await api('/api/ai/set-preferred','POST',{model_string:m.modelString});
+    _aiModels.forEach(x=>{x.isDefault=false;x.isLeader=false;});
+    m.isDefault=true;m.isLeader=true;
+    toast('⭐ تم تعيين النموذج كقائد وحُفظ في السيرفر','success');
+    renderAiMonitor();
+  }catch(e){toast('❌ فشل التعيين: '+e.message,'error');}
+}
 function toggleModelStatus(id,s){const m=_aiModels.find(m=>m.id===id);if(!m)return;if(m.isDefault&&s==='inactive'){toast('لا يمكن تعطيل الافتراضي','error');return;}m.status=s;renderAiMonitor();}
-function removeModel(id){if(!confirm('حذف هذا النموذج؟'))return;_aiModels=_aiModels.filter(m=>m.id!==id);renderAiMonitor();}
+async function removeModel(id){
+  if(!confirm('حذف هذا النموذج من القائمة؟'))return;
+  try{await api('/api/ai/models/'+id,'DELETE');}catch(e){}
+  _aiModels=_aiModels.filter(m=>m.id!==id);
+  toast('✅ تم حذف النموذج','success');
+  renderAiMonitor();
+}
 
 // ═══ AIM FUNCTIONS ═══
 const _aimModelsMap={google:['gemini/gemini-2.0-flash','gemini/gemini-1.5-pro','gemini/gemini-1.5-flash'],groq:['groq/llama-3.3-70b-versatile','groq/llama-3.1-8b-instant','groq/mixtral-8x7b-32768'],openai:['openai/gpt-4o','openai/gpt-4o-mini','openai/gpt-3.5-turbo'],deepseek:['deepseek/deepseek-chat','deepseek/deepseek-r1'],anthropic:['anthropic/claude-3-5-sonnet-20241022','anthropic/claude-3-haiku-20240307'],other:[]};
 let _aimKeyVisible={},_aimSelectedProvider='google',_aimSelectedRole='leader';
-function aimOpenAddModal(){_aimSelectedProvider='google';_aimSelectedRole='leader';document.getElementById('aim-add-modal')?.classList.add('open');}
+function aimOpenAddModal(){
+  _aimSelectedProvider='google';_aimSelectedRole='leader';
+  document.getElementById('aim-add-modal')?.classList.add('open');
+  // تهيئة dropdown الموديلات عند الفتح
+  setTimeout(()=>{
+    const provBtn=document.querySelector('#aim-add-modal .provider-btn');
+    if(provBtn&&!provBtn.classList.contains('selected'))provBtn.classList.add('selected');
+    const sel=document.getElementById('aim-model-select');
+    if(sel&&sel.options.length===0){
+      (_aimModelsMap['google']||[]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+      const co=document.createElement('option');co.value='custom';co.textContent='✏️ اكتب اسماً مخصصاً...';sel.appendChild(co);
+    }
+    // مسح حقل المفتاح ونتيجة الاختبار
+    const keyEl=document.getElementById('aim-api-key-input');
+    if(keyEl)keyEl.value='';
+    const testEl=document.getElementById('aim-test-new');
+    if(testEl){testEl.className='aim-test-result';testEl.textContent='';}
+  },50);
+}
 function aimCloseAddModal(){document.getElementById('aim-add-modal')?.classList.remove('open');}
 function aimCloseIfOutside(e){if(e.target===document.getElementById('aim-add-modal'))aimCloseAddModal();}
 function aimSelectProvider(el,provider){
@@ -1617,21 +1655,70 @@ function aimToggleKey(id,realKey){
   if(!_aimKeyVisible[id]){el.textContent=realKey;_aimKeyVisible[id]=true;}
   else{const m=_aiModels.find(m=>m.id===id);el.textContent=m?m.apiKeyMasked:realKey.slice(0,4)+'••••••••••••••••••••';_aimKeyVisible[id]=false;}
 }
-function aimTestConnection(id){
+async function aimTestConnection(id){
   const el=document.getElementById('aim-test-'+id);if(!el)return;
+  const m=_aiModels.find(m=>m.id===id);if(!m)return;
   el.className='aim-test-result show loading';el.textContent='⏳ جاري اختبار الاتصال...';
-  setTimeout(()=>{
-    const m=_aiModels.find(m=>m.id===id);
-    if(m&&m.status==='error'){el.className='aim-test-result show fail';el.textContent='❌ فشل — المفتاح غير صالح (401 Unauthorized)';}
-    else{el.className='aim-test-result show ok';el.textContent='✅ متصل بنجاح — استجابة: '+Math.floor(80+Math.random()*100)+'ms';}
-  },1800);
+  try{
+    const t0=Date.now();
+    const res=await api('/api/ai/test');
+    const elapsed=Date.now()-t0;
+    const match=res.live_call_tests?.find(t=>t.model===m.modelString);
+    if(match){
+      if(match.status&&match.status.includes('✅')){
+        el.className='aim-test-result show ok';
+        el.textContent=`✅ متصل بنجاح — ${match.response||''} (${match.latency_sec||'?'}ث)`;
+        m.status='active';m.errorMsg='';
+      }else if(match.status&&match.status.includes('quota')){
+        el.className='aim-test-result show fail';
+        el.textContent='⚠️ الـ quota منتهية — تحتاج مفتاح جديد';
+        m.status='error';
+      }else{
+        el.className='aim-test-result show fail';
+        el.textContent='❌ فشل — '+(match.error||'خطأ غير معروف').slice(0,100);
+        m.status='error';
+      }
+    }else{
+      el.className='aim-test-result show ok';
+      el.textContent=`✅ تحقق من الإعدادات (${elapsed}ms) — استخدم API Docs للتشخيص الكامل`;
+    }
+    renderAiMonitor();
+  }catch(e){
+    el.className='aim-test-result show fail';
+    el.textContent='❌ خطأ في الاختبار: '+e.message;
+  }
 }
-function aimTestNewConnection(){
+async function aimTestNewConnection(){
   const key=document.getElementById('aim-api-key-input')?.value.trim();
   const el=document.getElementById('aim-test-new');if(!el)return;
   if(!key){el.className='aim-test-result show fail';el.textContent='❌ أدخل المفتاح أولاً';return;}
-  el.className='aim-test-result show loading';el.textContent='⏳ جاري الاختبار...';
-  setTimeout(()=>{el.className='aim-test-result show ok';el.textContent='✅ الاتصال ناجح — المفتاح صالح';},2000);
+  if(key.length<10){el.className='aim-test-result show fail';el.textContent='❌ المفتاح قصير جداً، تحقق منه';return;}
+  const sel=document.getElementById('aim-model-select');
+  const model=sel?.value==='custom'?document.getElementById('aim-custom-model-input')?.value.trim():sel?.value;
+  if(!model){el.className='aim-test-result show fail';el.textContent='❌ اختر الموديل أولاً';return;}
+  el.className='aim-test-result show loading';el.textContent='⏳ جاري اختبار الاتصال الفعلي...';
+  try{
+    const t0=Date.now();
+    const res=await api('/api/ai/test');
+    const elapsed=Date.now()-t0;
+    const match=res.live_call_tests?.find(t=>t.model===model);
+    if(match&&match.status?.includes('✅')){
+      el.className='aim-test-result show ok';
+      el.textContent=`✅ متصل! استجابة: "${match.response||''}" (${match.latency_sec||'?'}ث)`;
+    }else if(match&&match.status?.includes('quota')){
+      el.className='aim-test-result show fail';
+      el.textContent='⚠️ Quota منتهية — جرب مفتاحاً آخر';
+    }else if(match){
+      el.className='aim-test-result show fail';
+      el.textContent='❌ '+(match.error||'فشل الاختبار').slice(0,120);
+    }else{
+      el.className='aim-test-result show ok';
+      el.textContent=`✅ شكل المفتاح صحيح — احفظ وتحقق من النتائج (${elapsed}ms)`;
+    }
+  }catch(e){
+    el.className='aim-test-result show fail';
+    el.textContent='❌ خطأ: '+e.message;
+  }
 }
 async function aimSetAsLeader(id){
   const m=_aiModels.find(m=>m.id===id);
@@ -1674,13 +1761,17 @@ function aimEditModel(id){
   document.body.appendChild(panel);
   panel.addEventListener('click',e=>{if(e.target===panel)panel.remove();});
 }
-function aimSaveEditModel(id){
+async function aimSaveEditModel(id){
   const m=_aiModels.find(m=>m.id===id);if(!m)return;
   const name=document.getElementById('aem-name')?.value.trim();
   const key=document.getElementById('aem-key')?.value.trim();
   const status=document.getElementById('aem-status')?.value;
   if(name)m.name=name;
-  if(key){m.apiKey=key;m.apiKeyMasked=key.slice(0,4)+'••••••••••••••••••••';m.status='active';m.errorMsg='';}
+  if(key){
+    m.apiKey=key;m.apiKeyMasked=key.slice(0,4)+'••••••••••••••••••••';m.status='active';m.errorMsg='';
+    try{await api('/api/ai/models','POST',{model_string:m.modelString,api_key:key,role:m.isLeader?'leader':'backup',name:m.name});}
+    catch(e){toast('⚠️ تم الحفظ محلياً فقط، السيرفر لم يُحدَّث: '+e.message,'warn');}
+  }
   if(status){if(m.isDefault&&status==='inactive'){toast('لا يمكن تعطيل النموذج الافتراضي','error');return;}m.status=status;}
   document.getElementById('aim-edit-modal')?.remove();
   toast('✅ تم حفظ التعديلات','success');
@@ -1840,7 +1931,7 @@ function renderSettings(){
       <label class="flbl" style="margin:0">إعادة المحاولة تلقائياً عند الفشل</label>
       <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
         <input type="checkbox" id="cfg-auto-retry" ${savedAutoRetry==='true'?'checked':''} style="opacity:0;width:0;height:0;position:absolute">
-        <span id="cfg-retry-track" style="position:absolute;inset:0;background:${savedAutoRetry==='true'?'var(--accent)':'var(--card3)'};border-radius:24px;transition:.2s" onclick="this.parentElement.querySelector('input').checked=!this.parentElement.querySelector('input').checked;this.style.background=this.parentElement.querySelector('input').checked?'var(--accent)':'var(--card3)'"></span>
+        <span id="cfg-retry-track" style="position:absolute;inset:0;background:${savedAutoRetry==='true'?'var(--accent)':'var(--card3)'};border-radius:24px;transition:.2s" onclick="const cb=this.parentElement.querySelector('input');cb.checked=!cb.checked;this.style.background=cb.checked?'var(--accent)':'var(--card3)';const th=document.getElementById('cfg-retry-thumb');if(th)th.style.left=cb.checked?'22px':'2px';"></span>
         <span style="position:absolute;left:${savedAutoRetry==='true'?'22':'2'}px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;pointer-events:none" id="cfg-retry-thumb"></span>
       </label>
     </div>
@@ -1954,14 +2045,23 @@ async function verifyPhoneCode(phone){
 function showJoinGroup(){
   showModal('الانضمام لمجموعة',`
     <div class="fg"><label class="flbl">رابط أو معرف المجموعة</label><input class="finput" id="jg-link" placeholder="https://t.me/... أو @username"></div>
-    <div class="fg"><label class="flbl">رقم الحساب (ID)</label><input class="finput" id="jg-acc" type="number" placeholder="1"></div>
+    <div class="fg"><label class="flbl">الحساب</label><select class="fselect" id="jg-acc"><option value="">جارٍ التحميل...</option></select></div>
   `,async()=>{
     const link=document.getElementById('jg-link').value.trim();
     const acc=parseInt(document.getElementById('jg-acc').value);
-    if(!link||!acc) throw new Error('أدخل جميع البيانات');
+    if(!link||!acc) throw new Error('أدخل الرابط واختر الحساب');
     await api('/api/groups/action','POST',{action:'join',group_link:link,account_id:acc});
     toast('تم الانضمام','success');renderGroups();
   });
+  api('/api/accounts').then(accs=>{
+    const sel=document.getElementById('jg-acc');if(!sel)return;
+    const active=accs.filter(a=>a.status==='active');
+    if(active.length){
+      sel.innerHTML=active.map(a=>`<option value="${a.id}">${a.phone} (${a.status})</option>`).join('');
+    }else{
+      sel.innerHTML='<option value="">⚠️ لا يوجد حساب نشط</option>';
+    }
+  }).catch(()=>{if(document.getElementById('jg-acc'))document.getElementById('jg-acc').innerHTML='<option value="">خطأ في التحميل</option>';});
 }
 
 // EDIT GROUP
