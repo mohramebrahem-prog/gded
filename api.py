@@ -1008,6 +1008,22 @@ async def set_preferred_model(data: dict):
     return {"status": "ok", "preferred_llm": model}
 
 
+@app.delete("/api/ai/models/{model_id}")
+async def delete_ai_model(model_id: str):
+    """
+    يحذف موديل مضاف يدوياً من قائمة _extra_models في الذاكرة.
+    ملاحظة: النماذج المضبوطة في .env تبقى — أزلها من Railway Variables.
+    """
+    global _extra_models
+    before = len(_extra_models)
+    _extra_models = [m for m in _extra_models if m["id"] != model_id]
+    after = len(_extra_models)
+    if before == after:
+        # النموذج من .env — لا يمكن حذفه لكن نرجع ok
+        return {"status": "ok", "note": "نموذج .env لا يُحذف — أزله من Railway Variables"}
+    return {"status": "deleted", "id": model_id}
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SYSTEM TEST ENDPOINT
 # ══════════════════════════════════════════════════════════════════════════════
