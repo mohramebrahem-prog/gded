@@ -345,6 +345,7 @@ td{padding:9px 10px;vertical-align:middle}
 .aim-modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
 .aim-modal-close{float:left;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
 .aim-divider{height:1px;background:var(--border);margin:12px 0}
+.spinner-sm{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -1658,34 +1659,23 @@ function aimToggleKey(id,realKey){
 async function aimTestConnection(id){
   const el=document.getElementById('aim-test-'+id);if(!el)return;
   const m=_aiModels.find(m=>m.id===id);if(!m)return;
-  el.className='aim-test-result show loading';el.textContent='⏳ جاري اختبار الاتصال...';
+  el.className='aim-test-result show loading';
+  el.innerHTML='<span style="display:flex;align-items:center;gap:8px"><span class="spinner-sm"></span> جاري إرسال رسالة اختبار حقيقية...</span>';
   try{
-    const t0=Date.now();
-    const res=await api('/api/ai/test');
-    const elapsed=Date.now()-t0;
-    const match=res.live_call_tests?.find(t=>t.model===m.modelString);
-    if(match){
-      if(match.status&&match.status.includes('✅')){
-        el.className='aim-test-result show ok';
-        el.textContent=`✅ متصل بنجاح — ${match.response||''} (${match.latency_sec||'?'}ث)`;
-        m.status='active';m.errorMsg='';
-      }else if(match.status&&match.status.includes('quota')){
-        el.className='aim-test-result show fail';
-        el.textContent='⚠️ الـ quota منتهية — تحتاج مفتاح جديد';
-        m.status='error';
-      }else{
-        el.className='aim-test-result show fail';
-        el.textContent='❌ فشل — '+(match.error||'خطأ غير معروف').slice(0,100);
-        m.status='error';
-      }
-    }else{
+    const res=await api('/api/ai/test-model','POST',{model_string:m.modelString,api_key:m.apiKey});
+    if(res.status==='ok'){
       el.className='aim-test-result show ok';
-      el.textContent=`✅ تحقق من الإعدادات (${elapsed}ms) — استخدم API Docs للتشخيص الكامل`;
+      el.textContent=res.message||'✅ متصل بنجاح';
+      m.status='active';m.errorMsg='';
+    }else{
+      el.className='aim-test-result show fail';
+      el.textContent=res.message||'❌ فشل الاختبار';
+      m.status='error';m.errorMsg=res.message||'';
     }
     renderAiMonitor();
   }catch(e){
     el.className='aim-test-result show fail';
-    el.textContent='❌ خطأ في الاختبار: '+e.message;
+    el.textContent='❌ خطأ: '+e.message;
   }
 }
 async function aimTestNewConnection(){
@@ -1696,28 +1686,20 @@ async function aimTestNewConnection(){
   const sel=document.getElementById('aim-model-select');
   const model=sel?.value==='custom'?document.getElementById('aim-custom-model-input')?.value.trim():sel?.value;
   if(!model){el.className='aim-test-result show fail';el.textContent='❌ اختر الموديل أولاً';return;}
-  el.className='aim-test-result show loading';el.textContent='⏳ جاري اختبار الاتصال الفعلي...';
+  el.className='aim-test-result show loading';
+  el.innerHTML='<span style="display:flex;align-items:center;gap:8px"><span class="spinner-sm"></span> جاري إرسال رسالة اختبار حقيقية...</span>';
   try{
-    const t0=Date.now();
-    const res=await api('/api/ai/test');
-    const elapsed=Date.now()-t0;
-    const match=res.live_call_tests?.find(t=>t.model===model);
-    if(match&&match.status?.includes('✅')){
+    const res=await api('/api/ai/test-model','POST',{model_string:model,api_key:key});
+    if(res.status==='ok'){
       el.className='aim-test-result show ok';
-      el.textContent=`✅ متصل! استجابة: "${match.response||''}" (${match.latency_sec||'?'}ث)`;
-    }else if(match&&match.status?.includes('quota')){
-      el.className='aim-test-result show fail';
-      el.textContent='⚠️ Quota منتهية — جرب مفتاحاً آخر';
-    }else if(match){
-      el.className='aim-test-result show fail';
-      el.textContent='❌ '+(match.error||'فشل الاختبار').slice(0,120);
+      el.textContent=res.message||'✅ متصل بنجاح';
     }else{
-      el.className='aim-test-result show ok';
-      el.textContent=`✅ شكل المفتاح صحيح — احفظ وتحقق من النتائج (${elapsed}ms)`;
+      el.className='aim-test-result show fail';
+      el.textContent=res.message||'❌ فشل الاختبار';
     }
   }catch(e){
     el.className='aim-test-result show fail';
-    el.textContent='❌ خطأ: '+e.message;
+    el.textContent='❌ خطأ في الاتصال: '+e.message;
   }
 }
 async function aimSetAsLeader(id){
