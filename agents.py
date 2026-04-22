@@ -59,7 +59,7 @@ def _run_async(coro):
 
 
 @crewai_tool("query_groups")
-def query_groups(criteria: Any = None) -> str:
+def query_groups(criteria: str = "{}") -> str:
     """
     يستعلم عن المجموعات من قاعدة البيانات.
     criteria: معايير البحث — يقبل نص JSON أو dict أو فارغ.
@@ -69,15 +69,13 @@ def query_groups(criteria: Any = None) -> str:
     async def _query():
         try:
             # Groq يرسل dict مباشرة، Gemini يرسل string — نقبل كليهما
-            if criteria is None or criteria == "" or criteria == "{}":
+            # criteria دائماً str الآن (Groq-compatible)
+            c = str(criteria or "{}").strip()
+            if not c or c == "{}" or c == "None":
                 params = {}
-            elif isinstance(criteria, dict):
-                params = criteria
             else:
-                c = str(criteria).strip()
-                # أحياناً يُرسل Python repr بدل JSON
                 c = c.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
-                params = json.loads(c) if c and c != "{}" else {}
+                params = json.loads(c) if c else {}
         except Exception:
             params = {}
         db = await get_session()
@@ -174,7 +172,7 @@ def check_deletion_status(message_id: int) -> str:
 
 
 @crewai_tool("store_memory")
-def store_memory(memory_id: str, text: str, metadata: Any = None) -> str:
+def store_memory(memory_id: str, text: str, metadata: str = "{}") -> str:
     """
     يخزن معلومة في الذاكرة الدائمة للنظام.
     memory_id: معرف فريد للذاكرة
@@ -184,15 +182,11 @@ def store_memory(memory_id: str, text: str, metadata: Any = None) -> str:
     if not CHROMA_AVAILABLE:
         return "ChromaDB غير متاح - تم تجاهل الحفظ"
     try:
-        if metadata is None:
+        # metadata دائماً str الآن
+        try:
+            meta = json.loads(str(metadata)) if metadata and metadata != "{}" else {}
+        except Exception:
             meta = {}
-        elif isinstance(metadata, dict):
-            meta = metadata
-        else:
-            try:
-                meta = json.loads(str(metadata)) if metadata else {}
-            except Exception:
-                meta = {}
         _memory_col.upsert(ids=[memory_id], documents=[text], metadatas=[meta])
         return "تم حفظ الذاكرة"
     except Exception as e:
@@ -306,8 +300,8 @@ def _get_candidates() -> list:
     """
     يبني قائمة الموديلات مرتبة:
     الأساسي (PREFERRED_LLM من os.environ) أولاً ثم الاحتياطية.
-    يقرأ PREFERRED_LLM من os.environ مباشرة حتى يعكس أي تغيير
-    تم عبر الواجهة أو api/set-preferred بدون إعادة تشغيل السيرفر.
+    الاحتياطية مرتبة: Groq أولاً (مجاني وسريع) ← Gemini ← DeepSeek آخراً
+    يقرأ PREFERRED_LLM من os.environ مباشرة حتى يعكس أي تغيير.
     """
     import os
     preferred = os.environ.get("PREFERRED_LLM", "") or PREFERRED_LLM or "groq/llama-3.3-70b-versatile"
@@ -318,13 +312,13 @@ def _get_candidates() -> list:
     _deep = os.environ.get("DEEPSEEK_API_KEY", "") or DEEPSEEK_API_KEY
     _gem  = os.environ.get("GOOGLE_API_KEY", "") or GOOGLE_API_KEY
 
-    # أضف الاحتياطيات بترتيب الأسرع → الأبطأ
+    # الاحتياطيات: Groq أولاً (مجاني وسريع) → Gemini → DeepSeek آخراً (مدفوع)
     if _groq and "groq" not in preferred.lower() and "llama" not in preferred.lower():
         candidates.append("groq/llama-3.3-70b-versatile")
-    if _deep and "deepseek" not in preferred.lower():
-        candidates.append("deepseek/deepseek-chat")
     if _gem and "gemini" not in preferred.lower():
         candidates.append("gemini/gemini-2.0-flash")
+    if _deep and "deepseek" not in preferred.lower():
+        candidates.append("deepseek/deepseek-chat")
 
     return candidates
 
@@ -479,14 +473,20 @@ async def run_copilot(command: str) -> dict:
             last_err = e
             err_str = str(e).lower()
             is_quota_err = any(x in err_str for x in [
+                # أخطاء الـ Rate Limit والـ Quota
                 "429", "quota", "resource_exhausted",
                 "rate_limit", "rate limit", "exceeded",
                 "too many requests",
+                # ✅ إضافة: أخطاء الرصيد غير الكافي (402 DeepSeek/OpenAI)
+                "402", "insufficient balance", "insufficient_balance",
+                "payment required", "billing", "no balance",
+                "account balance", "credit", "prepaid",
+                "invalid_request_error",  # DeepSeek يرسلها مع 402
             ])
             if is_quota_err:
-                logger.warning(f"⚠️ {model_str} رفض بـ quota/429، أجرب الاحتياطي التالي...")
+                logger.warning(f"⚠️ {model_str} فشل بسبب رصيد/quota/402 → أجرب الموديل التالي...")
                 continue
-            # خطأ غير متعلق بـ quota → توقف فوراً
+            # خطأ غير متعلق بـ quota أو رصيد → توقف فوراً
             logger.error(f"❌ خطأ غير متوقع من {model_str}: {e}")
             await _log_audit("Orchestrator", "copilot_error", {
                 "error": str(e), "model": model_str,

@@ -1141,6 +1141,71 @@ async def test_ai_full():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# AI MODEL QUICK TEST ENDPOINT
+# ══════════════════════════════════════════════════════════════════════════════
+
+class AITestReq(BaseModel):
+    model_string: str
+    api_key: str
+
+@app.post("/api/ai/test-model")
+async def test_single_model(req: AITestReq):
+    """
+    اختبار نموذج محدد بمفتاح محدد — يُرسل رسالة حقيقية ويُرجع الرد.
+    يُستخدم من زر الاختبار عند إضافة نموذج جديد.
+    """
+    import os, time
+    if not req.model_string or not req.api_key:
+        raise HTTPException(400, "model_string و api_key مطلوبان")
+
+    # ضبط مفتاح البيئة مؤقتاً
+    m = req.model_string.lower()
+    if "gemini" in m or "google" in m:
+        os.environ["GOOGLE_API_KEY"] = req.api_key
+        os.environ["GEMINI_API_KEY"] = req.api_key
+    elif "groq" in m or "llama" in m or "mixtral" in m:
+        os.environ["GROQ_API_KEY"] = req.api_key
+    elif "deepseek" in m:
+        os.environ["DEEPSEEK_API_KEY"] = req.api_key
+    elif "claude" in m or "anthropic" in m:
+        os.environ["ANTHROPIC_API_KEY"] = req.api_key
+    elif "gpt" in m or "openai" in m:
+        os.environ["OPENAI_API_KEY"] = req.api_key
+
+    try:
+        import litellm
+        litellm.set_verbose = False
+        t0 = time.time()
+        resp = await asyncio.to_thread(
+            litellm.completion,
+            model=req.model_string,
+            messages=[{"role": "user", "content": "قل كلمة: مرحبا"}],
+            max_tokens=20,
+            timeout=15,
+        )
+        text = resp.choices[0].message.content.strip()
+        elapsed = round(time.time() - t0, 2)
+        return {
+            "status": "ok",
+            "response": text,
+            "latency_sec": elapsed,
+            "message": f"✅ متصل بنجاح — رد: {text} ({elapsed}ث)",
+        }
+    except Exception as e:
+        err = str(e)
+        elapsed = round(time.time() - t0, 2) if 't0' in dir() else 0
+        is_quota = any(x in err.lower() for x in ["429","quota","rate","402","insufficient","balance","billing"])
+        is_auth  = any(x in err.lower() for x in ["401","unauthorized","invalid api key","api key","authentication"])
+        if is_auth:
+            msg = "❌ المفتاح غير صحيح أو غير صالح"
+        elif is_quota:
+            msg = "⚠️ المفتاح صحيح لكن الـ quota منتهية أو الرصيد غير كافٍ"
+        else:
+            msg = f"❌ خطأ: {err[:200]}"
+        return {"status": "error", "message": msg, "detail": err[:300], "latency_sec": elapsed}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # STATIC (SPA)
 # ══════════════════════════════════════════════════════════════════════════════
 STATIC_DIR = Path(__file__).parent / "static"
