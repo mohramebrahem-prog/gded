@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
+
+  <!-- ═══ PWA ═══ -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TG AI">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TG AI System</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -2596,5 +2605,40 @@ function showCreateTemplate(){
 connectWS();
 renderDashboard();
 </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(r => console.log('✅ SW:', r.scope))
+          .catch(e => console.warn('SW failed:', e));
+      });
+    }
+    let _pwaPrompt;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      _pwaPrompt = e;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
+      if (!standalone) setTimeout(_showInstallBanner, 3000);
+    });
+    function _showInstallBanner() {
+      if (document.getElementById('pwa-banner')) return;
+      const b = document.createElement('div');
+      b.id = 'pwa-banner';
+      b.style.cssText = 'position:fixed;bottom:72px;left:12px;right:12px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;border-radius:16px;padding:14px 16px;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);font-family:Tajawal,sans-serif;direction:rtl';
+      b.innerHTML = '<span style="font-size:30px">🤖</span><div style="flex:1"><div style="font-weight:800;font-size:14px">ثبّت التطبيق</div><div style="font-size:11px;opacity:.75;margin-top:2px">يعمل بدون متصفح مثل أي تطبيق</div></div><button onclick="installPWA()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;padding:8px 16px;border-radius:10px;font-family:Tajawal,sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">تثبيت</button><button onclick="document.getElementById('pwa-banner').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:0 4px;line-height:1">×</button>';
+      document.body.appendChild(b);
+    }
+    async function installPWA() {
+      if (!_pwaPrompt) return;
+      _pwaPrompt.prompt();
+      const {outcome} = await _pwaPrompt.userChoice;
+      _pwaPrompt = null;
+      document.getElementById('pwa-banner')?.remove();
+    }
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('pwa-banner')?.remove();
+    });
+  </script>
 </body>
 </html>
