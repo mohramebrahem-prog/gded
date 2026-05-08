@@ -1,0 +1,18 @@
+=== تعديل api.py ===
+
+أضف هذا الكود في api.py بعد السطر:
+  STATIC_DIR = Path(__file__).parent / "static"
+
+──────────────────────────────────────────
+BASE_DIR = Path(__file__).parent
+
+@app.get("/manifest.json")
+async def serve_manifest():
+    return FileResponse(BASE_DIR / "manifest.json", media_type="application/manifest+json")
+
+@app.get("/sw.js")
+async def serve_sw():
+    return FileResponse(BASE_DIR / "sw.js", media_type="application/javascript")
+──────────────────────────────────────────
+
+هذا يجب أن يكون قبل الـ routes الموجودة (serve_root, serve_spa)
