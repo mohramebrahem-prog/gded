@@ -59,43 +59,40 @@ def _run_async(coro):
 
 
 @crewai_tool("query_groups")
-def query_groups(criteria: str = "{}") -> str:
+def query_groups(
+    category: str = "",
+    is_joined: str = "",
+    min_members: int = 0,
+    language: str = "",
+    protection_bot: str = "",
+) -> str:
     """
     يستعلم عن المجموعات من قاعدة البيانات.
-    criteria: معايير البحث — يقبل نص JSON أو dict أو فارغ.
-    مثال: {"category":"news","is_joined":true,"min_members":100}
-    أو أرسل فارغاً لجلب كل المجموعات.
+    category: تصنيف المجموعة (news, ads, general ...)
+    is_joined: هل انضم الحساب للمجموعة؟ (true أو false أو فارغ)
+    min_members: الحد الأدنى لعدد الأعضاء (0 = بدون حد)
+    language: لغة المجموعة (ar, en ...)
+    protection_bot: اسم بوت الحماية أو فارغ
     """
     async def _query():
-        try:
-            # Groq يرسل dict مباشرة، Gemini يرسل string — نقبل كليهما
-            # criteria دائماً str الآن (Groq-compatible)
-            c = str(criteria or "{}").strip()
-            if not c or c == "{}" or c == "None":
-                params = {}
-            else:
-                c = c.replace("'", '"').replace("True", "true").replace("False", "false").replace("None", "null")
-                params = json.loads(c) if c else {}
-        except Exception:
-            params = {}
         db = await get_session()
         try:
             from sqlalchemy import select, and_
             q = select(Group)
             conditions = []
-            if params.get("category"):
-                conditions.append(Group.category == params["category"])
-            if params.get("is_joined") is not None:
-                conditions.append(Group.is_joined == params["is_joined"])
-            if params.get("min_members"):
-                conditions.append(Group.member_count >= params["min_members"])
-            if params.get("language"):
-                conditions.append(Group.language == params["language"])
-            if params.get("protection_bot") is not None:
-                if params["protection_bot"] is False:
+            if category and category.strip():
+                conditions.append(Group.category == category.strip())
+            if is_joined and is_joined.strip().lower() in ("true", "false"):
+                conditions.append(Group.is_joined == (is_joined.strip().lower() == "true"))
+            if min_members and int(min_members) > 0:
+                conditions.append(Group.member_count >= int(min_members))
+            if language and language.strip():
+                conditions.append(Group.language == language.strip())
+            if protection_bot and protection_bot.strip():
+                if protection_bot.strip().lower() in ("false", "none", "no", "لا"):
                     conditions.append(Group.protection_bot == None)
                 else:
-                    conditions.append(Group.protection_bot == params["protection_bot"])
+                    conditions.append(Group.protection_bot == protection_bot.strip())
             if conditions:
                 q = q.where(and_(*conditions))
             result = await db.execute(q.limit(100))
@@ -172,21 +169,17 @@ def check_deletion_status(message_id: int) -> str:
 
 
 @crewai_tool("store_memory")
-def store_memory(memory_id: str, text: str, metadata: str = "{}") -> str:
+def store_memory(memory_id: str, text: str, tag: str = "") -> str:
     """
     يخزن معلومة في الذاكرة الدائمة للنظام.
     memory_id: معرف فريد للذاكرة
     text: النص المراد حفظه
-    metadata: بيانات إضافية اختيارية (dict أو JSON string)
+    tag: وسم اختياري لتصنيف الذاكرة (مثل: campaign, group, result)
     """
     if not CHROMA_AVAILABLE:
         return "ChromaDB غير متاح - تم تجاهل الحفظ"
     try:
-        # metadata دائماً str الآن
-        try:
-            meta = json.loads(str(metadata)) if metadata and metadata != "{}" else {}
-        except Exception:
-            meta = {}
+        meta = {"tag": tag} if tag else {}
         _memory_col.upsert(ids=[memory_id], documents=[text], metadatas=[meta])
         return "تم حفظ الذاكرة"
     except Exception as e:
